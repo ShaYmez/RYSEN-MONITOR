@@ -26,7 +26,7 @@ RUN	apk update && \
     pip install --upgrade pip && \
     pip cache purge && \
     cd /opt && \
-	git clone https://github.com/shaymez/RYSEN-MONITOR.git /fdmrmon && \
+	git clone https://github.com/shaymez/RYSEN-MONITOR.git fdmrmon && \
 	pip install --no-cache-dir -r requirements.txt && \
 	apk del git gcc musl-dev && \
 	chown -R radio /opt/fdmrmon
