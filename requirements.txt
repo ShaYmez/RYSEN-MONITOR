@@ -1,0 +1,11 @@
+setuptools
+wheel
+Twisted
+dmr_utils3
+bitstring
+autobahn
+jinja2
+MarkupSafe
+pyOpenSSL
+service-identity
+mysqlclient
