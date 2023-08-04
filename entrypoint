@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo 'Starting FDMR-Monitor...'
+cd /opt
+python /opt/fdmrmon/monitor.py
