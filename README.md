@@ -1,8 +1,8 @@
-**Dashboard backend with Self Service for SystemX Servers**
+**Dashboard backend with Selfcare for SystemX Servers**
 
 ![Dashboard](./screenshot.png)
 
-***This version has been forked from FDMR Monitor with Self Service by CS8ABG. Thanks for all contrib***
+***This version has been forked from FDMR Monitor with Selfcare by CS8ABG. Thanks for all contrib***
 
 ---
 
