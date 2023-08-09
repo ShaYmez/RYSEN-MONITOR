@@ -77,6 +77,9 @@ def mk_config(cfg_file):
                 CONF["OPB_FLTR"] = {
                     "OPB_FILTER": conf.get(section, "OPB_FILTER").replace(" ", "").split(",")}
             elif section == "FILES":
+                _path = conf[section]["FILES_PATH"]
+                if not _path.endswith("/"):
+                    _path = conf[section]["FILES_PATH"] = f"{_path}/"
                 CONF["FILES"] = {
                     "PATH": conf.get(section, "FILES_PATH"),
                     "SUBS": conf.get(section, "SUBSCRIBER_FILE"),

@@ -1205,10 +1205,10 @@ if __name__ == "__main__":
         }
     logger = create_logger(log_conf)
 
-    logger.info("monitor.py starting up")
+    logger.info("monitor.py starting up.....")
     logger.info("\n\n\tCopyright (c) 2016-2022\n\tThe Regents of the K0USY Group. All rights "
                 "reserved.\n\n\tPython 3 port:\n\t2019 Steve Miller, KC1AWV <smiller@kc1awv.net>"
-                "\n\n\tFDMR-Monitor OA4DOA 2022\n\n")
+                "\n\n\tFDMR-Monitor OA4DOA & CS8ABG 2023\n\n")
 
     # Create an instance of MoniDB
     db_conn = MoniDB(CONF["DB"]["SERVER"], CONF["DB"]["USER"], CONF["DB"]["PASSWD"],
