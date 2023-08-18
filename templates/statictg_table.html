@@ -43,8 +43,12 @@ TX: {{_cdata['TX_FREQ'] }}
 RX: {{_cdata['RX_FREQ'] }}
 TS1: {{ _cdata['TS1_STATIC']|join(', ') }}
 TS2: {{ _cdata['TS2_STATIC']|join(', ') }}{% endif %}
+Power: {{ _cdata['TX_POWER'] }}
+Latitude: {{ _cdata['LATITUDE'] }}
+Longitude: {{ _cdata['LONGITUDE'] }}
+Height: {{ _cdata['HEIGHT'] }}
 Software: {{_cdata['SOFTWARE_ID'] }}
-Equipamento: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></b>&nbsp;
+Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></b>&nbsp;
                     </span>
                     <span class="badge badge-info">{{ _client }}</span>
                   </td>
@@ -131,8 +135,12 @@ TX: {{_cdata['TX_FREQ'] }}
 RX: {{_cdata['RX_FREQ'] }}
 TS1: {{ _cdata['TS1_STATIC']|join(', ') }}
 TS2: {{ _cdata['TS2_STATIC']|join(', ') }}{% endif %}
+Power: {{ _cdata['TX_POWER'] }}
+Latitude: {{ _cdata['LATITUDE'] }}
+Longitude: {{ _cdata['LONGITUDE'] }}
+Height: {{ _cdata['HEIGHT'] }}
 Software: {{_cdata['SOFTWARE_ID'] }}
-Equipamento: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></b>&nbsp;
+Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></b>&nbsp;
                   </span>
                   <span class="badge badge-info">{{ _client }}</span>
                 </td>
@@ -215,7 +223,7 @@ RX: {{_cdata['RX_FREQ'] }}
 TS1: {{ _cdata['TS1_STATIC']|join(', ') }}
 TS2: {{ _cdata['TS2_STATIC']|join(', ') }}{% endif %}
 Software: {{_cdata['SOFTWARE_ID'] }}
-Equipamento: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></b>&nbsp;
+Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></b>&nbsp;
                   </span>
                   <span class="badge badge-info">{{ _client }}</span>
                 </td>
