@@ -28,6 +28,7 @@
 
 # Standard modules
 import logging
+import sys
 from collections import deque
 from csv import DictReader as csv_dict_reader
 from json import load as jload
@@ -1227,7 +1228,10 @@ if __name__ == "__main__":
                 "\n\n\tFDMR-Monitor OA4DOA & CS8ABG 2023\n\n")
 
     # Create an instance of MoniDB
-    db_conn = MoniDB("mon.db")
+    db_conn = MoniDB(CONF["DB"]["SERVER"], CONF["DB"]["USER"], CONF["DB"]["PASSWD"],
+                     CONF["DB"]["NAME"], CONF["DB"]["PORT"])
+    # Test database connection
+    db_conn.test_db(reactor)
 
     # Jinja2 Stuff
     env = Environment(
