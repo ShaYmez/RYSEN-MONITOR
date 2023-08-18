@@ -28,7 +28,6 @@
 
 # Standard modules
 import logging
-import sys
 from collections import deque
 from csv import DictReader as csv_dict_reader
 from json import load as jload
@@ -59,7 +58,7 @@ from log import create_logger
 __version__ = '1.0.0'
 
 # SP2ONG - Increase the value if HBlink link break occurs
-NetstringReceiver.MAX_LENGTH = 5000000
+NetstringReceiver.MAX_LENGTH = 500000000
 
 # Opcodes for reporting protocol to HBlink
 OPCODE = {
@@ -205,7 +204,7 @@ def update_table(_path, _file, _url, _stale, _table):
         global not_in_db
         count = yield db_conn.table_count(_table)
         result = yield deferToThread(try_download, _path, _file, _url, _stale)
-        if "successfully" in result or count <= 2:
+        if "successfully" in result or count < 1:
             fill_table(_path, _file, _table)
             not_in_db = []
             lcl_lstmod[_table] = None
@@ -341,11 +340,8 @@ def db2dict(_id, _table):
 
 def error_hdl(failure):
     # Called when loop execution failed.
-    if reactor.running:
-        logger.error(f"Loop error: {failure.getBriefTraceback()}, stopping the reactor.")
-        reactor.stop()
-    else:
-        sys.exit(failure)
+    logger.error(f"Loop error: {failure.getBriefTraceback()}, stopping the reactor.")
+    reactor.stop()
 
 
 ##################################################
@@ -1111,7 +1107,7 @@ class dashboard(WebSocketServerProtocol):
             msg = payload.decode("utf-8").split(",")
             logger.info(f"Text message received: {payload}")
             if msg[0] != "conf":
-                return
+                return None
             for group in msg[1:]:
                 if group not in GROUPS:
                     continue
@@ -1225,16 +1221,13 @@ if __name__ == "__main__":
         }
     logger = create_logger(log_conf)
 
-    logger.info("monitor.py starting up")
+    logger.info("monitor.py Starting Up.....")
     logger.info("\n\n\tCopyright (c) 2016-2022\n\tThe Regents of the K0USY Group. All rights "
                 "reserved.\n\n\tPython 3 port:\n\t2019 Steve Miller, KC1AWV <smiller@kc1awv.net>"
-                "\n\n\tFDMR-Monitor OA4DOA 2022\n\n")
+                "\n\n\tFDMR-Monitor OA4DOA & CS8ABG 2023\n\n")
 
     # Create an instance of MoniDB
-    db_conn = MoniDB(CONF["DB"]["SERVER"], CONF["DB"]["USER"], CONF["DB"]["PASSWD"],
-                     CONF["DB"]["NAME"], CONF["DB"]["PORT"])
-    # Test database connection
-    db_conn.test_db(reactor)
+    db_conn = MoniDB("mon.db")
 
     # Jinja2 Stuff
     env = Environment(
