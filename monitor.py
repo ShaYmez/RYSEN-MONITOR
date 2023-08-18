@@ -59,7 +59,7 @@ from log import create_logger
 __version__ = '1.0.0'
 
 # SP2ONG - Increase the value if HBlink link break occurs
-NetstringReceiver.MAX_LENGTH = 500000000
+NetstringReceiver.MAX_LENGTH = 5000000
 
 # Opcodes for reporting protocol to HBlink
 OPCODE = {
@@ -205,7 +205,7 @@ def update_table(_path, _file, _url, _stale, _table):
         global not_in_db
         count = yield db_conn.table_count(_table)
         result = yield deferToThread(try_download, _path, _file, _url, _stale)
-        if "successfully" in result or count < 1:
+        if "successfully" in result or count <= 2:
             fill_table(_path, _file, _table)
             not_in_db = []
             lcl_lstmod[_table] = None
@@ -341,8 +341,11 @@ def db2dict(_id, _table):
 
 def error_hdl(failure):
     # Called when loop execution failed.
-    logger.error(f"Loop error: {failure.getBriefTraceback()}, stopping the reactor.")
-    reactor.stop()
+    if reactor.running:
+        logger.error(f"Loop error: {failure.getBriefTraceback()}, stopping the reactor.")
+        reactor.stop()
+    else:
+        sys.exit(failure)
 
 
 ##################################################
@@ -458,26 +461,6 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer["COLORCODE"] = _peer_conf["COLORCODE"].decode("utf-8").strip()
     else:
         _ctable_peer["COLORCODE"] = _peer_conf["COLORCODE"]
-
-    if str(type(_peer_conf["TX_POWER"])).find("bytes") != -1:
-        _ctable_peer["TX_POWER"] = _peer_conf["TX_POWER"].decode("utf-8").strip()
-    else:
-        _ctable_peer["TX_POWER"] = _peer_conf["TX_POWER"]
-
-    if str(type(_peer_conf["LATITUDE"])).find("bytes") != -1:
-        _ctable_peer["LATITUDE"] = _peer_conf["LATITUDE"].decode("utf-8").strip()
-    else:
-        _ctable_peer["LATITUDE"] = _peer_conf["LATITUDE"]
-
-    if str(type(_peer_conf["LONGITUDE"])).find("bytes") != -1:
-        _ctable_peer["LONGITUDE"] = _peer_conf["LONGITUDE"].decode("utf-8").strip()
-    else:
-        _ctable_peer["LONGITUDE"] = _peer_conf["LONGITUDE"]
-
-    if str(type(_peer_conf["HEIGHT"])).find("bytes") != -1:
-        _ctable_peer["HEIGHT"] = _peer_conf["HEIGHT"].decode("utf-8").strip()
-    else:
-        _ctable_peer["HEIGHT"] = _peer_conf["HEIGHT"]
 
     _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]
     _ctable_peer["CONNECTED"] = time_str(_peer_conf["CONNECTED"], "since")
@@ -1108,7 +1091,7 @@ class dashboard(WebSocketServerProtocol):
             msg = payload.decode("utf-8").split(",")
             logger.info(f"Text message received: {payload}")
             if msg[0] != "conf":
-                return None
+                return
             for group in msg[1:]:
                 if group not in GROUPS:
                     continue
@@ -1222,7 +1205,7 @@ if __name__ == "__main__":
         }
     logger = create_logger(log_conf)
 
-    logger.info("monitor.py Starting Up.....")
+    logger.info("monitor.py starting up.....")
     logger.info("\n\n\tCopyright (c) 2016-2022\n\tThe Regents of the K0USY Group. All rights "
                 "reserved.\n\n\tPython 3 port:\n\t2019 Steve Miller, KC1AWV <smiller@kc1awv.net>"
                 "\n\n\tFDMR-Monitor OA4DOA & CS8ABG 2023\n\n")
