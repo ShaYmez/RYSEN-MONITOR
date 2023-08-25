@@ -25,7 +25,6 @@ RUN	apk update && \
 	apk add git gcc musl-dev libffi-dev openssl-dev cargo mariadb-dev && \
     pip install --upgrade pip && \
     pip cache purge && \
-    cd /opt && \
 	git clone https://github.com/shaymez/RYSEN-MONITOR.git /monitor && \
     cd /monitor && \
 	pip install --no-cache-dir -r requirements.txt && \
