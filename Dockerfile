@@ -16,21 +16,32 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 ###############################################################################
 
-FROM python:alpine3.17
-
-COPY entrypoint /entrypoint
+FROM python:alpine3.20
 
 RUN adduser -D -u 54000 radio
-RUN	apk update && \
-	apk add git gcc musl-dev libffi-dev openssl-dev cargo mariadb-dev && \
-    pip install --upgrade pip && \
-    pip cache purge && \
-	git clone https://github.com/shaymez/RYSEN-MONITOR.git /monitor && \
-    cd /monitor && \
-	pip install --no-cache-dir -r requirements.txt && \
-	apk del git gcc musl-dev && \
-	chown -R radio /monitor
+
+WORKDIR /monitor
+
+# Install build dependencies
+RUN apk add --no-cache git gcc musl-dev libffi-dev openssl-dev cargo mariadb-dev
+
+# Copy only requirements first for better layer caching
+COPY requirements.txt .
+
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Remove build dependencies
+RUN apk del git gcc musl-dev libffi-dev openssl-dev cargo
+
+# Copy the application code
+COPY . .
+
+RUN chown -R radio /monitor
+
+COPY entrypoint /entrypoint
+RUN chmod +x /entrypoint
 
 USER radio
 
-ENTRYPOINT [ "/entrypoint" ]
+ENTRYPOINT ["/entrypoint"]
