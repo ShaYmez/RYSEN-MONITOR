@@ -126,6 +126,22 @@ class MoniDB:
                             qso_time DECIMAL(7,2) NOT NULL,
                             UNIQUE(tg_num, dmr_id)) DEFAULT CHARSET=utf8mb4''')
 
+                txn.execute('''CREATE TABLE IF NOT EXISTS bulletin_board (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            callsign VARCHAR(10) NOT NULL,
+                            dmr_id INT NOT NULL,
+                            message TEXT NOT NULL,
+                            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            server_name VARCHAR(50) DEFAULT 'System-X',
+                            category VARCHAR(20) DEFAULT 'GENERAL',
+                            priority TINYINT DEFAULT 0,
+                            is_pinned BOOLEAN DEFAULT FALSE,
+                            created_by INT,
+                            INDEX idx_timestamp (timestamp DESC),
+                            INDEX idx_pinned (is_pinned, timestamp DESC),
+                            INDEX idx_category (category)
+                ) DEFAULT CHARSET=utf8mb4''')
+
             yield self.db.runInteraction(create_tbl)
             logger.info("Tables created successfully.")
 
@@ -318,6 +334,117 @@ class MoniDB:
 
         except Exception as err:
             logger.error(f"clean_tgcount: {err}.")
+
+    @inlineCallbacks
+    def ins_bulletin(self, callsign, dmr_id, message, server_name, category='GENERAL', priority=0):
+        try:
+            yield self.db.runOperation(
+                '''INSERT INTO bulletin_board 
+                (callsign, dmr_id, message, server_name, category, priority)
+                VALUES (%s, %s, %s, %s, %s, %s)''',
+                (callsign, dmr_id, message, server_name, category, priority))
+            logger.info(f"Bulletin inserted from {callsign}: {message[:50]}")
+        except Exception as err:
+            logger.error(f"ins_bulletin: {err}")
+
+    @inlineCallbacks
+    def slct_bulletin(self, row_num=20, include_pinned=True):
+        try:
+            if include_pinned:
+                # Pinned messages first, then recent messages
+                stm = '''
+                    (SELECT id, callsign, message, 
+                     CONVERT(timestamp, CHAR) as time, 
+                     server_name, category, priority, is_pinned
+                     FROM bulletin_board 
+                     WHERE is_pinned = TRUE
+                     ORDER BY timestamp DESC)
+                    UNION ALL
+                    (SELECT id, callsign, message, 
+                     CONVERT(timestamp, CHAR) as time,
+                     server_name, category, priority, is_pinned
+                     FROM bulletin_board 
+                     WHERE is_pinned = FALSE
+                     ORDER BY timestamp DESC LIMIT %s)
+                '''
+            else:
+                stm = '''SELECT id, callsign, message,
+                         CONVERT(timestamp, CHAR) as time,
+                         server_name, category, priority, is_pinned
+                         FROM bulletin_board 
+                         ORDER BY is_pinned DESC, timestamp DESC LIMIT %s'''
+            
+            result = yield self.db.runQuery(stm, (row_num,))
+            returnValue(result)
+        except Exception as err:
+            logger.error(f"slct_bulletin: {err}")
+            returnValue([])
+
+    @inlineCallbacks
+    def slct_bulletin_rss(self, row_num=50):
+        try:
+            stm = '''SELECT callsign, message, dmr_id,
+                     CONVERT(timestamp, CHAR) as time,
+                     server_name, category, priority
+                     FROM bulletin_board 
+                     ORDER BY timestamp DESC LIMIT %s'''
+            result = yield self.db.runQuery(stm, (row_num,))
+            returnValue(result)
+        except Exception as err:
+            logger.error(f"slct_bulletin_rss: {err}")
+            returnValue([])
+
+    @inlineCallbacks
+    def updt_bulletin_pin(self, bulletin_id, is_pinned, admin_dmr_id):
+        try:
+            yield self.db.runOperation(
+                '''UPDATE bulletin_board 
+                SET is_pinned = %s, created_by = %s 
+                WHERE id = %s''',
+                (is_pinned, admin_dmr_id, bulletin_id))
+            logger.info(f"Bulletin {bulletin_id} pin status: {is_pinned}")
+        except Exception as err:
+            logger.error(f"updt_bulletin_pin: {err}")
+
+    @inlineCallbacks
+    def del_bulletin(self, bulletin_id):
+        try:
+            yield self.db.runOperation(
+                'DELETE FROM bulletin_board WHERE id = %s',
+                (bulletin_id,))
+            logger.info(f"Bulletin {bulletin_id} deleted")
+        except Exception as err:
+            logger.error(f"del_bulletin: {err}")
+
+    @inlineCallbacks
+    def clean_bulletin(self, max_entries=500, keep_pinned=True):
+        try:
+            if keep_pinned:
+                # Keep pinned + most recent entries
+                yield self.db.runOperation(
+                    '''DELETE FROM bulletin_board 
+                    WHERE is_pinned = FALSE 
+                    AND id NOT IN (
+                        SELECT id FROM (
+                            SELECT id FROM bulletin_board 
+                            WHERE is_pinned = FALSE 
+                            ORDER BY timestamp DESC 
+                            LIMIT %s
+                        ) tmp
+                    )''', (max_entries,))
+            else:
+                yield self.db.runOperation(
+                    '''DELETE FROM bulletin_board 
+                    WHERE id NOT IN (
+                        SELECT id FROM (
+                            SELECT id FROM bulletin_board 
+                            ORDER BY timestamp DESC 
+                            LIMIT %s
+                        ) tmp
+                    )''', (max_entries,))
+            logger.info("Bulletin board cleaned successfully")
+        except Exception as err:
+            logger.error(f"clean_bulletin: {err}")
 
     @inlineCallbacks
     def updt_table(self):

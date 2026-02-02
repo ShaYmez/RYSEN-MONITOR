@@ -1,0 +1,44 @@
+{#
+  Bulletin Board Table
+  Displays bulletin board messages from D-APRS SMS system
+  
+  Expected data: bulletin list
+  - Each entry contains: [callsign, message, time, server_name, category, priority, is_pinned]
+  - Priority: 0=Normal, 1=Important, 2=Urgent
+  - Categories: GENERAL, INFO, EMERGENCY, EVENT
+#}
+<table class="table table-striped table-sm">
+  <thead>
+    <tr>
+      <th>Callsign</th>
+      <th>Message</th>
+      <th>Time</th>
+      <th>Server</th>
+      <th>Category</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in bulletin %}
+    <tr class="{% if row[7] %}table-warning{% endif %} {% if row[6] == 2 %}table-danger{% elif row[6] == 1 %}table-info{% endif %}">
+      <td>
+        {% if row[7] %}<i class="bi bi-pin-angle-fill"></i>{% endif %}
+        <strong>{{row[1]}}</strong>
+      </td>
+      <td>{{row[2]}}</td>
+      <td>{{row[3]}}</td>
+      <td>{{row[4]}}</td>
+      <td>
+        {% if row[5] == 'EMERGENCY' %}
+          <span class="badge bg-danger">🚨 EMERGENCY</span>
+        {% elif row[5] == 'INFO' %}
+          <span class="badge bg-info">ℹ️ INFO</span>
+        {% elif row[5] == 'EVENT' %}
+          <span class="badge bg-success">📅 EVENT</span>
+        {% else %}
+          <span class="badge bg-secondary">💬 GENERAL</span>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
