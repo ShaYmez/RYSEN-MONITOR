@@ -41,7 +41,8 @@ def mk_config(cfg_file):
         "OPB_FLTR": {},
         "FILES": {},
         "LOG": {},
-        "WS": {}
+        "WS": {},
+        "BULLETIN_BOARD": {}
         }
     
     default_values = {
@@ -121,6 +122,18 @@ def mk_config(cfg_file):
                     "PASSWD": conf.get(section, "DB_PASSWORD"),
                     "NAME": conf.get(section, "DB_NAME"),
                     "PORT": conf.getint(section, "DB_PORT")
+                    }
+            elif section == "BULLETIN_BOARD":
+                CONF["BULLETIN_BOARD"] = {
+                    "BB_INC": conf.getboolean(section, "BB_INC"),
+                    "BB_ROWS": conf.getint(section, "BB_ROWS"),
+                    "RSS_ENABLED": conf.getboolean(section, "RSS_ENABLED"),
+                    "RSS_MAX_ITEMS": conf.getint(section, "RSS_MAX_ITEMS"),
+                    "RSS_TITLE": conf.get(section, "RSS_TITLE"),
+                    "RSS_DESCRIPTION": conf.get(section, "RSS_DESCRIPTION"),
+                    "RSS_LINK": conf.get(section, "RSS_LINK"),
+                    "BB_MAX_ENTRIES": conf.getint(section, "BB_MAX_ENTRIES"),
+                    "BB_KEEP_PINNED": conf.getboolean(section, "BB_KEEP_PINNED")
                     }
             elif section == "DEFAULT":
                 pass
