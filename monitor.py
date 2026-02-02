@@ -733,7 +733,7 @@ def build_stats():
             dashboard_server.broadcast(statictg, "statictg")
         if GROUPS["lsthrd_log"]:
             render_fromdb("lstheard_log", LASTHEARD_LOG_ROWS)
-        if "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BULLETIN_INC"]:
+        if "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BB_INC"]:
             render_bulletin()
 
     if BRIDGES and CONF["GLOBAL"]["BRDG_INC"]:
@@ -782,8 +782,8 @@ def render_fromdb(_tbl, _row_num, _snd=False):
 @inlineCallbacks
 def render_bulletin():
     try:
-        if CONF["BULLETIN_BOARD"]["BULLETIN_INC"]:
-            result = yield db_conn.slct_bulletin(CONF["BULLETIN_BOARD"]["BULLETIN_ROWS"])
+        if CONF["BULLETIN_BOARD"]["BB_INC"]:
+            result = yield db_conn.slct_bulletin(CONF["BULLETIN_BOARD"]["BB_ROWS"])
             if result and GROUPS['bulletin']:
                 _msg = butemplate.render(bulletin=result)
                 dashboard_server.broadcast("u" + _msg, "bulletin")
@@ -794,7 +794,7 @@ def render_bulletin():
 @inlineCallbacks
 def render_bulletin_once(_snd):
     try:
-        result = yield db_conn.slct_bulletin(CONF["BULLETIN_BOARD"]["BULLETIN_ROWS"])
+        result = yield db_conn.slct_bulletin(CONF["BULLETIN_BOARD"]["BB_ROWS"])
         if result:
             _msg = butemplate.render(bulletin=result)
             _snd.sendMessage(("u" + _msg).encode("utf-8"))
@@ -1219,7 +1219,7 @@ class dashboard(WebSocketServerProtocol):
                     render_fromdb("lstheard_log", LASTHEARD_LOG_ROWS, self)
                 elif group == "tgcount" and CONF["GLOBAL"]["TGC_INC"]:
                     render_fromdb("tgcount", CONF["GLOBAL"]["TGC_ROWS"], self)
-                elif group == "bulletin" and "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BULLETIN_INC"]:
+                elif group == "bulletin" and "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BB_INC"]:
                     render_bulletin_once(self)
                 elif group == "log":
                     for _message in LOGBUF:
@@ -1291,7 +1291,7 @@ def cleaning_loop():
             ("lstheard_log", LASTHEARD_LOG_ROWS))
     for _table, _row_num in tbls:
         db_conn.clean_table(_table, _row_num)
-    if "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BULLETIN_INC"]:
+    if "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BB_INC"]:
         db_conn.clean_bulletin(
             CONF["BULLETIN_BOARD"]["BB_MAX_ENTRIES"],
             CONF["BULLETIN_BOARD"]["BB_KEEP_PINNED"]
