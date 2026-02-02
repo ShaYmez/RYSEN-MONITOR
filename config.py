@@ -125,8 +125,8 @@ def mk_config(cfg_file):
                     }
             elif section == "BULLETIN_BOARD":
                 CONF["BULLETIN_BOARD"] = {
-                    "BB_INC": conf.getboolean(section, "BULLETIN_INC"),
-                    "BB_ROWS": conf.getint(section, "BULLETIN_ROWS"),
+                    "BULLETIN_INC": conf.getboolean(section, "BULLETIN_INC"),
+                    "BULLETIN_ROWS": conf.getint(section, "BULLETIN_ROWS"),
                     "RSS_ENABLED": conf.getboolean(section, "RSS_ENABLED"),
                     "RSS_MAX_ITEMS": conf.getint(section, "RSS_MAX_ITEMS"),
                     "RSS_TITLE": conf.get(section, "RSS_TITLE"),
