@@ -3,9 +3,10 @@
   Displays bulletin board messages from D-APRS SMS system
   
   Expected data: bulletin list
-  - Each entry contains: [callsign, message, time, server_name, category, priority, is_pinned]
-  - Priority: 0=Normal, 1=Important, 2=Urgent
+  - Each entry contains: [id, callsign, message, time, server_name, category, priority, is_pinned]
+  - Priority levels: 0=Normal (no styling), 1=Important (table-info/blue), 2=Urgent (table-danger/red)
   - Categories: GENERAL, INFO, EMERGENCY, EVENT
+  - is_pinned: True=Pinned message (table-warning/yellow background)
 #}
 <table class="table table-striped table-sm">
   <thead>
@@ -19,6 +20,7 @@
   </thead>
   <tbody>
   {% for row in bulletin %}
+    {# Apply styling: pinned=yellow, priority 2=red, priority 1=blue #}
     <tr class="{% if row[7] %}table-warning{% endif %} {% if row[6] == 2 %}table-danger{% elif row[6] == 1 %}table-info{% endif %}">
       <td>
         {% if row[7] %}<i class="bi bi-pin-angle-fill"></i>{% endif %}

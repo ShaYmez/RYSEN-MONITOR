@@ -38,6 +38,7 @@ from pickle import  loads
 from time import time, strftime, localtime
 from datetime import date, datetime
 from email.utils import formatdate
+from xml.sax.saxutils import escape as xml_escape
 
 # Twisted modules
 from twisted.internet.protocol import ReconnectingClientFactory
@@ -791,6 +792,17 @@ def render_bulletin():
 
 
 @inlineCallbacks
+def render_bulletin_once(_snd):
+    try:
+        result = yield db_conn.slct_bulletin(CONF["BULLETIN_BOARD"]["BB_ROWS"])
+        if result:
+            _msg = butemplate.render(bulletin=result)
+            _snd.sendMessage(("u" + _msg).encode("utf-8"))
+    except Exception as err:
+        logger.error(f"render_bulletin_once: {err}")
+
+
+@inlineCallbacks
 def generate_rss_feed():
     try:
         if not CONF["BULLETIN_BOARD"]["RSS_ENABLED"]:
@@ -808,27 +820,29 @@ def generate_rss_feed():
             try:
                 dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
                 pub_date = formatdate(timeval=dt.timestamp(), localtime=False, usegmt=True)
-            except:
+            except (ValueError, AttributeError):
                 pub_date = formatdate(timeval=time(), localtime=False, usegmt=True)
             
             # Escape XML special characters
-            message_escaped = message.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            message_escaped = xml_escape(message)
+            callsign_escaped = xml_escape(callsign)
+            category_escaped = xml_escape(category)
             
             rss_items.append(f'''    <item>
-      <title>{callsign} - {category}</title>
+      <title>{callsign_escaped} - {category_escaped}</title>
       <description>{message_escaped}</description>
-      <author>{callsign} ({dmr_id})</author>
+      <author>{callsign_escaped} ({dmr_id})</author>
       <pubDate>{pub_date}</pubDate>
-      <category>{category}</category>
+      <category>{category_escaped}</category>
       <guid>{server}-{timestamp}</guid>
     </item>''')
         
         rss_xml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>{CONF["BULLETIN_BOARD"]["RSS_TITLE"]}</title>
-    <description>{CONF["BULLETIN_BOARD"]["RSS_DESCRIPTION"]}</description>
-    <link>http://localhost/</link>
+    <title>{xml_escape(CONF["BULLETIN_BOARD"]["RSS_TITLE"])}</title>
+    <description>{xml_escape(CONF["BULLETIN_BOARD"]["RSS_DESCRIPTION"])}</description>
+    <link>{CONF["BULLETIN_BOARD"]["RSS_LINK"]}</link>
     <lastBuildDate>{formatdate(timeval=time(), localtime=False, usegmt=True)}</lastBuildDate>
 {''.join(rss_items)}
   </channel>
@@ -1205,6 +1219,8 @@ class dashboard(WebSocketServerProtocol):
                     render_fromdb("lstheard_log", LASTHEARD_LOG_ROWS, self)
                 elif group == "tgcount" and CONF["GLOBAL"]["TGC_INC"]:
                     render_fromdb("tgcount", CONF["GLOBAL"]["TGC_ROWS"], self)
+                elif group == "bulletin" and "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BB_INC"]:
+                    render_bulletin_once(self)
                 elif group == "log":
                     for _message in LOGBUF:
                         if _message:

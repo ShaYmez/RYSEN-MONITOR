@@ -131,8 +131,8 @@ def mk_config(cfg_file):
                     "RSS_MAX_ITEMS": conf.getint(section, "RSS_MAX_ITEMS"),
                     "RSS_TITLE": conf.get(section, "RSS_TITLE"),
                     "RSS_DESCRIPTION": conf.get(section, "RSS_DESCRIPTION"),
+                    "RSS_LINK": conf.get(section, "RSS_LINK"),
                     "BB_MAX_ENTRIES": conf.getint(section, "BB_MAX_ENTRIES"),
-                    "BB_CLEANUP_DAYS": conf.getint(section, "BB_CLEANUP_DAYS"),
                     "BB_KEEP_PINNED": conf.getboolean(section, "BB_KEEP_PINNED")
                     }
             elif section == "DEFAULT":
