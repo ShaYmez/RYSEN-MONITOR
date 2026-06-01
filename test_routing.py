@@ -36,7 +36,7 @@ class _TestableMonitorRootResource(Resource):
     isLeaf = False
 
     def __init__(self, websocket_resource):
-        Resource.__init__(self)
+        super().__init__()
         self.websocket_resource = websocket_resource
         self.putChild(b"wss", websocket_resource)
 

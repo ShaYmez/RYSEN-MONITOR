@@ -165,7 +165,7 @@ class MonitorRootResource(Resource):
     isLeaf = False
 
     def __init__(self, websocket_resource):
-        Resource.__init__(self)
+        super().__init__()
         self.websocket_resource = websocket_resource
         # Mount the WebSocket endpoint at /wss/ for reverse-proxy deployments.
         # Apache configurations typically use one of:
