@@ -1271,14 +1271,20 @@ class reportClientFactory(ReconnectingClientFactory):
 class dashboard(WebSocketServerProtocol):
 
     def onConnect(self, request):
-        path = getattr(request, "path", "/")
-        logger.info(
-            f"WebSocket client connecting from {request.peer} "
-            f"(path: {path!r}, origin: {getattr(request, 'origin', None)!r})"
-        )
+        try:
+            path = getattr(request, "path", "/")
+            logger.info(
+                f"WebSocket client connecting from {getattr(request, 'peer', 'unknown')} "
+                f"(path: {path!r}, origin: {getattr(request, 'origin', None)!r})"
+            )
+        except Exception:
+            logger.exception("Unhandled websocket connect error")
 
     def onOpen(self):
-        logger.info(f"WebSocket connection opened for {client_peer(self)}")
+        try:
+            logger.info(f"WebSocket connection opened for {client_peer(self)}")
+        except Exception:
+            logger.exception("Unhandled websocket open error")
 
     def onMessage(self, payload, isBinary):
         try:
@@ -1327,11 +1333,23 @@ class dashboard(WebSocketServerProtocol):
             logger.exception(f"Unhandled websocket message error for {client_peer(self)}")
 
     def onClose(self, wasClean, code, reason):
-        self.factory.unregister(self)
-        logger.info(
-            f"WebSocket connection closed for {client_peer(self)}: "
-            f"wasClean={wasClean}, code={code}, reason={reason!r}"
-        )
+        try:
+            factory = getattr(self, "factory", None)
+            if factory is None:
+                logger.warning(
+                    f"WebSocket close received for {client_peer(self)} without a protocol factory"
+                )
+            else:
+                factory.unregister(self)
+        except Exception:
+            logger.exception(f"Unhandled websocket close cleanup error for {client_peer(self)}")
+        try:
+            logger.info(
+                f"WebSocket connection closed for {client_peer(self)}: "
+                f"wasClean={wasClean}, code={code}, reason={reason!r}"
+            )
+        except Exception:
+            logger.exception("Unhandled websocket close log error")
 
 
 class dashboardFactory(WebSocketServerFactory):
@@ -1347,10 +1365,13 @@ class dashboardFactory(WebSocketServerFactory):
             self.clients["all_clients"][client] = time()
 
     def unregister(self, client):
-        logger.info(f"unregistered client {client_peer(client)}")
-        for group in self.clients:
-            if client in self.clients[group]:
-                del self.clients[group][client]
+        try:
+            logger.info(f"unregistered client {client_peer(client)}")
+            for group in self.clients:
+                if client in self.clients[group]:
+                    del self.clients[group][client]
+        except Exception:
+            logger.exception(f"Unhandled websocket unregister error for {client_peer(client)}")
 
     def broadcast(self, msg, group):
         logger.debug(f"broadcasting message to: {self.clients[group]}")

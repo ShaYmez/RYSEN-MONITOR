@@ -18,7 +18,7 @@ Run with:  python -m pytest test_routing.py -v
 
 import logging
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from twisted.web.resource import Resource
 
@@ -130,6 +130,36 @@ class _FakeWebSocketResource(Resource):
     def render(self, request):  # type: ignore[override]
         self.render_called = True
         return b"WS_HANDLED"
+
+
+def _client_peer(client):
+    """Mirror monitor.py client peer helper used by websocket protocol logging."""
+    return getattr(client, "peer", f"{type(client).__name__}@{id(client)}")
+
+
+class _TestableDashboardProtocol:
+    """Minimal reproduction of dashboard close lifecycle handling from monitor.py."""
+
+    peer = "test-peer"
+
+    def onClose(self, wasClean, code, reason):
+        try:
+            factory = getattr(self, "factory", None)
+            if factory is None:
+                logger.warning(
+                    f"WebSocket close received for {_client_peer(self)} without a protocol factory"
+                )
+            else:
+                factory.unregister(self)
+        except Exception:
+            logger.exception(f"Unhandled websocket close cleanup error for {_client_peer(self)}")
+        try:
+            logger.info(
+                f"WebSocket connection closed for {_client_peer(self)}: "
+                f"wasClean={wasClean}, code={code}, reason={reason!r}"
+            )
+        except Exception:
+            logger.exception("Unhandled websocket close log error")
 
 
 # ---------------------------------------------------------------------------
@@ -251,6 +281,36 @@ class TestWebSocketUpgradeRouting(unittest.TestCase):
         self.assertFalse(
             self.ws.render_called,
             "WebSocket resource render() should not have been called yet",
+        )
+
+
+class TestWebSocketLifecycleSafety(unittest.TestCase):
+    """Regression coverage for defensive websocket close handling."""
+
+    def test_on_close_swallow_unregister_exception(self):
+        proto = _TestableDashboardProtocol()
+        proto.factory = MagicMock()
+        proto.factory.unregister.side_effect = RuntimeError("cleanup failed")
+
+        with patch.object(logger, "exception") as log_exception:
+            proto.onClose(True, 1000, "normal closure")
+
+        log_exception.assert_called_once()
+        self.assertIn(
+            "Unhandled websocket close cleanup error",
+            log_exception.call_args.args[0],
+        )
+
+    def test_on_close_without_factory_does_not_raise(self):
+        proto = _TestableDashboardProtocol()
+
+        with patch.object(logger, "warning") as log_warning:
+            proto.onClose(False, 1006, "abnormal closure")
+
+        log_warning.assert_called_once()
+        self.assertIn(
+            "without a protocol factory",
+            log_warning.call_args.args[0],
         )
 
 
