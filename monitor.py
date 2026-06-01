@@ -46,7 +46,10 @@ from twisted.protocols.basic import NetstringReceiver
 from twisted.internet import reactor, task
 from twisted.internet.threads import deferToThread
 from twisted.internet.defer import inlineCallbacks
+from twisted.web.resource import Resource
+from twisted.web.server import Site
 # Autobahn provides websocket service under Twisted
+from autobahn.twisted.resource import WebSocketResource
 from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
 # Web templating environment
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -59,6 +62,7 @@ from config import mk_config
 from log import create_logger
 
 __version__ = '1.0.0'
+logger = logging.getLogger("fdmr-mon")
 
 # SP2ONG - Increase the value if HBlink link break occurs
 NetstringReceiver.MAX_LENGTH = 5000000
@@ -135,6 +139,59 @@ UPDT_FILES = (
     (CONF["FILES"]["SUBS"], CONF["FILES"]["SUBS_URL"], "subscriber_ids"),
     (CONF["FILES"]["TGID"], CONF["FILES"]["TGID_URL"], "talkgroup_ids")
     )
+
+
+def client_peer(client):
+    """Return a log-friendly peer string, even before websocket handshake state exists."""
+    return getattr(client, "peer", f"{type(client).__name__}@{id(client)}")
+
+
+class MonitorRootResource(Resource):
+    """Serve simple HTTP responses while forwarding websocket upgrade requests."""
+    isLeaf = True
+
+    def __init__(self, websocket_resource):
+        super().__init__()
+        self.websocket_resource = websocket_resource
+
+    @staticmethod
+    def _decode(value):
+        if isinstance(value, bytes):
+            return value.decode("utf-8", "replace")
+        return str(value)
+
+    def render(self, request):
+        method = self._decode(request.method)
+        uri = self._decode(request.uri)
+        client_ip = request.getClientIP() or "unknown"
+        upgrade = (request.getHeader("upgrade") or "").lower()
+        connection = {
+            token.strip().lower() for token in (request.getHeader("connection") or "").split(",")
+            if token.strip()
+            }
+
+        try:
+            if upgrade == "websocket" or "upgrade" in connection:
+                logger.info(f"Handling websocket request {method} {uri} from {client_ip}")
+                return self.websocket_resource.render(request)
+
+            logger.info(f"Handling HTTP request {method} {uri} from {client_ip}")
+            request.setHeader(b"content-type", b"text/plain; charset=utf-8")
+
+            if method not in ("GET", "HEAD"):
+                request.setResponseCode(405)
+                return b"Method Not Allowed\n"
+
+            if method == "HEAD":
+                return b""
+
+            return b"RYSEN-Monitor is running.\n"
+
+        except Exception:
+            logger.exception(f"Failed handling request {method} {uri} from {client_ip}")
+            request.setResponseCode(500)
+            request.setHeader(b"content-type", b"text/plain; charset=utf-8")
+            return b"Internal Server Error\n"
 
 
 # LONG VERSION - MAKES A FULL DICTIONARY OF INFORMATION BASED ON TYPE OF ALIAS FILE
@@ -1185,47 +1242,50 @@ class dashboard(WebSocketServerProtocol):
         logger.info("WebSocket connection open.")
 
     def onMessage(self, payload, isBinary):
-        if isBinary:
-            logger.info(f"Binary message received: {len(payload)} bytes")
-        else:
-            msg = payload.decode("utf-8").split(",")
-            logger.info(f"Text message received: {payload}")
-            if msg[0] != "conf":
-                return
-            for group in msg[1:]:
-                if group not in GROUPS:
-                    continue
-                self.factory.register(self, group)
-                if group == "bridge":
-                    if BRIDGES and CONF["GLOBAL"]["BRDG_INC"]:
+        try:
+            if isBinary:
+                logger.info(f"Binary message received: {len(payload)} bytes")
+            else:
+                msg = payload.decode("utf-8").split(",")
+                logger.info(f"Text message received: {payload}")
+                if msg[0] != "conf":
+                    return
+                for group in msg[1:]:
+                    if group not in GROUPS:
+                        continue
+                    self.factory.register(self, group)
+                    if group == "bridge":
+                        if BRIDGES and CONF["GLOBAL"]["BRDG_INC"]:
+                            self.sendMessage(
+                                ("b" + btemplate.render(
+                                    _table=BTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])).encode("utf-8"))
+                    elif group == "lnksys":
                         self.sendMessage(
-                            ("b" + btemplate.render(
-                                _table=BTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])).encode("utf-8"))
-                elif group == "lnksys":
-                    self.sendMessage(
-                        ("c" + ctemplate.render(
-                            _table=CTABLE,emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])).encode("utf-8"))
-                elif group == "opb":
-                    self.sendMessage(
-                        ("o" + otemplate.render(
-                            _table=CTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])).encode("utf-8"))
-                elif group == "main":
-                    render_fromdb("last_heard", CONF["GLOBAL"]["LH_ROWS"], self)
-                elif group == "statictg":
-                    self.sendMessage(
-                        ("s" + stemplate.render(
-                            _table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])).encode("utf-8"))
-                elif group == "lsthrd_log":
-                    render_fromdb("lstheard_log", LASTHEARD_LOG_ROWS, self)
-                elif group == "tgcount" and CONF["GLOBAL"]["TGC_INC"]:
-                    render_fromdb("tgcount", CONF["GLOBAL"]["TGC_ROWS"], self)
-                elif group == "bulletin" and "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BB_INC"]:
-                    render_bulletin_once(self)
-                elif group == "log":
-                    for _message in LOGBUF:
-                        if _message:
-                            _bmessage = ("l" + _message).encode("utf-8")
-                            self.sendMessage(_bmessage)
+                            ("c" + ctemplate.render(
+                                _table=CTABLE,emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])).encode("utf-8"))
+                    elif group == "opb":
+                        self.sendMessage(
+                            ("o" + otemplate.render(
+                                _table=CTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])).encode("utf-8"))
+                    elif group == "main":
+                        render_fromdb("last_heard", CONF["GLOBAL"]["LH_ROWS"], self)
+                    elif group == "statictg":
+                        self.sendMessage(
+                            ("s" + stemplate.render(
+                                _table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])).encode("utf-8"))
+                    elif group == "lsthrd_log":
+                        render_fromdb("lstheard_log", LASTHEARD_LOG_ROWS, self)
+                    elif group == "tgcount" and CONF["GLOBAL"]["TGC_INC"]:
+                        render_fromdb("tgcount", CONF["GLOBAL"]["TGC_ROWS"], self)
+                    elif group == "bulletin" and "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BB_INC"]:
+                        render_bulletin_once(self)
+                    elif group == "log":
+                        for _message in LOGBUF:
+                            if _message:
+                                _bmessage = ("l" + _message).encode("utf-8")
+                                self.sendMessage(_bmessage)
+        except Exception:
+            logger.exception(f"Unhandled websocket message error for {client_peer(self)}")
 
     def onClose(self, wasClean, code, reason):
         self.factory.unregister(self)
@@ -1240,21 +1300,30 @@ class dashboardFactory(WebSocketServerFactory):
     def register(self, client, group):
         if client not in self.clients[group]:
             self.clients[group][client] = time()
-            logger.info(f"registered client {client.peer} to group {group}")
+            logger.info(f"registered client {client_peer(client)} to group {group}")
         if client not in self.clients["all_clients"]:
             self.clients["all_clients"][client] = time()
 
     def unregister(self, client):
-        logger.info(f"unregistered client {client.peer}")
+        logger.info(f"unregistered client {client_peer(client)}")
         for group in self.clients:
             if client in self.clients[group]:
                 del self.clients[group][client]
 
     def broadcast(self, msg, group):
         logger.debug(f"broadcasting message to: {self.clients[group]}")
-        for client in self.clients[group]:
-            client.sendMessage(msg.encode("utf8"))
-            logger.debug(f"message sent to {client.peer}")
+        failed_clients = []
+        # Copy the current client keys so failed sends can unregister clients
+        # without mutating the mapping while it is being iterated.
+        for client in tuple(self.clients[group]):
+            try:
+                client.sendMessage(msg.encode("utf8"))
+                logger.debug(f"message sent to {client_peer(client)}")
+            except Exception:
+                logger.exception(f"Failed sending message to {client_peer(client)}")
+                failed_clients.append(client)
+        for client in failed_clients:
+            self.unregister(client)
 
 
 @inlineCallbacks
@@ -1390,11 +1459,15 @@ if __name__ == "__main__":
         certificate = ssl.DefaultOpenSSLContextFactory(CONF["WS"]["P2F_PKEY"], CONF["WS"]["P2F_CERT"])
         dashboard_server = dashboardFactory(f'wss://*:{CONF["WS"]["WS_PORT"]}')
         dashboard_server.protocol = dashboard
-        reactor.listenSSL(CONF["WS"]["WS_PORT"], dashboard_server, certificate)
+        dashboard_resource = WebSocketResource(dashboard_server)
+        dashboard_site = Site(MonitorRootResource(dashboard_resource))
+        reactor.listenSSL(CONF["WS"]["WS_PORT"], dashboard_site, certificate)
 
     else:
         dashboard_server = dashboardFactory(f'ws://*:{CONF["WS"]["WS_PORT"]}')
         dashboard_server.protocol = dashboard
-        reactor.listenTCP(CONF["WS"]["WS_PORT"], dashboard_server)
+        dashboard_resource = WebSocketResource(dashboard_server)
+        dashboard_site = Site(MonitorRootResource(dashboard_resource))
+        reactor.listenTCP(CONF["WS"]["WS_PORT"], dashboard_site)
 
     reactor.run()
