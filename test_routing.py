@@ -296,6 +296,10 @@ class TestWebSocketLifecycleSafety(unittest.TestCase):
             proto.onClose(True, 1000, "normal closure")
 
         log_exception.assert_called_once()
+        self.assertIn(
+            "Unhandled websocket close cleanup error",
+            log_exception.call_args.args[0],
+        )
 
     def test_on_close_without_factory_does_not_raise(self):
         proto = _TestableDashboardProtocol()
@@ -304,6 +308,10 @@ class TestWebSocketLifecycleSafety(unittest.TestCase):
             proto.onClose(False, 1006, "abnormal closure")
 
         log_warning.assert_called_once()
+        self.assertIn(
+            "without a protocol factory",
+            log_warning.call_args.args[0],
+        )
 
 
 if __name__ == "__main__":
