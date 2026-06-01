@@ -147,12 +147,31 @@ def client_peer(client):
 
 
 class MonitorRootResource(Resource):
-    """Serve simple HTTP responses while forwarding websocket upgrade requests."""
-    isLeaf = True
+    """
+    Root HTTP/WebSocket resource for RYSEN-Monitor.
+
+    Routing table (preserves compatibility across deployment topologies):
+    - GET /           (plain HTTP)        → health-check "RYSEN-Monitor is running."
+    - GET /           (WebSocket upgrade) → WebSocket handler (direct-access deployments
+                                            where clients connect to ws://host:9000/)
+    - /wss/           (WebSocket upgrade) → WebSocket handler (reverse-proxy deployments
+                                            where Apache proxies /wss/ → ws://host:9000/wss/)
+    - /wss/           (plain HTTP)        → 400 Bad Request from WebSocketResource
+    - Any other path  (plain HTTP)        → health-check (via getChild fallback)
+    """
+    # isLeaf = False so that Twisted's resource tree can route /wss/ to the
+    # explicitly mounted WebSocketResource child, rather than everything
+    # falling through to render() where the path is ignored.
+    isLeaf = False
 
     def __init__(self, websocket_resource):
         super().__init__()
         self.websocket_resource = websocket_resource
+        # Mount the WebSocket endpoint at /wss/ for reverse-proxy deployments.
+        # Apache configurations typically use one of:
+        #   ProxyPass "/wss/" "ws://127.0.0.1:9000/wss/"  (path preserved)
+        #   ProxyPass "/wss/" "ws://127.0.0.1:9000/"       (path stripped → handled by render())
+        self.putChild(b"wss", websocket_resource)
 
     @staticmethod
     def _decode(value):
@@ -172,7 +191,12 @@ class MonitorRootResource(Resource):
 
         try:
             if upgrade == "websocket" or "upgrade" in connection:
-                logger.info(f"Handling websocket request {method} {uri} from {client_ip}")
+                # WebSocket upgrade on the root path — used by direct-access deployments
+                # (ws://host:9000/) and by reverse-proxy configs that strip the /wss/ prefix
+                # before forwarding to the backend.
+                logger.info(
+                    f"WebSocket upgrade on {uri} from {client_ip} (direct-access path)"
+                )
                 return self.websocket_resource.render(request)
 
             logger.info(f"Handling HTTP request {method} {uri} from {client_ip}")
@@ -192,6 +216,17 @@ class MonitorRootResource(Resource):
             request.setResponseCode(500)
             request.setHeader(b"content-type", b"text/plain; charset=utf-8")
             return b"Internal Server Error\n"
+
+    def getChild(self, path, request):
+        """Return self for any unrecognised child path so the health check is
+        always reachable without exposing an unhandled 404 on misconfigured
+        probes.  The /wss/ child is registered via putChild and takes
+        precedence over this fallback."""
+        logger.debug(
+            f"Unrecognised path /{self._decode(path)} requested from "
+            f"{request.getClientIP() or 'unknown'}"
+        )
+        return self
 
 
 # LONG VERSION - MAKES A FULL DICTIONARY OF INFORMATION BASED ON TYPE OF ALIAS FILE
@@ -1236,10 +1271,14 @@ class reportClientFactory(ReconnectingClientFactory):
 class dashboard(WebSocketServerProtocol):
 
     def onConnect(self, request):
-        logger.info(f"Client connecting: {request.peer}")
+        path = getattr(request, "path", "/")
+        logger.info(
+            f"WebSocket client connecting from {request.peer} "
+            f"(path: {path!r}, origin: {getattr(request, 'origin', None)!r})"
+        )
 
     def onOpen(self):
-        logger.info("WebSocket connection open.")
+        logger.info(f"WebSocket connection opened for {client_peer(self)}")
 
     def onMessage(self, payload, isBinary):
         try:
@@ -1289,7 +1328,10 @@ class dashboard(WebSocketServerProtocol):
 
     def onClose(self, wasClean, code, reason):
         self.factory.unregister(self)
-        logger.info(f"WebSocket connection closed: {reason}")
+        logger.info(
+            f"WebSocket connection closed for {client_peer(self)}: "
+            f"wasClean={wasClean}, code={code}, reason={reason!r}"
+        )
 
 
 class dashboardFactory(WebSocketServerFactory):
