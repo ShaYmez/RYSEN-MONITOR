@@ -46,6 +46,8 @@ from twisted.protocols.basic import NetstringReceiver
 from twisted.internet import reactor, task
 from twisted.internet.threads import deferToThread
 from twisted.internet.defer import inlineCallbacks
+from twisted.web.resource import Resource
+from twisted.web.server import Site
 # Autobahn provides websocket service under Twisted
 from autobahn.twisted.resource import WebSocketResource
 from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
@@ -53,8 +55,6 @@ from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerF
 from jinja2 import Environment, PackageLoader, select_autoescape
 # Utilities from K0USY Group sister project
 from dmr_utils3.utils import int_id, try_download, bytes_4
-from twisted.web.resource import Resource
-from twisted.web.server import Site
 
 # Local modules and config variables
 from mon_db import MoniDB
@@ -142,10 +142,12 @@ UPDT_FILES = (
 
 
 def client_peer(client):
-    return getattr(client, "peer", "unknown client")
+    """Return a log-friendly peer string, even before websocket handshake state exists."""
+    return getattr(client, "peer", f"{type(client).__name__}@{id(client)}")
 
 
 class MonitorRootResource(Resource):
+    """Serve simple HTTP responses while forwarding websocket upgrade requests."""
     isLeaf = True
 
     def __init__(self, websocket_resource):
@@ -163,7 +165,10 @@ class MonitorRootResource(Resource):
         uri = self._decode(request.uri)
         client_ip = request.getClientIP() or "unknown"
         upgrade = (request.getHeader("upgrade") or "").lower()
-        connection = (request.getHeader("connection") or "").lower()
+        connection = {
+            token.strip().lower() for token in (request.getHeader("connection") or "").split(",")
+            if token.strip()
+            }
 
         try:
             if upgrade == "websocket" or "upgrade" in connection:
@@ -1307,13 +1312,18 @@ class dashboardFactory(WebSocketServerFactory):
 
     def broadcast(self, msg, group):
         logger.debug(f"broadcasting message to: {self.clients[group]}")
-        for client in list(self.clients[group]):
+        failed_clients = []
+        # Copy the current client keys so failed sends can unregister clients
+        # without mutating the mapping while it is being iterated.
+        for client in tuple(self.clients[group]):
             try:
                 client.sendMessage(msg.encode("utf8"))
                 logger.debug(f"message sent to {client_peer(client)}")
             except Exception:
                 logger.exception(f"Failed sending message to {client_peer(client)}")
-                self.unregister(client)
+                failed_clients.append(client)
+        for client in failed_clients:
+            self.unregister(client)
 
 
 @inlineCallbacks
