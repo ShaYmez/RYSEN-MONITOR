@@ -16,17 +16,14 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 ###############################################################################
 
-FROM python:alpine3.20
+FROM python:alpine3.22
 
 RUN adduser -D -u 54000 radio
 
 WORKDIR /monitor
 
-ENV PATH="/root/.cargo/bin:${PATH}"
-
 # Install build dependencies
-RUN apk add --no-cache git gcc musl-dev libffi-dev openssl-dev mariadb-dev curl \
-    && curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain stable
+RUN apk add --no-cache git gcc musl-dev libffi-dev openssl-dev cargo mariadb-dev
 
 # Copy only requirements first for better layer caching
 COPY requirements.txt .
@@ -35,8 +32,7 @@ RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # Remove build dependencies
-RUN rm -rf /root/.cargo /root/.rustup \
-    && apk del git gcc musl-dev libffi-dev openssl-dev mariadb-dev curl
+RUN apk del git gcc musl-dev libffi-dev openssl-dev cargo
 
 # Copy the application code
 COPY . .
