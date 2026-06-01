@@ -16,7 +16,7 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 ###############################################################################
 
-FROM python:alpine3.22
+FROM python:3.12-alpine3.22
 
 RUN adduser -D -u 54000 radio
 
