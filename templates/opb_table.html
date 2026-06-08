@@ -25,8 +25,7 @@
             </thead>
             <tbody>
               {% for _openbridge in _table['OPENBRIDGES'] %}
-              {% set opbnum = _table['OPENBRIDGES'][_openbridge]['NETWORK_ID']|safe %}
-              {% set ctrynum = opbnum[0:3] %}
+              {% set ctrynum = _table['OPENBRIDGES'][_openbridge]['NETWORK_ID']|flag_code %}
               <tr>
                 <td class="align-middle"><img src="./flags/{{ ctrynum }}.png" alt="Country {{ ctrynum }}">&nbsp;<strong>{{ _openbridge}}</strong>
                 </td>
