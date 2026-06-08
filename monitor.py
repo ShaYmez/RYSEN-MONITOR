@@ -122,10 +122,10 @@ talkgroup_ids = {}
 
 
 def country_flag_code(value):
-    """Return a 3-digit country flag code or the world fallback."""
+    """Extract a leading 3-digit flag code, returning "world" when unavailable or "000"."""
     if value is None:
         return "world"
-    match = re.match(r"^\s*(\d{3})", str(value))
+    match = re.match(r"^(\d{3})", str(value))
     if not match:
         return "world"
     code = match.group(1)
