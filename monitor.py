@@ -255,8 +255,13 @@ def fill_table(_path, _file, _table, wipe_tbl=True):
             logger.warning(f"Local alias path is not a file, skipping: {p2f}")
             return
 
-        with p2f.open("r", encoding="utf8") as _handle:
-            if p2f.suffix.lower() == ".csv":
+        ext = p2f.suffix.lower()[1:] if p2f.suffix else ""
+        if ext not in ("csv", "json"):
+            logger.warning(f"Local alias file extension is not supported, skipping: {p2f}")
+            return
+
+        with p2f.open("r", encoding="utf-8") as _handle:
+            if ext == "csv":
                 if _table == "subscriber_ids":
                     fields = SUB_FIELDS
                 elif _table == "peer_ids":

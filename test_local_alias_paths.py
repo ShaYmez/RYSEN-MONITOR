@@ -47,6 +47,28 @@ class TestFillTablePathGuards(unittest.TestCase):
         namespace["db_conn"].populate_tbl.assert_not_called()
         namespace["logger"].warning.assert_called_once()
 
+    def test_fill_table_skips_unsupported_extension(self):
+        namespace = _load_functions("fill_table")
+        namespace.update(
+            {
+                "Path": Path,
+                "logger": MagicMock(),
+                "db_conn": MagicMock(),
+                "csv_dict_reader": MagicMock(),
+                "jload": MagicMock(),
+                "SUB_FIELDS": (),
+                "PEER_FIELDS": (),
+                "TGID_FIELDS": (),
+            }
+        )
+
+        with TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "peer_ids").write_text("{}", encoding="utf-8")
+            namespace["fill_table"](tmpdir, "peer_ids", "peer_ids")
+
+        namespace["db_conn"].populate_tbl.assert_not_called()
+        namespace["logger"].warning.assert_called_once()
+
 
 class TestUpdateLocalPathGuards(unittest.TestCase):
     def _make_update_local_namespace(self, files_path, lcl_peer):
