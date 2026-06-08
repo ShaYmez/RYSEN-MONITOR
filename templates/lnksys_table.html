@@ -100,13 +100,8 @@
                 {% if _client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %} 
                   <tr>
                     <td>
-                      {% set idnum = _client|safe %}
-                      {% if idnum|length > 2 %}
-                      {% set ctrynum = idnum[0:3] %}
+                      {% set ctrynum = _client|flag_code %}
                       <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                      {% else %}
-                      <img src="./flags/world.png" alt="World">
-                      {% endif %}
                       <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}"
                         data-toggle="tooltip" data-html="true" title="
 {{_master}}
@@ -229,13 +224,8 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                 {% if _client|string|length >= 7 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
                 <tr>
                   <td>
-                    {% set idnum = _client|safe %}
-                    {% if idnum|length > 2 %}
-                    {% set ctrynum = idnum[0:3] %}
+                    {% set ctrynum = _client|flag_code %}
                     <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                    {% else %}
-                    <img src="./flags/world.png" alt="World">
-                    {% endif %}
                     <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
                           data-html="true" title="
 {{_master}}
@@ -357,13 +347,8 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                 {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
                 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}
                   <td>
-                    {% set idnum = _client|safe %}
-                    {% if idnum|length > 2 %}
-                    {% set ctrynum = idnum[0:3] %}
+                    {% set ctrynum = _client|flag_code %}
                     <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                    {% else %}
-                    <img src="./flags/world.png" alt="World">
-                    {% endif %}
                     <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
                           data-html="true" title="
 {{_master}}

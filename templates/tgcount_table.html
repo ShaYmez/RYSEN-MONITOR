@@ -30,13 +30,8 @@
                   <tr>
                     <td><strong>{{ itm[0] }}</strong></td>
                     <td>
-                        {% set tgnum = itm[0]|safe  %}
-                        {% if tgnum|length > 2 %}
-                        {% set ctrynum = tgnum[0:3]  %}
+                        {% set ctrynum = itm[0]|flag_code %}
                         <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                        {% else %}
-                        <img src="./flags/world.png" alt="World">
-                        {% endif %}
                         <strong>&nbsp;{{ itm[1]|safe }}&nbsp;</strong>
                         {% set tgname = itm[1]|safe %}
                         {% if 'fcs' in tgname.lower() or 'ysf' in tgname.lower() or 'wiresx' in tgname.lower() %}

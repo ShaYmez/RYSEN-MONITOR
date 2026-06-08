@@ -28,6 +28,7 @@
 
 # Standard modules
 import logging
+import re
 import sys
 from collections import deque
 from csv import DictReader as csv_dict_reader
@@ -118,6 +119,17 @@ GROUPS = {
 peer_ids = {}
 subscriber_ids = {}
 talkgroup_ids = {}
+
+
+def country_flag_code(value):
+    """Return a 3-digit country flag code or the world fallback."""
+    if value is None:
+        return "world"
+    match = re.match(r"^\s*(\d{3})", str(value))
+    if not match:
+        return "world"
+    code = match.group(1)
+    return "world" if code == "000" else code
 not_in_db = []
 # Last modified local files
 lcl_lstmod = {"peer_ids": None, "subscriber_ids": None, "talkgroup_ids": None}
@@ -1460,6 +1472,7 @@ if __name__ == "__main__":
         loader=PackageLoader("monitor", "templates"),
         autoescape=select_autoescape(["html", "xml"])
         )
+    env.filters["flag_code"] = country_flag_code
 
     # define tables template
     itemplate = env.get_template("main_table.html")
