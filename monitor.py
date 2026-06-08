@@ -246,9 +246,22 @@ class MonitorRootResource(Resource):
 # moved from dmr_utils3
 def fill_table(_path, _file, _table, wipe_tbl=True):
     temp_lst = []
+    p2f = Path(_path, _file)
     try:
-        with Path(_path, _file).open("r", encoding="utf8") as _handle:
-            if _file.split(".")[1] == "csv":
+        if not p2f.exists():
+            logger.info(f"Local alias file not found, skipping: {p2f}")
+            return
+        if not p2f.is_file():
+            logger.warning(f"Local alias path is not a file, skipping: {p2f}")
+            return
+
+        ext = p2f.suffix.lower()[1:] if p2f.suffix else ""
+        if ext not in ("csv", "json"):
+            logger.warning(f"Local alias file extension is not supported, skipping: {p2f}")
+            return
+
+        with p2f.open("r", encoding="utf-8") as _handle:
+            if ext == "csv":
                 if _table == "subscriber_ids":
                     fields = SUB_FIELDS
                 elif _table == "peer_ids":
@@ -326,19 +339,32 @@ def update_table(_path, _file, _url, _stale, _table):
 
 def update_local(_table=None):
     updt_files = []
-    if _table == "peer_ids" or not _table and CONF["FILES"]["LCL_PEER"]:
-        updt_files.append((CONF["FILES"]["LCL_PEER"], "peer_ids"))
-    if _table == "subscriber_ids" or not _table and CONF["FILES"]["LCL_SUBS"]:
-        updt_files.append((CONF["FILES"]["LCL_SUBS"], "subscriber_ids"))
-    if _table == "talkgroup_ids" or not _table and CONF["FILES"]["LCL_TGID"]:
-        updt_files.append((CONF["FILES"]["LCL_TGID"], "talkgroup_ids"))
+    if _table == "peer_ids" or not _table:
+        file = CONF["FILES"]["LCL_PEER"].strip()
+        if file:
+            updt_files.append((file, "peer_ids"))
+    if _table == "subscriber_ids" or not _table:
+        file = CONF["FILES"]["LCL_SUBS"].strip()
+        if file:
+            updt_files.append((file, "subscriber_ids"))
+    if _table == "talkgroup_ids" or not _table:
+        file = CONF["FILES"]["LCL_TGID"].strip()
+        if file:
+            updt_files.append((file, "talkgroup_ids"))
 
     for file, tbl in updt_files:
         p2f = Path(CONF["FILES"]["PATH"], file)
-        if not p2f.exists() or getmtime(p2f) == lcl_lstmod[tbl]:
+        if not p2f.exists():
+            logger.info(f"Local override file not found, skipping: {p2f}")
+            continue
+        if not p2f.is_file():
+            logger.warning(f"Local override path is not a file, skipping: {p2f}")
+            continue
+        mtime = getmtime(p2f)
+        if mtime == lcl_lstmod[tbl]:
             continue
         fill_table(CONF["FILES"]["PATH"], file, tbl, wipe_tbl=False)
-        lcl_lstmod[tbl] = getmtime(p2f)
+        lcl_lstmod[tbl] = mtime
 
 
 # THESE ARE THE SAME THING FOR LEGACY PURPOSES
