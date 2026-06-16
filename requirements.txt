@@ -1,6 +1,6 @@
 setuptools
 wheel
-Twisted
+Twisted<=18.4.0
 dmr_utils3
 bitstring
 autobahn
