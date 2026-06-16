@@ -4,4 +4,6 @@ set -e
 
 echo 'Starting RYSEN-Monitor...'
 
+export AUTOBAHN_USE_NVX=0
+
 exec python monitor.py

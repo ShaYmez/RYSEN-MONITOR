@@ -18,6 +18,9 @@
 
 FROM python:3.12-alpine3.22
 
+# Force pure-Python Autobahn WebSocket UTF-8 validation (see AUTOBAHN_USE_NVX).
+ENV AUTOBAHN_USE_NVX=0
+
 RUN adduser -D -u 54000 radio
 
 WORKDIR /monitor
