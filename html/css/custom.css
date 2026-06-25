@@ -1,0 +1,160 @@
+/* Data Table Styles
+   Extracted from wwtg.php and wwbridges.php
+   ================================================== */
+
+.data-table {
+    vertical-align: middle;
+    text-align: center;
+    empty-cells: show;
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    border-collapse: collapse;
+    border-color: #000000;
+    border-style: solid;
+    border-spacing: 4px;
+    border-width: 2px;
+    text-decoration: none;
+    color: #ffffff;
+    background: #000000;
+    font-family: verdana, arial, sans-serif;
+    width: 100%;
+    white-space: nowrap;
+}
+
+.data-table th {
+    font-family: "Lucidia Console", monospace;
+    font-weight: bolder;
+    text-shadow: 1px 1px #8b0000;
+    text-decoration: none;
+    background: #091b33;
+    border: 1px solid #c0c0c0;
+    transition: background-color 0.2s ease;
+}
+
+.data-table th:hover {
+    background: #0d2447;
+}
+
+.data-table tr:nth-child(even) {
+    background: #f7f7f7;
+    transition: background-color 0.2s ease;
+}
+
+.data-table tr:nth-child(odd) {
+    background: #d0d0d0;
+    transition: background-color 0.2s ease;
+}
+
+.data-table tr:hover {
+    background: #e8f4f8 !important;
+}
+
+.data-table td {
+    color: #000000;
+    font-family: "Lucidia Console", monospace;
+    font-weight: bolder;
+    text-decoration: none;
+    border: 1px solid #000000;
+}
+
+/* Responsive Styles */
+
+.responsive {
+    width: 100%;
+    height: auto;
+}
+
+
+/* Fix browser autofill yellow background with unreadable white text
+   Adapts to both light and dark modes
+   ================================================== */
+
+/* Light mode - white background with dark text */
+.light-mode input:-webkit-autofill,
+.light-mode input:-webkit-autofill:hover,
+.light-mode input:-webkit-autofill:focus,
+.light-mode input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+    -webkit-text-fill-color: #495057 !important;
+}
+
+/* Dark mode - dark background with light text */
+.dark-mode input:-webkit-autofill,
+.dark-mode input:-webkit-autofill:hover,
+.dark-mode input:-webkit-autofill:focus,
+.dark-mode input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #343a40 inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Fix bulletin board colored row backgrounds - force readable text
+   Override Bootstrap table-* classes from monitor container
+   ================================================== */
+
+/* Blue backgrounds - need DARK text */
+#bulletin table tbody tr.table-info,
+#bulletin table tbody tr.table-info td,
+#bulletin table tbody tr.table-info th {
+    background-color: #17a2b8 !important;
+    color: #000000 !important;
+}
+
+/* Green backgrounds - need DARK text */
+#bulletin table tbody tr.table-success,
+#bulletin table tbody tr.table-success td,
+#bulletin table tbody tr.table-success th {
+    background-color: #28a745 !important;
+    color: #000000 !important;
+}
+
+/* Red backgrounds - need DARK text */
+#bulletin table tbody tr.table-danger,
+#bulletin table tbody tr.table-danger td,
+#bulletin table tbody tr.table-danger th {
+    background-color: #dc3545 !important;
+    color: #000000 !important;
+}
+
+/* Yellow backgrounds - need DARK text */
+#bulletin table tbody tr.table-warning,
+#bulletin table tbody tr.table-warning td,
+#bulletin table tbody tr.table-warning th {
+    background-color: #ffc107 !important;
+    color: #000000 !important;
+}
+
+/* Gray backgrounds - need DARK text */
+#bulletin table tbody tr.table-secondary,
+#bulletin table tbody tr.table-secondary td,
+#bulletin table tbody tr.table-secondary th {
+    background-color: #6c757d !important;
+    color: #000000 !important;
+}
+
+/* Badges - dark text on all colored backgrounds */
+#bulletin .badge.bg-info {
+    background-color: #17a2b8 !important;
+    color: #000000 !important;
+}
+
+#bulletin .badge.bg-success {
+    background-color: #28a745 !important;
+    color: #000000 !important;
+}
+
+#bulletin .badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: #000000 !important;
+}
+
+#bulletin .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000000 !important;
+}
+
+#bulletin .badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: #000000 !important;
+}

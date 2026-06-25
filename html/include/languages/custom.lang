@@ -1,0 +1,9 @@
+{
+  "CUSTOM_HEADER": "Custom Header",
+  "CUSTOM_FOOTER": "Custom Footer",
+  "CUSTOM_MENU": "Custom Menu",
+  
+  "_comment": "Add organization-specific translations here",
+  "_comment2": "This file is protected during upgrades",
+  "_comment3": "Keys should follow existing translation naming conventions"
+}
