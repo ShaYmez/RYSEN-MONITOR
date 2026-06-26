@@ -34,29 +34,9 @@
   <div><br></div>
 </div>
 
-<!-- Content check and reconnect if empty -->
+<!-- Content check: show waiting message instead of reloading -->
 <script>
-  var bulletinCheckCount = 0;
-  var maxCheckCount = 3;
-
-  window.addEventListener('load', function () {
-    setInterval(checkBulletinContent, 5000);
-  });
-
-  function checkBulletinContent() {
-    var bulletinElement = document.getElementById('bulletin');
-    if (bulletinElement && bulletinElement.innerHTML.trim() !== '') {
-      // Content OK, reset counter
-      bulletinCheckCount = 0;
-    } else {
-      // No content, increment counter
-      bulletinCheckCount++;
-      if (bulletinCheckCount >= maxCheckCount) {
-        // Only reload after multiple failed checks
-        location.reload();
-      }
-    }
-  }
+  watchDashboardContent('bulletin');
 
   function filterBB(cat) {
     var table = document.querySelector('#bulletin table');

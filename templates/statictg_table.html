@@ -41,6 +41,7 @@
                     {% set ctrynum = _peer_id|flag_code %}
                     <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
                     <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
+                          {% if _cdata.get('PROTOCOL') == 'IPSC' %}class="badge badge-pill badge-ipsc"{% endif %}
                           data-html="true" title="
 {{_master}}
 {% if _cdata.get('PROTOCOL') == 'IPSC' %}Type: IPSC Repeater ({{ _cdata['SLOTS'] }})
@@ -57,7 +58,7 @@ Height: {{ _cdata['HEIGHT'] }}
 {% endif %}Software: {{_cdata['SOFTWARE_ID'] }}
 Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                     </span>
-                    <span class="badge badge-info">{{ _peer_id }}</span>
+                    <span class="badge {% if _cdata.get('PROTOCOL') == 'IPSC' %}badge-ipsc{% else %}badge-info{% endif %}">{{ _peer_id }}</span>
                   </td>
                   <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                   <td class="table-active align-middle text-center"><span

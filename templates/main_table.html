@@ -144,7 +144,6 @@
             {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
             {% if _cdata[1]['TS'] == True or _cdata[2]['TS'] == True %}
             {% if _cdata[1]['TRX'] == "RX" %}
-            {% set countcon.value = countcon.value + 1 %}
             <div class="col col-lg-auto col-md-auto col-sm-auto">
               <span class="badge badge-danger text-sm">
                 <table>
@@ -162,7 +161,6 @@
             </div>
             {% endif %}
             {% if _cdata[2]['TRX'] == "RX" %}
-            {% set countcon.value = countcon.value + 1 %}
             <div class="col col-lg-auto col-md-auto col-sm-auto">
               <span class="badge badge-danger text-sm">
                 <table>
@@ -185,7 +183,6 @@
             {% for _peer, _pdata in _table['PEERS'].items() %}
             {% if _pdata[1]['TS'] == True or _pdata[2]['TS'] == True %}
             {% if _pdata[1]['TRX'] == "RX" %}
-            {% set countcon.value = countcon.value + 1 %}
             <div class="col col-lg-auto col-md-auto col-sm-auto">
               <span class="badge badge-danger text-sm">
                 <table>
@@ -203,7 +200,6 @@
             </div>
             {% endif %}
             {% if _pdata[2]['TRX'] == "RX" %}
-            {% set countcon.value = countcon.value + 1 %}
             <div class="col col-lg-auto col-md-auto col-sm-auto">
               <span class="badge badge-danger text-sm">
                 <table>
@@ -233,7 +229,6 @@
             {% if rx.value == 1 %}
             {% for entry in _table['OPENBRIDGES'][_openbridge]['STREAMS'] if
             _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0] == 'RX' %}
-            {% set countcon.value = countcon.value + 1 %}
             <div class="col col-lg-auto col-md-auto col-sm-auto">
               <span class="badge badge-success text-sm">
                 <table>
@@ -353,8 +348,9 @@
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
           {% if _cdata.get('PROTOCOL') == 'IPSC' or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
           {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
+          {% set _rptr_badge = 'badge-ipsc' if _cdata.get('PROTOCOL') == 'IPSC' else 'badge-success' %}
           <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}"
-            class="badge badge-pill badge-success" style="width: 56px;" data-toggle="tooltip" data-placement="top"
+            class="badge badge-pill {{ _rptr_badge }}" style="min-width: 3.5rem;" data-toggle="tooltip" data-placement="top"
             title="
 ID DMR: {{ _peer_id }}
 {% if _cdata.get('PROTOCOL') == 'IPSC' %}Mode: IPSC Repeater ({{ _cdata['SLOTS'] }})
@@ -389,7 +385,7 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
           {% if _client|string|length >= 7 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
           <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}" class="badge badge-pill badge-success"
-            style="width: 56px;" data-toggle="tooltip" data-placement="top" data-html="true" title="
+            style="min-width: 3.5rem;" data-toggle="tooltip" data-placement="top" data-html="true" title="
 ID DMR: {{ _client }}
 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
 TX: {{_cdata['TX_FREQ'] }}
@@ -420,7 +416,7 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
           {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
-          <a href="#" class="badge badge-pill badge-success" style="width: 56px;" data-toggle="tooltip"
+          <a href="#" class="badge badge-pill badge-success" style="min-width: 3.5rem;" data-toggle="tooltip"
             data-placement="top" data-html="true" title="
 ID DMR: {{ _client }}
 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}

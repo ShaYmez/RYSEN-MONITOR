@@ -280,9 +280,15 @@ def fill_table(_path, _file, _table, wipe_tbl=True):
             if _table == "peer_ids":
                 for record in records:
                     try:
-                        temp_lst.append((int(record["id"]), record["callsign"]))
-
-                    except:
+                        rid = int(record["id"])
+                        callsign = record.get("callsign") or record.get("call_sign") or ""
+                        temp_lst.append((rid, callsign))
+                        peer_ids[rid] = {
+                            "CALLSIGN": callsign,
+                            "CITY": record.get("city") or "",
+                            "STATE": record.get("state") or "",
+                        }
+                    except Exception:
                         pass
 
             elif _table == "subscriber_ids":
@@ -529,6 +535,57 @@ def is_routing_master(mode):
     return mode in ROUTING_MASTER_MODES
 
 
+def _hb_field_str(value):
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace").rstrip("\x00").strip()
+    if value is None:
+        return ""
+    return str(value).rstrip("\x00").strip()
+
+
+def _alias_location(radio_id):
+    try:
+        rid = int(radio_id)
+    except (TypeError, ValueError):
+        return ""
+    alias = get_alias(rid, peer_ids, "CITY", "STATE")
+    if isinstance(alias, list):
+        parts = [str(part).strip() for part in alias if part]
+        return ", ".join(parts)
+    return ""
+
+
+def _ipsc_location(peer_conf, radio_id):
+    location = _hb_field_str(peer_conf.get("LOCATION", ""))
+    if location:
+        return location
+    return _alias_location(radio_id)
+
+
+def _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer):
+    _ctable_peer["PROTOCOL"] = "IPSC"
+    _ctable_peer["RADIO_ID"] = _ipsc_radio_id(_peer_conf, _peer)
+    _ctable_peer["CALLSIGN"] = _ipsc_callsign(
+        _peer_conf, _peer, _ctable_peer["RADIO_ID"])
+    for field in ("SOFTWARE_ID", "PACKAGE_ID", "DESCRIPTION"):
+        _ctable_peer[field] = _hb_field_str(_peer_conf.get(field, ""))
+    _ctable_peer["LOCATION"] = _ipsc_location(
+        _peer_conf, _ctable_peer["RADIO_ID"])
+    for field in ("SOFTWARE_ID", "PACKAGE_ID"):
+        if not _ctable_peer[field]:
+            _ctable_peer[field] = "—"
+
+
+def refresh_hb_peer(_peer_conf, _ctable_peer, _peer):
+    """Refresh CTABLE peer metadata from config without resetting timeslots."""
+    _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]
+    _ctable_peer["CONNECTED"] = time_str(_peer_conf["CONNECTED"], "since")
+    _ctable_peer["IP"] = _peer_conf["IP"]
+    _ctable_peer["PORT"] = _peer_conf["PORT"]
+    if _peer_conf.get("PROTOCOL") == "IPSC":
+        _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
+
+
 def _ipsc_radio_id(peer_conf, peer):
     if "RADIO_ID" not in peer_conf:
         return str(int_id(peer))
@@ -593,40 +650,13 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer["SLOTS"] = "Simplex"
 
     # Simple translation items
-    if str(type(_peer_conf["PACKAGE_ID"])).find("bytes") != -1:
-        _ctable_peer["PACKAGE_ID"] = _peer_conf["PACKAGE_ID"].decode("utf-8")
-    else:
-        _ctable_peer["PACKAGE_ID"] = _peer_conf["PACKAGE_ID"]
-
-    if str(type(_peer_conf["SOFTWARE_ID"])).find("bytes") != -1:
-        _ctable_peer["SOFTWARE_ID"] = _peer_conf["SOFTWARE_ID"].decode("utf-8")
-    else:
-        _ctable_peer["SOFTWARE_ID"] = _peer_conf["SOFTWARE_ID"]
-
-    if str(type(_peer_conf["LOCATION"])).find("bytes") != -1:
-        _ctable_peer["LOCATION"] = _peer_conf["LOCATION"].decode("utf-8").strip()
-    else:
-        _ctable_peer["LOCATION"] = _peer_conf["LOCATION"]
-
-    if str(type(_peer_conf["DESCRIPTION"])).find("bytes") != -1:
-        _ctable_peer["DESCRIPTION"] = _peer_conf["DESCRIPTION"].decode("utf-8").strip()
-    else:
-        _ctable_peer["DESCRIPTION"] = _peer_conf["DESCRIPTION"]
-
-    if str(type(_peer_conf["URL"])).find("bytes") != -1:
-        _ctable_peer["URL"] = _peer_conf["URL"].decode("utf-8").strip()
-    else:
-        _ctable_peer["URL"] = _peer_conf["URL"]
-
-    if str(type(_peer_conf["CALLSIGN"])).find("bytes") != -1:
-        _ctable_peer["CALLSIGN"] = _peer_conf["CALLSIGN"].decode("utf-8").strip()
-    else:
-        _ctable_peer["CALLSIGN"] = _peer_conf["CALLSIGN"]
-
-    if str(type(_peer_conf["COLORCODE"])).find("bytes") != -1:
-        _ctable_peer["COLORCODE"] = _peer_conf["COLORCODE"].decode("utf-8").strip()
-    else:
-        _ctable_peer["COLORCODE"] = _peer_conf["COLORCODE"]
+    _ctable_peer["PACKAGE_ID"] = _hb_field_str(_peer_conf.get("PACKAGE_ID", ""))
+    _ctable_peer["SOFTWARE_ID"] = _hb_field_str(_peer_conf.get("SOFTWARE_ID", ""))
+    _ctable_peer["LOCATION"] = _hb_field_str(_peer_conf.get("LOCATION", ""))
+    _ctable_peer["DESCRIPTION"] = _hb_field_str(_peer_conf.get("DESCRIPTION", ""))
+    _ctable_peer["URL"] = _hb_field_str(_peer_conf.get("URL", ""))
+    _ctable_peer["CALLSIGN"] = _hb_field_str(_peer_conf.get("CALLSIGN", ""))
+    _ctable_peer["COLORCODE"] = _hb_field_str(_peer_conf.get("COLORCODE", ""))
 
     for field in ("TX_POWER", "LATITUDE", "LONGITUDE", "HEIGHT"):
         value = _peer_conf.get(field, "")
@@ -636,16 +666,7 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
             _ctable_peer[field] = value
 
     if _peer_conf.get("PROTOCOL") == "IPSC":
-        _ctable_peer["PROTOCOL"] = "IPSC"
-        _ctable_peer["RADIO_ID"] = _ipsc_radio_id(_peer_conf, _peer)
-        _ctable_peer["CALLSIGN"] = _ipsc_callsign(
-            _peer_conf, _peer, _ctable_peer["RADIO_ID"])
-        for field in ("SOFTWARE_ID", "PACKAGE_ID", "LOCATION", "DESCRIPTION"):
-            if isinstance(_ctable_peer[field], str):
-                _ctable_peer[field] = _ctable_peer[field].rstrip("\x00").strip()
-        for field in ("SOFTWARE_ID", "PACKAGE_ID", "LOCATION"):
-            if not _ctable_peer[field]:
-                _ctable_peer[field] = "—"
+        _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
         logger.info(
             f"IPSC peer registered: {_ctable_peer['CALLSIGN']} "
             f"(Id: {_ctable_peer['RADIO_ID']})")
@@ -798,12 +819,16 @@ def update_hblink_table(_config, _stats_table):
         for _peer in remove_list:
             logger.info(f"Deleting stats peer not in hblink config: {_peer}")
             del _stats_table["MASTERS"][_hbp]["PEERS"][_peer]
-    # Update connection time
+    # Update connection time and refresh peer metadata from latest config
     for _hbp in _stats_table["MASTERS"]:
         for _peer in _stats_table["MASTERS"][_hbp]["PEERS"]:
-            if bytes_4(_peer) in _config[_hbp]["PEERS"]:
-                _stats_table["MASTERS"][_hbp]["PEERS"][_peer]["CONNECTED"] = time_str(
-                    _config[_hbp]["PEERS"][bytes_4(_peer)]["CONNECTED"],"since")
+            peer_key = bytes_4(_peer)
+            if peer_key in _config[_hbp]["PEERS"]:
+                peer_conf = _config[_hbp]["PEERS"][peer_key]
+                refresh_hb_peer(
+                    peer_conf,
+                    _stats_table["MASTERS"][_hbp]["PEERS"][_peer],
+                    peer_key)
 
     for _hbp in _stats_table["PEERS"]:
         if _stats_table["PEERS"][_hbp]["MODE"] == "XLXPEER":
@@ -1035,9 +1060,9 @@ def generate_rss_feed():
 
 
 def build_tgstats():
+    tmp_dict = {}
     if CONFIG and CTABLE:
         CTABLE["SERVER"] ={"TS1":[],"TS2":[]}
-        tmp_dict = {}
         srv_info = 0
         # make a list with occupied systems
         for system in CTABLE["MASTERS"]:
@@ -1066,16 +1091,18 @@ def build_tgstats():
             for peer in CTABLE["MASTERS"][system]["PEERS"]:
                 CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS1"] = {"TGID": "", "TO": ""}
                 CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS2"] = {"TGID": "", "TO": ""}
-                if isinstance(CONFIG[system]["TS1_STATIC"], bool):
+                ts1_static = CONFIG[system].get("TS1_STATIC")
+                if isinstance(ts1_static, bool) or ts1_static is None:
                     CTABLE["MASTERS"][system]["PEERS"][peer]["TS1_STATIC"] = []
                 else:
                     CTABLE["MASTERS"][system]["PEERS"][peer]["TS1_STATIC"] = (
-                        CONFIG[system]["TS1_STATIC"].split(","))
-                if isinstance(CONFIG[system]["TS2_STATIC"], bool):
+                        ts1_static.split(","))
+                ts2_static = CONFIG[system].get("TS2_STATIC")
+                if isinstance(ts2_static, bool) or ts2_static is None:
                     CTABLE["MASTERS"][system]["PEERS"][peer]["TS2_STATIC"] = []
                 else:
                     CTABLE["MASTERS"][system]["PEERS"][peer]["TS2_STATIC"] = (
-                        CONFIG[system]["TS2_STATIC"].split(","))
+                        ts2_static.split(","))
     # Find Single TG
     if CTABLE and BRIDGES and tmp_dict:
         for bridge in BRIDGES:
@@ -1095,7 +1122,7 @@ def timeout_clients():
         for group in dashboard_server.clients:
             for client in dashboard_server.clients[group]:
                 if dashboard_server.clients[group][client] + CONF["WS"]["CLT_TO"] < now:
-                    logger.info(f"TIMEOUT: disconnecting client {dashboard_server.clients[client]}")
+                    logger.info(f"TIMEOUT: disconnecting client {client_peer(client)}")
                     try:
                         dashboard.sendClose(client)
                     except Exception as err:

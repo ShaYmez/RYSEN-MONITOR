@@ -3,6 +3,10 @@ var ellog = null;
 const conf_groups = [];
 var bulletin_tbl = null;
 
+let translationsCache = null;
+let translationsPromise = null;
+let languageListenerBound = false;
+
 function formatDashboardLabel(text) {
     if (typeof text !== 'string') {
         return text;
@@ -18,8 +22,13 @@ function applyTranslation(element, translation) {
         return;
     }
     const label = formatDashboardLabel(translation);
-    if (element.getAttribute('data-bs-toggle') === 'tooltip') {
-        element.setAttribute('data-bs-title', label);
+    const isTooltip = element.getAttribute('data-bs-toggle') === 'tooltip'
+        || element.getAttribute('data-toggle') === 'tooltip';
+    if (isTooltip) {
+        element.setAttribute('title', label);
+        if (element.getAttribute('data-bs-toggle') === 'tooltip') {
+            element.setAttribute('data-bs-title', label);
+        }
     } else if (element.tagName === 'INPUT') {
         element.setAttribute('placeholder', label);
     } else {
@@ -33,6 +42,59 @@ function translateElements(translations, selectedLanguage) {
         if (element && translations[key][selectedLanguage] != null) {
             applyTranslation(element, translations[key][selectedLanguage]);
         }
+    });
+}
+
+function initTooltips(root) {
+    if (typeof $ === 'undefined' || !$.fn.tooltip) {
+        return;
+    }
+    const scope = root || document;
+    $(scope).find('[data-toggle="tooltip"], [data-bs-toggle="tooltip"]').tooltip('dispose');
+    $(scope).find('[data-toggle="tooltip"], [data-bs-toggle="tooltip"]').tooltip();
+}
+
+function loadTranslations() {
+    if (translationsCache) {
+        return Promise.resolve(translationsCache);
+    }
+    if (!translationsPromise) {
+        translationsPromise = fetch('translations.json')
+            .then(response => response.json())
+            .then(data => {
+                translationsCache = data;
+                return data;
+            });
+    }
+    return translationsPromise;
+}
+
+function bindLanguageListener() {
+    const languageSelect = document.getElementById('languageSelect');
+    if (!languageSelect || languageListenerBound) {
+        return;
+    }
+    languageListenerBound = true;
+    languageSelect.addEventListener('change', function () {
+        if (!translationsCache) {
+            return;
+        }
+        translateElements(translationsCache, languageSelect.value);
+        initTooltips();
+    });
+}
+
+function updateDashboardPane(container, message) {
+    if (!container) {
+        return;
+    }
+    loadTranslations().then(translations => {
+        const languageSelect = document.getElementById('languageSelect');
+        const lang = languageSelect ? languageSelect.value : 'en';
+        container.innerHTML = message;
+        translateElements(translations, lang);
+        initTooltips(container);
+        bindLanguageListener();
     });
 }
 
@@ -50,6 +112,15 @@ window.onload = function () {
     tgcount_tbl = document.getElementById('tgcount');
     lsthrd_log_tbl = document.getElementById('lsthrd_log');
     bulletin_tbl = document.getElementById('bulletin');
+
+    loadTranslations().then(translations => {
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect) {
+            translateElements(translations, languageSelect.value);
+            initTooltips();
+            bindLanguageListener();
+        }
+    });
 
     // HBMonv2 pattern: Direct WebSocket connection to port 9000
     // Production installer will modify this to use /wss/ if Mode 2 selected
@@ -134,7 +205,7 @@ window.onload = function () {
                     } else if (group == "main") {
                         main_tbl.innerHTML = "";
                     } else if (group == "lnksys") {
-                        masters_tbl.innerHTML = "";
+                        lnksys_tbl.innerHTML = "";
                     } else if (group == "opb") {
                         opb_tbl.innerHTML = "";
                     } else if (group == 'statictg') {
@@ -155,202 +226,37 @@ window.onload = function () {
 };
 
 
-
-
 function Bmsg(_msg) {
-    fetch('translations.json')
-        .then(response => response.json())
-        .then(translations => {
-            const languageSelect = document.getElementById('languageSelect');
-            //const bridge_tbl = document.getElementById('bridge_tbl');
-
-            // Function to translate the page based on the selected language
-            function translatePage() {
-                translateElements(translations, languageSelect.value);
-            }
-
-            // Update the content after translations are loaded
-            bridge_tbl.innerHTML = _msg;
-
-            // Translate the page on initial load
-            translatePage();
-
-            // Translate the page when the language selection changes
-            languageSelect.addEventListener('change', translatePage);
-        });
+    updateDashboardPane(bridge_tbl, _msg);
 }
 
 function Cmsg(_msg) {
-    fetch('translations.json')
-        .then(response => response.json())
-        .then(translations => {
-            const languageSelect = document.getElementById('languageSelect');
-            //const lnksys_tbl = document.getElementById('lnksys_tbl');
-
-            // Function to translate the page based on the selected language
-            function translatePage() {
-                translateElements(translations, languageSelect.value);
-            }
-
-            // Update the content after translations are loaded
-            lnksys_tbl.innerHTML = _msg;
-
-            // Translate the page on initial load
-            translatePage();
-
-            // Translate the page when the language selection changes
-            languageSelect.addEventListener('change', translatePage);
-        });
+    updateDashboardPane(lnksys_tbl, _msg);
 }
 
 function Imsg(_msg) {
-    fetch('translations.json')
-        .then(response => response.json())
-        .then(translations => {
-            const languageSelect = document.getElementById('languageSelect');
-
-            // Function to translate the page based on the selected language
-            function translatePage() {
-                translateElements(translations, languageSelect.value);
-            }
-
-            // Update the content after translations are loaded
-            main_tbl.innerHTML = _msg;
-
-            // Translate the page on initial load
-            translatePage();
-
-            // Translate the page when the language selection changes
-            languageSelect.addEventListener('change', translatePage);
-        });
+    updateDashboardPane(main_tbl, _msg);
 }
 
 function Omsg(_msg) {
-    fetch('translations.json')
-        .then(response => response.json())
-        .then(translations => {
-            const languageSelect = document.getElementById('languageSelect');
-            //const opb_tbl = document.getElementById('opb_tbl');
-
-            // Function to translate the page based on the selected language
-            function translatePage() {
-                translateElements(translations, languageSelect.value);
-            }
-
-            // Update the content after translations are loaded
-            opb_tbl.innerHTML = _msg;
-
-            // Translate the page on initial load
-            translatePage();
-
-            // Translate the page when the language selection changes
-            languageSelect.addEventListener('change', translatePage);
-        });
+    updateDashboardPane(opb_tbl, _msg);
 }
 
 function Smsg(_msg) {
-    fetch('translations.json')
-        .then(response => response.json())
-        .then(translations => {
-            const languageSelect = document.getElementById('languageSelect');
-            //const statictg_tbl = document.getElementById('statictg_tbl');
-
-            // Function to translate the page based on the selected language
-            function translatePage() {
-                translateElements(translations, languageSelect.value);
-            }
-
-            // Update the content after translations are loaded
-            statictg_tbl.innerHTML = _msg;
-
-            // Translate the page on initial load
-            translatePage();
-
-            // Translate the page when the language selection changes
-            languageSelect.addEventListener('change', translatePage);
-        });
+    updateDashboardPane(statictg_tbl, _msg);
 }
 
 function Hmsg(_msg) {
-    fetch('translations.json')
-        .then(response => response.json())
-        .then(translations => {
-            const languageSelect = document.getElementById('languageSelect');
-            //const lsthrd_log_tbl = document.getElementById('lsthrd_log_tbl');
-
-            // Function to translate the page based on the selected language
-            function translatePage() {
-                translateElements(translations, languageSelect.value);
-            }
-
-            // Update the content after translations are loaded
-            lsthrd_log_tbl.innerHTML = _msg;
-
-            // Translate the page on initial load
-            translatePage();
-
-            // Translate the page when the language selection changes
-            languageSelect.addEventListener('change', translatePage);
-        });
+    updateDashboardPane(lsthrd_log_tbl, _msg);
 }
 
 function Umsg(_msg) {
-    fetch('translations.json')
-        .then(response => response.json())
-        .then(translations => {
-            const languageSelect = document.getElementById('languageSelect');
-
-            function translatePage() {
-                translateElements(translations, languageSelect.value);
-            }
-
-            bulletin_tbl.innerHTML = _msg;
-            translatePage();
-            languageSelect.addEventListener('change', translatePage);
-        });
+    updateDashboardPane(bulletin_tbl, _msg);
 }
 
 function Tmsg(_msg) {
-    fetch('translations.json')
-        .then(response => response.json())
-        .then(translations => {
-            const languageSelect = document.getElementById('languageSelect');
-            //const tgcount_tbl = document.getElementById('tgcount_tbl');
-
-            // Function to translate the page based on the selected language
-            function translatePage() {
-                translateElements(translations, languageSelect.value);
-            }
-
-            // Update the content after translations are loaded
-            tgcount_tbl.innerHTML = _msg;
-
-            // Translate the page on initial load
-            translatePage();
-
-            // Translate the page when the language selection changes
-            languageSelect.addEventListener('change', translatePage);
-        });
+    updateDashboardPane(tgcount_tbl, _msg);
 }
-
-// translate script
-fetch('translations.json')
-  .then(response => response.json())
-  .then(translations => {
-    const languageSelect = document.getElementById('languageSelect');
-
-    // Function to translate the page based on the selected language
-    function translatePage() {
-        translateElements(translations, languageSelect.value);
-        $('[data-bs-toggle="tooltip"]').tooltip();
-    }
-
-    // Translate the page on initial load
-    translatePage();
-
-    // Translate the page when the language selection changes
-    languageSelect.addEventListener('change', translatePage);
-  });
 
 
 function log(_msg) {
@@ -370,4 +276,3 @@ function conf_id() {
     }
     console.log(conf_groups)
 };
-

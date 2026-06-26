@@ -90,6 +90,7 @@ if (!isset($_SESSION['preloader_displayed'])) {
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="scripts/mode.js"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
+    <script src="scripts/dashboard-watch.js"></script>
     <script src="scripts/monitor.js"></script>
   </body>
 </html>

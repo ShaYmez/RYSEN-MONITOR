@@ -13,22 +13,26 @@ if not (ROOT / "fdmr-mon.cfg").exists():
 import monitor  # noqa: E402
 from dmr_utils3.utils import int_id  # noqa: E402
 from monitor import (  # noqa: E402
+    _alias_location,
     _ipsc_callsign,
+    _ipsc_location,
     _ipsc_radio_id,
     add_hb_peer,
     build_hblink_table,
     is_routing_master,
+    refresh_hb_peer,
+    update_hblink_table,
 )
 
 
-def _ipsc_peer(callsign=b"GB7NR   ", radio_id="235287"):
+def _ipsc_peer(callsign=b"GB7NR   ", radio_id="235287", location=b""):
     return {
         "TX_FREQ": b"0000000",
         "RX_FREQ": b"0000000",
         "SLOTS": b"3",
         "PACKAGE_ID": b"Motorola IPSC Repeater" + b"\x00" * 19,
         "SOFTWARE_ID": b"Motorola IPSC 04.02.04.01 (voice, data)" + b"\x00" * 2,
-        "LOCATION": b"",
+        "LOCATION": location,
         "DESCRIPTION": b"Digital TS1:IPSC TS2:IPSC",
         "URL": b"",
         "CALLSIGN": callsign,
@@ -68,9 +72,69 @@ def test_ipsc_system_in_masters():
     assert peer["SOFTWARE_ID"].startswith("Motorola IPSC 04.02.04.01")
     assert peer["PACKAGE_ID"] == "Motorola IPSC Repeater"
     assert peer["DESCRIPTION"] == "Digital TS1:IPSC TS2:IPSC"
-    assert peer["LOCATION"] == "—"
+    assert peer["LOCATION"] == ""
     assert peer["TX_FREQ"] == "N/A"
     assert peer["RX_FREQ"] == "N/A"
+
+
+def test_ipsc_location_from_config():
+    peer_conf = _ipsc_peer(location=b"Nottingham")
+    assert _ipsc_location(peer_conf, "235287") == "Nottingham"
+
+
+def test_ipsc_location_fallback_to_peer_ids():
+    monitor.peer_ids.clear()
+    monitor.peer_ids[235287] = {
+        "CALLSIGN": "GB7NR",
+        "CITY": "Nottingham",
+        "STATE": "",
+    }
+    peer_conf = _ipsc_peer()
+    assert _ipsc_location(peer_conf, "235287") == "Nottingham"
+    assert _alias_location("235287") == "Nottingham"
+
+
+def test_ipsc_peer_metadata_refresh():
+    monitor.peer_ids.clear()
+    peer_key = b"\x00\x00\x03\x97"
+    config = {
+        "IPSC-198": {
+            "ENABLED": True,
+            "MODE": "IPSC",
+            "REPEAT": True,
+            "PEERS": {peer_key: _ipsc_peer()},
+        }
+    }
+    ctable = {"MASTERS": {}, "PEERS": {}, "OPENBRIDGES": {}}
+    build_hblink_table(config, ctable)
+    peer_id = int_id(peer_key)
+    assert ctable["MASTERS"]["IPSC-198"]["PEERS"][peer_id]["LOCATION"] == ""
+
+    config["IPSC-198"]["PEERS"][peer_key]["LOCATION"] = b"Nottingham"
+    update_hblink_table(config, ctable)
+    assert ctable["MASTERS"]["IPSC-198"]["PEERS"][peer_id]["LOCATION"] == "Nottingham"
+
+    config["IPSC-198"]["PEERS"][peer_key]["LOCATION"] = b""
+    monitor.peer_ids.clear()
+    monitor.peer_ids[235287] = {"CALLSIGN": "GB7NR", "CITY": "Nottingham", "STATE": ""}
+    update_hblink_table(config, ctable)
+    assert ctable["MASTERS"]["IPSC-198"]["PEERS"][peer_id]["LOCATION"] == "Nottingham"
+
+
+def test_refresh_hb_peer_preserves_timeslots():
+    peer_key = b"\x00\x00\x03\x97"
+    peers = {}
+    add_hb_peer(_ipsc_peer(), peers, peer_key)
+    peer = peers[int_id(peer_key)]
+    peer[1]["TS"] = True
+    peer[1]["TRX"] = "RX"
+    peer[1]["CALL"] = "TEST"
+
+    refresh_hb_peer(_ipsc_peer(location=b"Nottingham"), peer, peer_key)
+    assert peer["LOCATION"] == "Nottingham"
+    assert peer[1]["TS"] is True
+    assert peer[1]["TRX"] == "RX"
+    assert peer[1]["CALL"] == "TEST"
 
 
 def test_ipsc_callsign_fallback_to_peer_ids():

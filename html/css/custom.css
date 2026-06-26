@@ -158,3 +158,15 @@
     background-color: #6c757d !important;
     color: #000000 !important;
 }
+
+/* Motorola IPSC repeaters — distinct from green MMDVM pills */
+.badge-ipsc {
+    background-color: #ff6600;
+    color: #fff;
+}
+
+a.badge-ipsc:hover,
+a.badge-ipsc:focus {
+    color: #fff;
+    opacity: 0.92;
+}
