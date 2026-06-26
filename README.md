@@ -28,6 +28,8 @@ Python 3 implementation of N0MJS HBmonitor for HBlink https://github.com/kc1awv/
 
 RYSEN reports IPSC systems (`MODE: IPSC`, `PROTOCOL: IPSC`) on the TCP report socket (default port 4321). These appear on **Linked Systems** in the Repeaters section with callsign, DMR ID, Motorola software/hardware, and live TS1/TS2 activity. Point `[FDMR CONNECTION]` in `fdmr-mon.cfg` at your RYSEN instance (use the container IP on Docker Compose, not `127.0.0.1`).
 
+IPSC repeater selfcare (static TS1/TS2) is planned in phases; MMDVM hotspot selfcare is unchanged. See [doc/ipsc-selfcare-roadmap.md](doc/ipsc-selfcare-roadmap.md). Admin password: `scripts/set_ipsc_selfcare_password.py`.
+
 ---
 
 Copyright (C) 2013-2018  Cortney T. Buffington, N0MJS <n0mjs@me.com>
