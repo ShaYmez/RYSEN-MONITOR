@@ -17,13 +17,15 @@
 
 {% for _master in _table['MASTERS'] %}
   {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-    {% if _client|string|length == 6 and _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
+    {% if _cdata.get('PROTOCOL') == 'IPSC' %}
+      {% set countrepeaters.value = countrepeaters.value + 1 %}
+    {% elif _client|string|length == 6 and _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
       {% set countrepeaters.value = countrepeaters.value + 1 %}
     {% endif %}
     {% if _client|string|length >= 7 and _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
       {% set counthotspots.value = counthotspots.value + 1 %}
     {% endif %}
-    {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}
+    {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
       {% set countbridges.value = countbridges.value + 1 %}
     {% endif %}
     {% if _cdata[1]['TS'] == True or _cdata[2]['TS'] == True %}
@@ -349,16 +351,19 @@
           {% for _master in _table['MASTERS'] %}
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-          {% if _client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %} 
+          {% if _cdata.get('PROTOCOL') == 'IPSC' or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
+          {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
           <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}"
             class="badge badge-pill badge-success" style="width: 56px;" data-toggle="tooltip" data-placement="top"
             title="
-ID DMR: {{ _client }}
-{% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
+ID DMR: {{ _peer_id }}
+{% if _cdata.get('PROTOCOL') == 'IPSC' %}Mode: IPSC Repeater ({{ _cdata['SLOTS'] }})
+Description: {{ _cdata['DESCRIPTION'] }}
+{% elif _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
 TX: {{_cdata['TX_FREQ'] }}
 RX: {{_cdata['RX_FREQ'] }}
-TS1: {{ _cdata['TS1_STATIC']|join(', ') }}
-TS2: {{ _cdata['TS2_STATIC']|join(', ') }}{% endif %}
+TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
+TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}{% endif %}
 Hardware: {{_cdata['PACKAGE_ID'] }}
 Software: {{_cdata['SOFTWARE_ID'] }}
 Info: {{_cdata['LOCATION']}}
@@ -414,7 +419,7 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
           {% for _master in _table['MASTERS'] %}
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-          {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}
+          {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
           <a href="#" class="badge badge-pill badge-success" style="width: 56px;" data-toggle="tooltip"
             data-placement="top" data-html="true" title="
 ID DMR: {{ _client }}

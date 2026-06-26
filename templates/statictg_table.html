@@ -34,27 +34,30 @@
               {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0) and
               emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
               {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-              {% if _client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
+              {% if _cdata.get('PROTOCOL') == 'IPSC' or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
+                {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
                 <tr>
                   <td>
-                    {% set ctrynum = _client|flag_code %}
+                    {% set ctrynum = _peer_id|flag_code %}
                     <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
                     <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
                           data-html="true" title="
 {{_master}}
-{% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
+{% if _cdata.get('PROTOCOL') == 'IPSC' %}Type: IPSC Repeater ({{ _cdata['SLOTS'] }})
+Mode: {{ _cdata['DESCRIPTION'] }}
+{% elif _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
 TX: {{_cdata['TX_FREQ'] }}
 RX: {{_cdata['RX_FREQ'] }}
-TS1: {{ _cdata['TS1_STATIC']|join(', ') }}
-TS2: {{ _cdata['TS2_STATIC']|join(', ') }}{% endif %}
-Power: {{ _cdata['TX_POWER'] }}
+TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
+TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}{% endif %}
+{% if _cdata.get('PROTOCOL') != 'IPSC' %}Power: {{ _cdata['TX_POWER'] }}
 Latitude: {{ _cdata['LATITUDE'] }}
 Longitude: {{ _cdata['LONGITUDE'] }}
 Height: {{ _cdata['HEIGHT'] }}
-Software: {{_cdata['SOFTWARE_ID'] }}
+{% endif %}Software: {{_cdata['SOFTWARE_ID'] }}
 Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                     </span>
-                    <span class="badge badge-info">{{ _client }}</span>
+                    <span class="badge badge-info">{{ _peer_id }}</span>
                   </td>
                   <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                   <td class="table-active align-middle text-center"><span
@@ -203,7 +206,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
               {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0) and
               emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
               {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-              {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}
+              {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
               <tr>
                 <td>
                   {% set ctrynum = _client|flag_code %}
