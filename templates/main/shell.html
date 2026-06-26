@@ -1,0 +1,48 @@
+{#
+  Main dashboard shell — stable layout; sections filled via partial WebSocket updates.
+#}
+{% if _table['MASTERS']|length == 0 %}
+<div class="preloader flex-column justify-content-center align-items-center">
+  <i class="fas fa-2x fa-sync-alt fa-spin"></i>
+  <span class="info-box-text" id="pre_wait"></span>
+</div>
+{% endif %}
+
+<div id="main-stats"></div>
+
+<div id="main-activity"></div>
+
+{% if _table['MASTERS']|length >0 %}
+<div class="row justify-content-center">
+  <div class="col-12">
+    <div class="card dashboard-card">
+      <div class="card-header border-transparent">
+        <h3 class="card-title" id="lh_tbl"></h3>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table m-0 table-striped table-sm dashboard-table lh-table">
+            <thead>
+              <tr>
+                <th class="lh-date-cell" id="lh_date"></th>
+                <th class="lh-time-cell" id="lh_time"></th>
+                <th class="lh-callsign-cell" id="lh_callsignid"></th>
+                <th id="lh_name"></th>
+                <th class="lh-tgnum-cell" id="lh_tgnum"></th>
+                <th class="lh-tg-cell" id="lh_tgname"></th>
+                <th class="lh-tx-cell">TX</th>
+              </tr>
+            </thead>
+            <tbody id="main-lastheard-rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer text-center">
+        <a href="?p=lastheard" id="lh_viewmore">+ View more</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div id="main-connected"></div>

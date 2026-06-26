@@ -111,6 +111,39 @@ function markDashboardPanes() {
     });
 }
 
+function updateSection(sectionId, html) {
+    const el = document.getElementById(sectionId);
+    if (!el || el.innerHTML === html) {
+        return;
+    }
+    el.innerHTML = html;
+    loadTranslations().then(translations => {
+        const languageSelect = document.getElementById('languageSelect');
+        const lang = languageSelect ? languageSelect.value : 'en';
+        translateElements(translations, lang);
+    });
+}
+
+function updateTbody(tbodyId, html) {
+    const el = document.getElementById(tbodyId);
+    if (!el || el.innerHTML === html) {
+        return;
+    }
+    el.innerHTML = html;
+}
+
+function handleMainSection(opcode, message) {
+    if (opcode === '2') {
+        updateSection('main-stats', message);
+    } else if (opcode === '3') {
+        updateSection('main-activity', message);
+    } else if (opcode === '4') {
+        updateTbody('main-lastheard-rows', message);
+    } else if (opcode === '5') {
+        updateSection('main-connected', message);
+    }
+}
+
 function updateDashboardPane(container, message) {
     if (!container) {
         return;
@@ -225,6 +258,8 @@ window.onload = function () {
                 Cmsg(message);
             } else if (opcode == "i") {
                 Imsg(message);
+            } else if (opcode == "2" || opcode == "3" || opcode == "4" || opcode == "5") {
+                handleMainSection(opcode, message);
             } else if (opcode == "o") {
                 Omsg(message);
             } else if (opcode == "s") {

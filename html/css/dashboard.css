@@ -52,18 +52,14 @@
     flex-wrap: nowrap;
     gap: 0.4rem;
     justify-content: flex-start;
-}
-
-.peer-flag {
-    flex-shrink: 0;
-    height: 16px;
-    width: auto;
+    min-width: 11rem;
 }
 
 .peer-callsign {
     color: inherit;
-    flex-shrink: 0;
+    flex: 1 1 auto;
     font-weight: 700;
+    min-width: 0;
     white-space: nowrap;
 }
 
@@ -81,8 +77,9 @@
 }
 
 .peer-id-badge {
-    flex-shrink: 0;
+    flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
+    margin-left: auto;
 }
 
 .peer-loc-cell {
@@ -101,4 +98,85 @@
 
 .dashboard-table tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.015);
+}
+
+.peer-flag {
+    flex-shrink: 0;
+    height: 16px;
+    width: auto;
+}
+
+/* Last heard — stable rows and aligned ID badges */
+.lh-table .lh-row {
+    min-height: 2rem;
+}
+
+.lh-table .lh-date-cell {
+    white-space: nowrap;
+    width: 6.5rem;
+}
+
+.lh-table .lh-time-cell {
+    white-space: nowrap;
+    width: 4.5rem;
+}
+
+.lh-table .lh-callsign-cell {
+    min-width: 11rem;
+    width: 11rem;
+}
+
+.lh-table .lh-tgnum-cell {
+    white-space: nowrap;
+    width: 4.5rem;
+}
+
+.lh-table .lh-tx-cell {
+    text-align: center;
+    white-space: nowrap;
+    width: 3rem;
+}
+
+.lh-id-row,
+.lh-tg-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+}
+
+.lh-callsign {
+    color: inherit;
+    flex: 1 1 auto;
+    font-weight: 700;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.lh-callsign:hover {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.lh-id-badge {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+.lh-tg-name {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dashboard-flag {
+    display: inline-block;
+    flex-shrink: 0;
+    height: 13px;
+    vertical-align: middle;
+    width: 18px;
+}
+
+.dashboard-flag-protocol {
+    flex-shrink: 0;
 }

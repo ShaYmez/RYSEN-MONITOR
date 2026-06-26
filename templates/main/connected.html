@@ -1,0 +1,105 @@
+{% if _table['MASTERS']|length >0 %}
+<div class="row justify-content-center">
+  <div class="col-md-4 col-12" id="rptrs-statbtn">
+    <div class="card dashboard-card">
+      <div class="card-header">
+        <h3 class="card-title" id="crd_rptrs"></h3>
+      </div>
+      <div class="card-body">
+        <div class="peer-pill-grid">
+          {% for _master in _table['MASTERS'] %}
+          {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
+          {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+          {% if _cdata.get('PROTOCOL') == 'IPSC' or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
+          {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
+          {% set _rptr_badge = 'badge-ipsc' if _cdata.get('PROTOCOL') == 'IPSC' else 'badge-success' %}
+          <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}"
+            class="badge badge-pill {{ _rptr_badge }}" style="min-width: 3.5rem;" data-toggle="tooltip" data-placement="top"
+            title="
+ID DMR: {{ _peer_id }}
+{% if _cdata.get('PROTOCOL') == 'IPSC' %}Mode: IPSC Repeater ({{ _cdata['SLOTS'] }})
+Description: {{ _cdata['DESCRIPTION'] }}
+{% elif _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
+TX: {{_cdata['TX_FREQ'] }}
+RX: {{_cdata['RX_FREQ'] }}
+TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
+TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}{% endif %}
+Hardware: {{_cdata['PACKAGE_ID'] }}
+Software: {{_cdata['SOFTWARE_ID'] }}
+Info: {{_cdata['LOCATION']}}
+Master: {{_master }}
+Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 col-12">
+    <div class="card dashboard-card">
+      <div class="card-header">
+        <h3 class="card-title" id="crd_htspts"></h3>
+      </div>
+      <div class="card-body">
+        <div class="peer-pill-grid">
+          {% for _master in _table['MASTERS'] %}
+          {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
+          {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+          {% if _client|string|length >= 7 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
+          <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}" class="badge badge-pill badge-success"
+            style="min-width: 3.5rem;" data-toggle="tooltip" data-placement="top" data-html="true" title="
+ID DMR: {{ _client }}
+{% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
+TX: {{_cdata['TX_FREQ'] }}
+RX: {{_cdata['RX_FREQ'] }}
+TS1: {{ _cdata['TS1_STATIC']|join(', ') }}
+TS2: {{ _cdata['TS2_STATIC']|join(', ') }}{% endif %}
+Hardware: {{_cdata['PACKAGE_ID'] }}
+Software: {{_cdata['SOFTWARE_ID'] }}
+Info: {{_cdata['LOCATION']}}
+Master: {{_master }}
+Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 col-12">
+    <div class="card dashboard-card">
+      <div class="card-header">
+        <h3 class="card-title" id="crd_brdg"></h3>
+      </div>
+      <div class="card-body">
+        <div class="peer-pill-grid">
+          {% for _master in _table['MASTERS'] %}
+          {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
+          {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+          {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
+          <a href="#" class="badge badge-pill badge-success" style="min-width: 3.5rem;" data-toggle="tooltip"
+            data-placement="top" data-html="true" title="
+ID DMR: {{ _client }}
+{% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
+TX: {{_cdata['TX_FREQ'] }}
+RX: {{_cdata['RX_FREQ'] }}
+TS1: {{ _cdata['TS1_STATIC']|join(', ') }}
+TS2: {{ _cdata['TS2_STATIC']|join(', ') }}{% endif %}
+Hardware: {{_cdata['PACKAGE_ID'] }}
+Software: {{_cdata['SOFTWARE_ID'] }}
+Info: {{_cdata['LOCATION']}}
+Master: {{_master }}
+Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

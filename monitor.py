@@ -91,6 +91,8 @@ LASTHEARD_LOG_ROWS = 70
 # Last-heard DB refresh interval (seconds) — safety timer, not on live keys
 LASTHEARD_REFRESH = 45
 _lastheard_cache = []
+_section_html_cache = {}
+MTPL = {}
 CTABLE = {
     "MASTERS": {},
     "PEERS": {},
@@ -918,32 +920,39 @@ build_deferred = None
 
 
 def push_main_live(client=None):
-    """Push main dashboard activity/stats using cached last-heard rows (no DB query)."""
+    """Push stats + activity only — last-heard tbody is never touched on live keys."""
     if not CONFIG:
         return
     if not client and not GROUPS["main"]:
         return
-    lastheard = _lastheard_cache if CONF["GLOBAL"]["LH_INC"] else []
-    main = "i" + itemplate.render(_table=CTABLE, lastheard=lastheard)
+    ctx = {"_table": CTABLE}
+    _send_main_section("2", MTPL["stats"].render(**ctx), client, "main-stats")
+    _send_main_section("3", MTPL["activity"].render(**ctx), client, "main-activity")
+
+
+def _send_main_section(opcode, html, client=None, cache_key=None):
+    if cache_key is not None and _section_html_cache.get(cache_key) == html:
+        return
+    if cache_key is not None:
+        _section_html_cache[cache_key] = html
     if client:
-        client.sendMessage(main.encode("utf-8"))
-    else:
-        dashboard_server.broadcast(main, "main")
+        client.sendMessage((opcode + html).encode("utf-8"))
+    elif GROUPS["main"]:
+        dashboard_server.broadcast(opcode + html, "main")
 
 
-def _broadcast_main_lastheard(result, client=None):
+def push_lastheard_rows(result, client=None):
     global _lastheard_cache
     _lastheard_cache = result
-    main = "i" + itemplate.render(_table=CTABLE, lastheard=result)
-    if client:
-        client.sendMessage(main.encode("utf-8"))
-    else:
-        dashboard_server.broadcast(main, "main")
+    if not CONF["GLOBAL"]["LH_INC"]:
+        return
+    html = MTPL["lastheard_rows"].render(_table=CTABLE, lastheard=result)
+    _send_main_section("4", html, client, "main-lastheard")
 
 
 @inlineCallbacks
 def refresh_lastheard(client=None):
-    """Query last_heard from DB and push full main dashboard."""
+    """Query last_heard from DB and patch tbody only."""
     if not CONF["GLOBAL"]["LH_INC"]:
         return
     if not client and not GROUPS["main"]:
@@ -951,7 +960,21 @@ def refresh_lastheard(client=None):
     result = yield db_conn.slct_2render("last_heard", CONF["GLOBAL"]["LH_ROWS"])
     if result is None:
         return
-    _broadcast_main_lastheard(result, client)
+    push_lastheard_rows(result, client)
+
+
+@inlineCallbacks
+def render_main_dashboard(client=None):
+    """Initial connect: shell layout then section fills."""
+    shell = MTPL["shell"].render(_table=CTABLE)
+    if client:
+        client.sendMessage(("i" + shell).encode("utf-8"))
+    elif GROUPS["main"]:
+        dashboard_server.broadcast("i" + shell, "main")
+    push_main_live(client)
+    connected = MTPL["connected"].render(_table=CTABLE)
+    _send_main_section("5", connected, client, "main-connected")
+    yield refresh_lastheard(client)
 
 
 @inlineCallbacks
@@ -1004,7 +1027,7 @@ def render_fromdb(_tbl, _row_num, _snd=False):
         if result:
             if not _snd:
                 if _tbl == "last_heard":
-                    _broadcast_main_lastheard(result)
+                    push_lastheard_rows(result)
 
                 elif _tbl == "lstheard_log":
                     lsth_log = "h" + htemplate.render(_table=result)
@@ -1016,7 +1039,7 @@ def render_fromdb(_tbl, _row_num, _snd=False):
 
             else:
                 if _tbl == "last_heard":
-                    _broadcast_main_lastheard(result, _snd)
+                    push_lastheard_rows(result, _snd)
 
                 elif _tbl == "lstheard_log":
                     _snd.sendMessage(("h" + htemplate.render(_table=result)).encode("utf-8"))
@@ -1470,7 +1493,7 @@ class dashboard(WebSocketServerProtocol):
                             ("o" + otemplate.render(
                                 _table=CTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])).encode("utf-8"))
                     elif group == "main":
-                        ensureDeferred(refresh_lastheard(self))
+                        ensureDeferred(render_main_dashboard(self))
                     elif group == "statictg":
                         self.sendMessage(
                             ("s" + stemplate.render(
@@ -1628,6 +1651,13 @@ if __name__ == "__main__":
     htemplate = env.get_template("lasthrd_log.html")
     ttemplate = env.get_template("tgcount_table.html")
     butemplate = env.get_template("bulletin_board.html")
+    MTPL.update({
+        "shell": env.get_template("main/shell.html"),
+        "stats": env.get_template("main/stats.html"),
+        "activity": env.get_template("main/activity.html"),
+        "lastheard_rows": env.get_template("main/lastheard_rows.html"),
+        "connected": env.get_template("main/connected.html"),
+    })
 
     # Start update loop
     update_stats = task.LoopingCall(build_stats)
