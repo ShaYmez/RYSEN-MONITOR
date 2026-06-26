@@ -46,7 +46,7 @@ from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import NetstringReceiver
 from twisted.internet import reactor, task
 from twisted.internet.threads import deferToThread
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import ensureDeferred, inlineCallbacks
 from twisted.web.resource import Resource
 from twisted.web.server import Site
 # Autobahn provides websocket service under Twisted
@@ -88,6 +88,9 @@ CONF = mk_config("fdmr-mon.cfg")
 CONFIG = {}
 # Number of rows showed on the lastheard log page
 LASTHEARD_LOG_ROWS = 70
+# Last-heard DB refresh interval (seconds) — safety timer, not on live keys
+LASTHEARD_REFRESH = 45
+_lastheard_cache = []
 CTABLE = {
     "MASTERS": {},
     "PEERS": {},
@@ -912,6 +915,51 @@ def build_bridge_table(_bridges):
 #
 build_time = 0
 build_deferred = None
+
+
+def push_main_live(client=None):
+    """Push main dashboard activity/stats using cached last-heard rows (no DB query)."""
+    if not CONFIG:
+        return
+    if not client and not GROUPS["main"]:
+        return
+    lastheard = _lastheard_cache if CONF["GLOBAL"]["LH_INC"] else []
+    main = "i" + itemplate.render(_table=CTABLE, lastheard=lastheard)
+    if client:
+        client.sendMessage(main.encode("utf-8"))
+    else:
+        dashboard_server.broadcast(main, "main")
+
+
+def _broadcast_main_lastheard(result, client=None):
+    global _lastheard_cache
+    _lastheard_cache = result
+    main = "i" + itemplate.render(_table=CTABLE, lastheard=result)
+    if client:
+        client.sendMessage(main.encode("utf-8"))
+    else:
+        dashboard_server.broadcast(main, "main")
+
+
+@inlineCallbacks
+def refresh_lastheard(client=None):
+    """Query last_heard from DB and push full main dashboard."""
+    if not CONF["GLOBAL"]["LH_INC"]:
+        return
+    if not client and not GROUPS["main"]:
+        return
+    result = yield db_conn.slct_2render("last_heard", CONF["GLOBAL"]["LH_ROWS"])
+    if result is None:
+        return
+    _broadcast_main_lastheard(result, client)
+
+
+@inlineCallbacks
+def record_lastheard(qso_time, qso_type, system, tg_num, dmr_id):
+    yield db_conn.ins_lstheard(qso_time, qso_type, system, tg_num, dmr_id)
+    yield refresh_lastheard()
+
+
 def build_stats():
     global build_time, build_deferred
     if time() - build_time < 1:
@@ -925,8 +973,6 @@ def build_stats():
             build_deferred.cancel()
 
     if CONFIG:
-        if GROUPS["main"]:
-            render_fromdb("last_heard", CONF["GLOBAL"]["LH_ROWS"])
         if GROUPS["lnksys"]:
             lnksys = "c" + ctemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
             dashboard_server.broadcast(lnksys, "lnksys")
@@ -958,8 +1004,7 @@ def render_fromdb(_tbl, _row_num, _snd=False):
         if result:
             if not _snd:
                 if _tbl == "last_heard":
-                    main = "i" + itemplate.render(_table=CTABLE, lastheard=result)
-                    dashboard_server.broadcast(main, "main")
+                    _broadcast_main_lastheard(result)
 
                 elif _tbl == "lstheard_log":
                     lsth_log = "h" + htemplate.render(_table=result)
@@ -971,8 +1016,7 @@ def render_fromdb(_tbl, _row_num, _snd=False):
 
             else:
                 if _tbl == "last_heard":
-                    _snd.sendMessage(
-                        ("i" + itemplate.render(_table=CTABLE, lastheard=result)).encode("utf-8"))
+                    _broadcast_main_lastheard(result, _snd)
 
                 elif _tbl == "lstheard_log":
                     _snd.sendMessage(("h" + htemplate.render(_table=result)).encode("utf-8"))
@@ -1207,7 +1251,7 @@ def rts_update(p):
             CTABLE["PEERS"][system][timeSlot]["TG"] = ""
             CTABLE["PEERS"][system][timeSlot]["TRX"] = ""
 
-    build_stats()
+    push_main_live()
 
 
 ######################################################################
@@ -1270,8 +1314,7 @@ def process_message(_bmessage):
                     db_conn.ins_lstheard_log(p[9], p[0], p[3], p[8], p[6])
                     # use >= 0 instead of > 2 if you want to record all activities
                     if int(float(p[9])) > 2:
-                        # Insert voice qso into lstheard DB table
-                        db_conn.ins_lstheard(p[9], p[0], p[3], p[8], p[6])
+                        ensureDeferred(record_lastheard(p[9], p[0], p[3], p[8], p[6]))
 
                 # Removing obsolete entries from the sys_dict (3 sec)
                 if not sys_dict["lst_clean"] or time() - sys_dict["lst_clean"] >= 3:
@@ -1311,8 +1354,7 @@ def process_message(_bmessage):
 
         elif p[0] == "UNIT DATA HEADER" and p[2] != "TX" and p[5] not in CONF["OPB_FLTR"]["OPB_FILTER"]:
             logger.info(f"BRIDGE EVENT: {_message[1:]}")
-            # Insert data qso into lstheard DB table
-            db_conn.ins_lstheard(None, p[0], p[3], p[8], p[6])
+            ensureDeferred(record_lastheard(None, p[0], p[3], p[8], p[6]))
             # Insert data qso into lstheard_log DB table
             db_conn.ins_lstheard_log(None, p[0], p[3], p[8], p[6])
 
@@ -1428,7 +1470,7 @@ class dashboard(WebSocketServerProtocol):
                             ("o" + otemplate.render(
                                 _table=CTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])).encode("utf-8"))
                     elif group == "main":
-                        render_fromdb("last_heard", CONF["GLOBAL"]["LH_ROWS"], self)
+                        ensureDeferred(refresh_lastheard(self))
                     elif group == "statictg":
                         self.sendMessage(
                             ("s" + stemplate.render(
@@ -1590,6 +1632,10 @@ if __name__ == "__main__":
     # Start update loop
     update_stats = task.LoopingCall(build_stats)
     update_stats.start((CONF["WS"]["FREQ"])).addErrback(error_hdl)
+
+    if CONF["GLOBAL"]["LH_INC"]:
+        lastheard_refresh = task.LoopingCall(refresh_lastheard)
+        lastheard_refresh.start(LASTHEARD_REFRESH).addErrback(error_hdl)
 
     # Start the timeout loop
     if CONF["WS"]["CLT_TO"]:
