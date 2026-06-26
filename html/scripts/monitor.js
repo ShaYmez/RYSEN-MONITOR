@@ -3,6 +3,39 @@ var ellog = null;
 const conf_groups = [];
 var bulletin_tbl = null;
 
+function formatDashboardLabel(text) {
+    if (typeof text !== 'string') {
+        return text;
+    }
+    return text.trim()
+        .replace(/^\.\:\s*/, '')
+        .replace(/\s*:\.\s*$/, '')
+        .trim();
+}
+
+function applyTranslation(element, translation) {
+    if (!element || translation == null) {
+        return;
+    }
+    const label = formatDashboardLabel(translation);
+    if (element.getAttribute('data-bs-toggle') === 'tooltip') {
+        element.setAttribute('data-bs-title', label);
+    } else if (element.tagName === 'INPUT') {
+        element.setAttribute('placeholder', label);
+    } else {
+        element.textContent = label;
+    }
+}
+
+function translateElements(translations, selectedLanguage) {
+    Object.keys(translations).forEach(key => {
+        const element = document.getElementById(key);
+        if (element && translations[key][selectedLanguage] != null) {
+            applyTranslation(element, translations[key][selectedLanguage]);
+        }
+    });
+}
+
 window.onload = function () {
     var wsuri;
     conf_id();
@@ -133,14 +166,7 @@ function Bmsg(_msg) {
 
             // Function to translate the page based on the selected language
             function translatePage() {
-                const selectedLanguage = languageSelect.value;
-                Object.keys(translations).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        const translation = translations[key][selectedLanguage];
-                        element.textContent = translation;
-                    }
-                });
+                translateElements(translations, languageSelect.value);
             }
 
             // Update the content after translations are loaded
@@ -163,14 +189,7 @@ function Cmsg(_msg) {
 
             // Function to translate the page based on the selected language
             function translatePage() {
-                const selectedLanguage = languageSelect.value;
-                Object.keys(translations).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        const translation = translations[key][selectedLanguage];
-                        element.textContent = translation;
-                    }
-                });
+                translateElements(translations, languageSelect.value);
             }
 
             // Update the content after translations are loaded
@@ -192,14 +211,7 @@ function Imsg(_msg) {
 
             // Function to translate the page based on the selected language
             function translatePage() {
-                const selectedLanguage = languageSelect.value;
-                Object.keys(translations).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        const translation = translations[key][selectedLanguage];
-                        element.textContent = translation;
-                    }
-                });
+                translateElements(translations, languageSelect.value);
             }
 
             // Update the content after translations are loaded
@@ -222,14 +234,7 @@ function Omsg(_msg) {
 
             // Function to translate the page based on the selected language
             function translatePage() {
-                const selectedLanguage = languageSelect.value;
-                Object.keys(translations).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        const translation = translations[key][selectedLanguage];
-                        element.textContent = translation;
-                    }
-                });
+                translateElements(translations, languageSelect.value);
             }
 
             // Update the content after translations are loaded
@@ -252,14 +257,7 @@ function Smsg(_msg) {
 
             // Function to translate the page based on the selected language
             function translatePage() {
-                const selectedLanguage = languageSelect.value;
-                Object.keys(translations).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        const translation = translations[key][selectedLanguage];
-                        element.textContent = translation;
-                    }
-                });
+                translateElements(translations, languageSelect.value);
             }
 
             // Update the content after translations are loaded
@@ -282,14 +280,7 @@ function Hmsg(_msg) {
 
             // Function to translate the page based on the selected language
             function translatePage() {
-                const selectedLanguage = languageSelect.value;
-                Object.keys(translations).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        const translation = translations[key][selectedLanguage];
-                        element.textContent = translation;
-                    }
-                });
+                translateElements(translations, languageSelect.value);
             }
 
             // Update the content after translations are loaded
@@ -310,14 +301,7 @@ function Umsg(_msg) {
             const languageSelect = document.getElementById('languageSelect');
 
             function translatePage() {
-                const selectedLanguage = languageSelect.value;
-                Object.keys(translations).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        const translation = translations[key][selectedLanguage];
-                        element.textContent = translation;
-                    }
-                });
+                translateElements(translations, languageSelect.value);
             }
 
             bulletin_tbl.innerHTML = _msg;
@@ -335,14 +319,7 @@ function Tmsg(_msg) {
 
             // Function to translate the page based on the selected language
             function translatePage() {
-                const selectedLanguage = languageSelect.value;
-                Object.keys(translations).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        const translation = translations[key][selectedLanguage];
-                        element.textContent = translation;
-                    }
-                });
+                translateElements(translations, languageSelect.value);
             }
 
             // Update the content after translations are loaded
@@ -364,22 +341,7 @@ fetch('translations.json')
 
     // Function to translate the page based on the selected language
     function translatePage() {
-        const selectedLanguage = languageSelect.value;
-        Object.keys(translations).forEach(key => {
-          const element = document.getElementById(key);
-          if (element) {
-            const translation = translations[key][selectedLanguage];
-            if (element.getAttribute('data-bs-toggle') === 'tooltip') {
-              element.setAttribute('data-bs-title', translation);
-            } else if (element.tagName === 'INPUT') {
-              element.setAttribute('placeholder', translation);
-            } else {
-              element.textContent = translation;
-            }
-          }
-        });
-  
-        // Re-initialize Bootstrap tooltips after translation
+        translateElements(translations, languageSelect.value);
         $('[data-bs-toggle="tooltip"]').tooltip();
     }
 
