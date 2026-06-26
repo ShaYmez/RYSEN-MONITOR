@@ -522,6 +522,39 @@ def cleanTE():
                 del CTABLE["OPENBRIDGES"][system]["STREAMS"][streamId]
 
 
+ROUTING_MASTER_MODES = ("MASTER", "IPSC")
+
+
+def is_routing_master(mode):
+    return mode in ROUTING_MASTER_MODES
+
+
+def _ipsc_radio_id(peer_conf, peer):
+    if "RADIO_ID" not in peer_conf:
+        return str(int_id(peer))
+    rid = peer_conf["RADIO_ID"]
+    if isinstance(rid, bytes):
+        text = rid.decode("utf-8", errors="replace").rstrip("\x00").strip()
+        return text or str(int_id(peer))
+    text = str(rid).strip()
+    return text or str(int_id(peer))
+
+
+def _ipsc_callsign(peer_conf, peer, radio_id):
+    callsign = peer_conf.get("CALLSIGN", "")
+    if isinstance(callsign, bytes):
+        callsign = callsign.decode("utf-8", errors="replace").rstrip("\x00").strip()
+    else:
+        callsign = str(callsign).strip()
+    peer_key = str(int_id(peer))
+    if callsign and callsign not in (radio_id, peer_key):
+        return callsign
+    alias = alias_call(int(radio_id), peer_ids)
+    if str(alias) not in (str(radio_id), peer_key):
+        return str(alias)
+    return callsign or radio_id
+
+
 def add_hb_peer(_peer_conf, _ctable_loc, _peer):
     _ctable_loc[int_id(_peer)] = {}
     _ctable_peer = _ctable_loc[int_id(_peer)]
@@ -595,25 +628,27 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
     else:
         _ctable_peer["COLORCODE"] = _peer_conf["COLORCODE"]
 
-    if str(type(_peer_conf["TX_POWER"])).find("bytes") != -1:
-        _ctable_peer["TX_POWER"] = _peer_conf["TX_POWER"].decode("utf-8").strip()
-    else:
-        _ctable_peer["TX_POWER"] = _peer_conf["TX_POWER"]
+    for field in ("TX_POWER", "LATITUDE", "LONGITUDE", "HEIGHT"):
+        value = _peer_conf.get(field, "")
+        if str(type(value)).find("bytes") != -1:
+            _ctable_peer[field] = value.decode("utf-8").strip()
+        else:
+            _ctable_peer[field] = value
 
-    if str(type(_peer_conf["LATITUDE"])).find("bytes") != -1:
-        _ctable_peer["LATITUDE"] = _peer_conf["LATITUDE"].decode("utf-8").strip()
-    else:
-        _ctable_peer["LATITUDE"] = _peer_conf["LATITUDE"]
-
-    if str(type(_peer_conf["LONGITUDE"])).find("bytes") != -1:
-        _ctable_peer["LONGITUDE"] = _peer_conf["LONGITUDE"].decode("utf-8").strip()
-    else:
-        _ctable_peer["LONGITUDE"] = _peer_conf["LONGITUDE"]
-
-    if str(type(_peer_conf["HEIGHT"])).find("bytes") != -1:
-        _ctable_peer["HEIGHT"] = _peer_conf["HEIGHT"].decode("utf-8").strip()
-    else:
-        _ctable_peer["HEIGHT"] = _peer_conf["HEIGHT"]
+    if _peer_conf.get("PROTOCOL") == "IPSC":
+        _ctable_peer["PROTOCOL"] = "IPSC"
+        _ctable_peer["RADIO_ID"] = _ipsc_radio_id(_peer_conf, _peer)
+        _ctable_peer["CALLSIGN"] = _ipsc_callsign(
+            _peer_conf, _peer, _ctable_peer["RADIO_ID"])
+        for field in ("SOFTWARE_ID", "PACKAGE_ID", "LOCATION", "DESCRIPTION"):
+            if isinstance(_ctable_peer[field], str):
+                _ctable_peer[field] = _ctable_peer[field].rstrip("\x00").strip()
+        for field in ("SOFTWARE_ID", "PACKAGE_ID", "LOCATION"):
+            if not _ctable_peer[field]:
+                _ctable_peer[field] = "—"
+        logger.info(
+            f"IPSC peer registered: {_ctable_peer['CALLSIGN']} "
+            f"(Id: {_ctable_peer['RADIO_ID']})")
 
     _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]
     _ctable_peer["CONNECTED"] = time_str(_peer_conf["CONNECTED"], "since")
@@ -639,7 +674,7 @@ def build_hblink_table(_config, _stats_table):
     for _hbp, _hbp_data in list(_config.items()):
         if _hbp_data["ENABLED"] == True:
             # Process Master Systems
-            if _hbp_data["MODE"] == "MASTER":
+            if is_routing_master(_hbp_data["MODE"]):
                 _stats_table["MASTERS"][_hbp] = {}
                 if _hbp_data["REPEAT"]:
                     _stats_table["MASTERS"][_hbp]["REPEAT"] = "repeat"
@@ -728,26 +763,41 @@ def build_hblink_table(_config, _stats_table):
                 _stats_table["OPENBRIDGES"][_hbp]["STREAMS"] = {}
 
 
+def _routing_master_entry(_hbp_data):
+    return {
+        "REPEAT": "repeat" if _hbp_data["REPEAT"] else "isolate",
+        "PEERS": {},
+    }
+
+
 def update_hblink_table(_config, _stats_table):
-    # Is there a system in HBlink's config monitor doesn't know about?
-    for _hbp in _config:
-        if _config[_hbp]["MODE"] == "MASTER":
-            for _peer in _config[_hbp]["PEERS"]:
-                if int_id(_peer) not in _stats_table["MASTERS"][_hbp]["PEERS"] and _config[_hbp]["PEERS"][_peer]["CONNECTION"] == "YES":
-                    logger.info(f"Adding peer to CTABLE that has registerred: {int_id(_peer)}")
-                    add_hb_peer(_config[_hbp]["PEERS"][_peer], _stats_table["MASTERS"][_hbp]["PEERS"], _peer)
+    for _hbp, _hbp_data in _config.items():
+        if not _hbp_data.get("ENABLED"):
+            continue
+        if not is_routing_master(_hbp_data["MODE"]):
+            continue
+        if _hbp not in _stats_table["MASTERS"]:
+            _stats_table["MASTERS"][_hbp] = _routing_master_entry(_hbp_data)
+        for _peer in _hbp_data["PEERS"]:
+            if (int_id(_peer) not in _stats_table["MASTERS"][_hbp]["PEERS"]
+                    and _hbp_data["PEERS"][_peer]["CONNECTION"] == "YES"):
+                logger.info(f"Adding peer to CTABLE that has registerred: {int_id(_peer)}")
+                add_hb_peer(_hbp_data["PEERS"][_peer], _stats_table["MASTERS"][_hbp]["PEERS"], _peer)
 
     # Is there a system in monitor that's been removed from HBlink's config?
-    for _hbp in _stats_table["MASTERS"]:
+    for _hbp in list(_stats_table["MASTERS"]):
+        if _hbp not in _config or not is_routing_master(_config[_hbp]["MODE"]):
+            logger.info(f"Deleting stats master not in hblink config: {_hbp}")
+            del _stats_table["MASTERS"][_hbp]
+            continue
         remove_list = []
-        if _config[_hbp]["MODE"] == "MASTER":
-            for _peer in _stats_table["MASTERS"][_hbp]["PEERS"]:
-                if bytes_4(_peer) not in _config[_hbp]["PEERS"]:
-                    remove_list.append(_peer)
+        for _peer in _stats_table["MASTERS"][_hbp]["PEERS"]:
+            if bytes_4(_peer) not in _config[_hbp]["PEERS"]:
+                remove_list.append(_peer)
 
-            for _peer in remove_list:
-                logger.info(f"Deleting stats peer not in hblink config: {_peer}")
-                del (_stats_table["MASTERS"][_hbp]["PEERS"][_peer])
+        for _peer in remove_list:
+            logger.info(f"Deleting stats peer not in hblink config: {_peer}")
+            del _stats_table["MASTERS"][_hbp]["PEERS"][_peer]
     # Update connection time
     for _hbp in _stats_table["MASTERS"]:
         for _peer in _stats_table["MASTERS"][_hbp]["PEERS"]:
