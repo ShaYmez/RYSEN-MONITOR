@@ -6,6 +6,7 @@ var bulletin_tbl = null;
 let translationsCache = null;
 let translationsPromise = null;
 let languageListenerBound = false;
+let delegatedTooltipsReady = false;
 
 function formatDashboardLabel(text) {
     if (typeof text !== 'string') {
@@ -45,13 +46,30 @@ function translateElements(translations, selectedLanguage) {
     });
 }
 
-function initTooltips(root) {
+function cleanupTooltips() {
     if (typeof $ === 'undefined' || !$.fn.tooltip) {
         return;
     }
-    const scope = root || document;
-    $(scope).find('[data-toggle="tooltip"], [data-bs-toggle="tooltip"]').tooltip('dispose');
-    $(scope).find('[data-toggle="tooltip"], [data-bs-toggle="tooltip"]').tooltip();
+    try {
+        $('[data-toggle="tooltip"], [data-bs-toggle="tooltip"]').tooltip('hide');
+    } catch (err) {
+        // Ignore stale tooltip instances after DOM replacement.
+    }
+    $('.tooltip').remove();
+}
+
+function initDelegatedTooltips() {
+    if (delegatedTooltipsReady || typeof $ === 'undefined' || !$.fn.tooltip) {
+        return;
+    }
+    delegatedTooltipsReady = true;
+    $('body').tooltip({
+        selector: '[data-toggle="tooltip"]',
+        trigger: 'hover',
+        html: true,
+        container: 'body',
+        boundary: 'window'
+    });
 }
 
 function loadTranslations() {
@@ -80,7 +98,16 @@ function bindLanguageListener() {
             return;
         }
         translateElements(translationsCache, languageSelect.value);
-        initTooltips();
+    });
+}
+
+function markDashboardPanes() {
+    const paneIds = ['main', 'lnksys', 'statictg', 'bridge', 'opb', 'tgcount', 'lsthrd_log', 'bulletin'];
+    paneIds.forEach(function (id) {
+        const pane = document.getElementById(id);
+        if (pane) {
+            pane.classList.add('dashboard-pane');
+        }
     });
 }
 
@@ -91,16 +118,30 @@ function updateDashboardPane(container, message) {
     loadTranslations().then(translations => {
         const languageSelect = document.getElementById('languageSelect');
         const lang = languageSelect ? languageSelect.value : 'en';
+        const prevHeight = container.offsetHeight;
+
+        cleanupTooltips();
+        container.classList.add('dashboard-updating');
+        if (prevHeight > 0) {
+            container.style.minHeight = prevHeight + 'px';
+        }
+
         container.innerHTML = message;
         translateElements(translations, lang);
-        initTooltips(container);
         bindLanguageListener();
+
+        requestAnimationFrame(function () {
+            container.classList.remove('dashboard-updating');
+            container.style.minHeight = '';
+        });
     });
 }
 
 window.onload = function () {
     var wsuri;
     conf_id();
+    markDashboardPanes();
+    initDelegatedTooltips();
 
     ellog = document.getElementById('log');
 
@@ -117,7 +158,6 @@ window.onload = function () {
         const languageSelect = document.getElementById('languageSelect');
         if (languageSelect) {
             translateElements(translations, languageSelect.value);
-            initTooltips();
             bindLanguageListener();
         }
     });
@@ -151,6 +191,7 @@ window.onload = function () {
                 log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
             }
             sock = null;
+            cleanupTooltips();
             for (i = 0; i < conf_groups.length; i++) {
                 var group = conf_groups[i];
                 if (group == 'bridge') {
@@ -198,6 +239,7 @@ window.onload = function () {
                 }
             } else if (opcode == "q") {
                 log(message);
+                cleanupTooltips();
                 for (i = 0; i < conf_groups.length; i++) {
                     var group = conf_groups[i];
                     if (group == "bridge") {

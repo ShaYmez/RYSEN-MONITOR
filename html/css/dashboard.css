@@ -1,0 +1,104 @@
+/* Dashboard live-update stability and layout polish */
+
+#main,
+#lnksys,
+#statictg,
+#bridge,
+#opb,
+#tgcount,
+#lsthrd_log,
+#bulletin {
+    transition: opacity 0.12s ease;
+}
+
+.dashboard-pane.dashboard-updating {
+    opacity: 0.94;
+    pointer-events: none;
+}
+
+.dashboard-stat h3 {
+    font-variant-numeric: tabular-nums;
+    min-width: 1.5ch;
+}
+
+.dashboard-activity-card .card-body {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    min-height: 5.5rem;
+    padding: 0.75rem 1rem;
+}
+
+.dashboard-activity-card .activity-qso-badge {
+    flex: 0 0 auto;
+}
+
+.peer-pill-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+/* Linked Systems / Static TG — callsign + ID column */
+.peer-id-cell {
+    vertical-align: middle !important;
+}
+
+.peer-id-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    justify-content: flex-start;
+}
+
+.peer-flag {
+    flex-shrink: 0;
+    height: 16px;
+    width: auto;
+}
+
+.peer-callsign {
+    color: inherit;
+    flex-shrink: 0;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.peer-callsign:hover {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.peer-callsign-ipsc {
+    color: #ff6600;
+}
+
+.peer-callsign-ipsc:hover {
+    color: #e55a00;
+}
+
+.peer-id-badge {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.peer-loc-cell {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.dashboard-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.015);
+}

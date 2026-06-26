@@ -76,7 +76,7 @@
 <div class="row">
   <div class="col-lg-3 col-6">
     <a href="#active-qso-statbtn">
-      <div class="small-box bg-info">
+      <div class="small-box bg-info dashboard-stat">
         <div class="inner">
           <h3>{{ countcon.value }}</h3>
           <p id="smb_aq"></p>
@@ -90,7 +90,7 @@
 
   <div class="col-lg-3 col-6">
     <a href="#crd_rptrs">
-      <div class="small-box bg-success">
+      <div class="small-box bg-success dashboard-stat">
         <div class="inner">
           <h3>{{ countrepeaters.value }}</h3>
           <p id="smb_rptr"></p>
@@ -104,7 +104,7 @@
 
   <div class="col-lg-3 col-6">
     <a href="#crd_htspts">
-      <div class="small-box bg-warning">
+      <div class="small-box bg-warning dashboard-stat">
         <div class="inner">
           <h3>{{ counthotspots.value }}</h3>
           <p id="smb_htspts"></p>
@@ -118,7 +118,7 @@
 
   <div class="col-lg-3 col-6">
     <a href="?p=wwbridges">
-      <div class="small-box bg-danger">
+      <div class="small-box bg-danger dashboard-stat">
         <div class="inner">
           <h3>{{ countbridges.value }}</h3>
           <p id="smb_brdg"></p>
@@ -134,17 +134,17 @@
   <!-- Activity Table-->
   <div class="row">
     <div class="col-12" id="active-qso-statbtn">
-      <div class="card" style="height: 195px;"> <!-- 45px header + 75px per line -->
+      <div class="card dashboard-activity-card">
         <div class="card-header">
           <h3 class="card-title" id="act_tbl"></h3>
         </div>
         <div class="card-body">
-          <div class="row justify-content-center">
+          <div class="row justify-content-center w-100 m-0">
             {% for _master in _table['MASTERS'] %}
             {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
             {% if _cdata[1]['TS'] == True or _cdata[2]['TS'] == True %}
             {% if _cdata[1]['TRX'] == "RX" %}
-            <div class="col col-lg-auto col-md-auto col-sm-auto">
+            <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
               <span class="badge badge-danger text-sm">
                 <table>
                   <tbody>
@@ -161,7 +161,7 @@
             </div>
             {% endif %}
             {% if _cdata[2]['TRX'] == "RX" %}
-            <div class="col col-lg-auto col-md-auto col-sm-auto">
+            <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
               <span class="badge badge-danger text-sm">
                 <table>
                   <tbody>
@@ -183,7 +183,7 @@
             {% for _peer, _pdata in _table['PEERS'].items() %}
             {% if _pdata[1]['TS'] == True or _pdata[2]['TS'] == True %}
             {% if _pdata[1]['TRX'] == "RX" %}
-            <div class="col col-lg-auto col-md-auto col-sm-auto">
+            <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
               <span class="badge badge-danger text-sm">
                 <table>
                   <tbody>
@@ -200,7 +200,7 @@
             </div>
             {% endif %}
             {% if _pdata[2]['TRX'] == "RX" %}
-            <div class="col col-lg-auto col-md-auto col-sm-auto">
+            <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
               <span class="badge badge-danger text-sm">
                 <table>
                   <tbody>
@@ -229,7 +229,7 @@
             {% if rx.value == 1 %}
             {% for entry in _table['OPENBRIDGES'][_openbridge]['STREAMS'] if
             _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0] == 'RX' %}
-            <div class="col col-lg-auto col-md-auto col-sm-auto">
+            <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
               <span class="badge badge-success text-sm">
                 <table>
                   <tbody>
@@ -337,12 +337,12 @@
 {% if _table['MASTERS']|length >0 %}
 <div class="row justify-content-center">
   <div class="col-md-4 col-12" id="rptrs-statbtn">
-    <div class="card">
+    <div class="card dashboard-card">
       <div class="card-header">
         <h3 class="card-title" id="crd_rptrs"></h3>
       </div>
       <div class="card-body">
-        <div class="col">
+        <div class="peer-pill-grid">
           {% for _master in _table['MASTERS'] %}
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
@@ -374,12 +374,12 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
     </div>
   </div>
   <div class="col-md-4 col-12">
-    <div class="card">
+    <div class="card dashboard-card">
       <div class="card-header">
         <h3 class="card-title" id="crd_htspts"></h3>
       </div>
       <div class="card-body">
-        <div class="col">
+        <div class="peer-pill-grid">
           {% for _master in _table['MASTERS'] %}
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
@@ -406,12 +406,12 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
     </div>
   </div>
   <div class="col-md-4 col-12">
-    <div class="card">
+    <div class="card dashboard-card">
       <div class="card-header">
         <h3 class="card-title" id="crd_brdg"></h3>
       </div>
       <div class="card-body">
-        <div class="col">
+        <div class="peer-pill-grid">
           {% for _master in _table['MASTERS'] %}
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}

@@ -82,7 +82,7 @@
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table m-0 table-sm table-bordered">
+            <table class="table m-0 table-sm table-bordered dashboard-table">
               <thead>
                 <tr>
                   <th class="align-middle text-center" style="width: 180px;"><span id="trpt_callsign"></span> <span
@@ -102,12 +102,13 @@
                 {% if _cdata.get('PROTOCOL') == 'IPSC' or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
                   {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
                   <tr>
-                    <td>
+                    <td class="peer-id-cell">
                       {% set ctrynum = _peer_id|flag_code %}
-                      <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                      <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}"
-                        {% if _cdata.get('PROTOCOL') == 'IPSC' %}class="badge badge-pill badge-ipsc"{% endif %}
-                        data-toggle="tooltip" data-html="true" title="
+                      <div class="peer-id-row">
+                        <img class="peer-flag" src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
+                        <a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}"
+                          class="peer-callsign{% if _cdata.get('PROTOCOL') == 'IPSC' %} peer-callsign-ipsc{% endif %}"
+                          data-toggle="tooltip" data-html="true" title="
 {{_master}}
 {% if _cdata.get('PROTOCOL') == 'IPSC' %}Type: IPSC Repeater ({{ _cdata['SLOTS'] }})
 Mode: {{ _cdata['DESCRIPTION'] }}
@@ -121,9 +122,9 @@ Latitude: {{ _cdata['LATITUDE'] }}
 Longitude: {{ _cdata['LONGITUDE'] }}
 Height: {{ _cdata['HEIGHT'] }}
 {% endif %}Software: {{_cdata['SOFTWARE_ID'] }}
-Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
-                      </span>
-                      <span class="badge {% if _cdata.get('PROTOCOL') == 'IPSC' %}badge-ipsc{% else %}badge-info{% endif %}">{{ _peer_id }}</span>
+Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
+                        <span class="badge peer-id-badge {% if _cdata.get('PROTOCOL') == 'IPSC' %}badge-ipsc{% else %}badge-info{% endif %}">{{ _peer_id }}</span>
+                      </div>
                     </td>
                     <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                     <td class="table-active align-middle text-center">
@@ -156,7 +157,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                             ">{{ _cdata[1]['DEST']|safe }}</span>
                     </td>
                   <tr>
-                    <td class="p-0 align-middle text-center">{{_cdata['LOCATION']}}</td>
+                    <td class="peer-loc-cell align-middle text-center">{{_cdata['LOCATION']}}</td>
                     <td class="align-middle text-center">
                       <span class="badge badge-pill 
                             {% if _cdata[2]['TRX'] == 'RX' %}
@@ -211,7 +212,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table m-0 table-sm table-bordered">
+            <table class="table m-0 table-sm table-bordered dashboard-table">
               <thead>
                 <tr>
                   <th class="align-middle text-center" style="width: 180px;"><span id="thtsp_callsign"></span> <span
@@ -335,7 +336,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table m-0 table-sm table-bordered">
+            <table class="table m-0 table-sm table-bordered dashboard-table">
               <thead>
                 <tr>
                   <th class="align-middle text-center" style="width: 180px;"><span id="tbrdg_callsign"></span> <span
@@ -454,7 +455,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table m-0 table-sm table-bordered">
+            <table class="table m-0 table-sm table-bordered dashboard-table">
               <thead>
                 <tr>
                   <th class="align-middle text-center p-0" style="width: 140px;"><span id="tsrv_service"></span><br><span id="tsrv_mode"></span></th>
