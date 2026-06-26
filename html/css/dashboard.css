@@ -49,17 +49,18 @@
 .peer-id-row {
     align-items: center;
     display: flex;
-    flex-wrap: nowrap;
-    gap: 0.4rem;
+    flex-wrap: wrap;
+    gap: 0.35rem;
     justify-content: flex-start;
-    min-width: 11rem;
 }
 
 .peer-callsign {
     color: inherit;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     font-weight: 700;
-    min-width: 0;
+    max-width: 9ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -79,7 +80,6 @@
 .peer-id-badge {
     flex: 0 0 auto;
     font-variant-numeric: tabular-nums;
-    margin-left: auto;
 }
 
 .peer-loc-cell {
@@ -179,4 +179,24 @@
 
 .dashboard-flag-protocol {
     flex-shrink: 0;
+}
+
+/* Bootstrap tooltips / popovers — left-aligned, readable line spacing */
+.tooltip .tooltip-inner {
+    line-height: 1.6;
+    max-width: 280px;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    white-space: pre-line;
+}
+
+.popover .popover-header,
+.popover .popover-body {
+    line-height: 1.6;
+    text-align: left;
+    white-space: pre-line;
+}
+
+.popover .popover-body {
+    padding: 0.65rem 0.85rem;
 }
