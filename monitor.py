@@ -930,6 +930,44 @@ def push_main_live(client=None):
     _send_main_section("3", MTPL["activity"].render(**ctx), client, "main-activity")
 
 
+def _broadcast_table(opcode, html, group, client=None, cache_key=None):
+    if cache_key is not None and _section_html_cache.get(cache_key) == html:
+        return
+    if cache_key is not None:
+        _section_html_cache[cache_key] = html
+    if client:
+        client.sendMessage((opcode + html).encode("utf-8"))
+    elif GROUPS[group]:
+        dashboard_server.broadcast(opcode + html, group)
+
+
+def push_lnksys_live(client=None):
+    """Push full linked-systems table on live QSO events."""
+    if not CONFIG:
+        return
+    if not client and not GROUPS["lnksys"]:
+        return
+    html = ctemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
+    _broadcast_table("c", html, "lnksys", client, "lnksys-live")
+
+
+def push_statictg_live(client=None):
+    """Push static TG tables on live QSO events."""
+    if not CONFIG:
+        return
+    if not client and not GROUPS["statictg"]:
+        return
+    html = stemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
+    _broadcast_table("s", html, "statictg", client, "statictg-live")
+
+
+def push_live_dashboard(client=None):
+    """Immediate CTABLE-driven updates when a QSO starts or ends."""
+    push_main_live(client)
+    push_lnksys_live(client)
+    push_statictg_live(client)
+
+
 def _send_main_section(opcode, html, client=None, cache_key=None):
     if cache_key is not None and _section_html_cache.get(cache_key) == html:
         return
@@ -1274,7 +1312,7 @@ def rts_update(p):
             CTABLE["PEERS"][system][timeSlot]["TG"] = ""
             CTABLE["PEERS"][system][timeSlot]["TRX"] = ""
 
-    push_main_live()
+    push_live_dashboard()
 
 
 ######################################################################
