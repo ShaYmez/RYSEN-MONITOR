@@ -32,7 +32,11 @@ class SelfcareManager {
     attachEventListeners() {
         const inputs = document.querySelectorAll('input, select');
         inputs.forEach(input => {
-            input.addEventListener('input', () => this.updateGeneratedText());
+            if (input.type === 'number' && input.closest('#timeslotTable, #timeslotTable2')) {
+                this.bindTalkgroupInput(input);
+            } else {
+                input.addEventListener('input', () => this.updateGeneratedText());
+            }
         });
 
         const voiceSelect = document.getElementById('voiceSelect');
@@ -100,6 +104,7 @@ class SelfcareManager {
         input.className = 'form-control form-control-sm';
         input.min = '0';
         input.step = '1';
+        this.bindTalkgroupInput(input);
         timeslotCell.appendChild(input);
         
         // Create remove button without inline onclick
@@ -124,23 +129,42 @@ class SelfcareManager {
     }
 
     /**
-     * Check for duplicate talkgroup entries
+     * Check for duplicate talkgroup entries (run on blur, not while typing).
      */
     checkDupes() {
         const inputs = document.querySelectorAll('#timeslotTable input, #timeslotTable2 input');
         const values = [];
-        
+        let changed = false;
+
         inputs.forEach(input => {
-            if (input.value !== '') {
-                const value = parseInt(input.value);
-                if (values.includes(value)) {
-                    input.value = '';
-                    this.updateGeneratedText();
-                } else {
-                    values.push(value);
-                }
+            if (input.value === '') {
+                return;
+            }
+
+            const value = parseInt(input.value, 10);
+            if (isNaN(value)) {
+                return;
+            }
+
+            if (values.includes(value)) {
+                input.value = '';
+                changed = true;
+            } else {
+                values.push(value);
             }
         });
+
+        if (changed) {
+            this.updateGeneratedText();
+        }
+    }
+
+    /**
+     * Wire talkgroup number inputs for live options text and blur-time dupe check.
+     */
+    bindTalkgroupInput(input) {
+        input.addEventListener('input', () => this.updateGeneratedText());
+        input.addEventListener('blur', () => this.checkDupes());
     }
 
     /**
@@ -171,7 +195,6 @@ class SelfcareManager {
             if (genTextElement) {
                 genTextElement.value = genText;
             }
-            this.checkDupes();
             return;
         }
 
@@ -222,8 +245,6 @@ class SelfcareManager {
         if (genTextElement) {
             genTextElement.value = genText;
         }
-        
-        this.checkDupes();
     }
 
     /**

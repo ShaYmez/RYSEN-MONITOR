@@ -223,11 +223,10 @@ $csrfToken = generateCSRFToken();
                     <?php else: ?>
                     <form action="sslogin.php" method="post">
                       <div class="input-group mb-3 mt-4">
-                        <input type="text" class="form-control" name="callsign" placeholder="" id="sslog_call" required
-                          data-toggle="tooltip" data-placement="top" data-html="true"
-                          title="Enter your callsign. For IPSC (Motorola) repeaters, use your DMR radio ID instead.">
+                        <input type="text" class="form-control" name="callsign" placeholder="" id="sslog_call" required>
                         <div class="input-group-append">
-                          <div class="input-group-text">
+                          <div class="input-group-text" data-toggle="tooltip" data-placement="top"
+                            title="For IPSC (Motorola) repeaters, use your DMR radio ID instead of callsign.">
                             <i class="fas fa-broadcast-tower"></i>
                           </div>
                         </div>

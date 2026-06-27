@@ -47,12 +47,7 @@ $csrfToken = generateCSRFToken();
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>System X DMR Global | Selfcare Account | <?php echo escapeHtml($callsign); ?></title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
-    <link rel="stylesheet" href="plugins/adminlte/css/adminlte.min.css">
+    <?php include 'elements/header.php';?>
 </head>
 <body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm">
     <div class="wrapper">
@@ -140,6 +135,8 @@ $csrfToken = generateCSRFToken();
 
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="scripts/mode.js"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
 </body>
 </html>
