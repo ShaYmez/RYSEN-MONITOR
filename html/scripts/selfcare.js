@@ -5,6 +5,7 @@
 class SelfcareManager {
     constructor(config) {
         this.deviceMode = config.deviceMode;
+        this.isIpsc = config.isIpsc;
         this.deviceId = config.deviceId;
         this.isModified = config.isModified;
         this.checkInterval = null;
@@ -46,7 +47,8 @@ class SelfcareManager {
     toggleTimeslotTable() {
         const timeSlot1Col = document.getElementById('timeslot1col');
         if (timeSlot1Col) {
-            timeSlot1Col.style.display = this.deviceMode === 4 ? 'none' : 'block';
+            // Simplex hotspot: hide TS1. IPSC and duplex: show TS1.
+            timeSlot1Col.style.display = (this.deviceMode === 4 && !this.isIpsc) ? 'none' : 'block';
         }
         this.updateGeneratedText();
     }
@@ -154,11 +156,27 @@ class SelfcareManager {
         const stickySelect = document.getElementById('stickySelect');
         const timeoutInput = document.getElementById('timeoutInput');
 
-        if (!dialTGInput || !voiceSelect) return;
-
         const timeslots1 = this.getTimeslotValues(timeslotTable);
         const timeslots2 = this.getTimeslotValues(timeslotTable2);
-        
+
+        if (this.isIpsc) {
+            let genText = '';
+            if (timeslots1.length > 0) {
+                genText += 'TS1=' + timeslots1.join(',') + ';';
+            }
+            if (timeslots2.length > 0) {
+                genText += 'TS2=' + timeslots2.join(',') + ';';
+            }
+            const genTextElement = document.getElementById('genText');
+            if (genTextElement) {
+                genTextElement.value = genText;
+            }
+            this.checkDupes();
+            return;
+        }
+
+        if (!dialTGInput || !voiceSelect) return;
+
         const dialTGValue = dialTGInput.value;
         const voiceValue = voiceSelect.value;
         const languageValue = languageSelect ? languageSelect.value : 'en_GB';
@@ -167,35 +185,35 @@ class SelfcareManager {
         const timeoutValue = timeoutInput ? timeoutInput.value : '0';
 
         let genText = '';
-        
+
         if (timeslots1.length > 0 && this.deviceMode !== 4) {
             genText += 'TS1=' + timeslots1.join(',') + ';';
         }
-        
+
         if (timeslots2.length > 0 && parseInt(dialTGValue) <= 0) {
             genText += 'TS2=' + timeslots2.join(',') + ';';
         }
-        
+
         if (parseInt(dialTGValue) > 0) {
             genText += 'DIAL=' + dialTGValue + ';';
         }
-        
+
         if (voiceValue !== '-1') {
             genText += 'VOICE=' + voiceValue + ';';
         }
-        
+
         if (voiceValue === '1' && languageSelect) {
             genText += 'LANG=' + languageValue + ';';
         }
-        
+
         if (singleModeValue !== '-1') {
             genText += 'SINGLE=' + singleModeValue + ';';
         }
-        
+
         if (stickyValue !== '-1') {
             genText += 'STICKY=' + stickyValue + ';';
         }
-        
+
         if (parseInt(timeoutValue) > 0) {
             genText += 'TIMER=' + timeoutValue + ';';
         }
@@ -287,13 +305,15 @@ class SelfcareManager {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     const modeStatus = document.getElementById('mode-status');
+    const ipscDevice = document.getElementById('ipsc-device');
     const deviceId = document.getElementById('device-id');
     const deviceModified = document.getElementById('device-modified');
     
     if (modeStatus && deviceId) {
         window.selfcare = new SelfcareManager({
-            deviceMode: parseInt(modeStatus.value),
-            deviceId: parseInt(deviceId.value),
+            deviceMode: parseInt(modeStatus.value, 10),
+            isIpsc: ipscDevice ? ipscDevice.value === '1' : false,
+            deviceId: parseInt(deviceId.value, 10),
             isModified: deviceModified ? deviceModified.value === '1' : false
         });
     }

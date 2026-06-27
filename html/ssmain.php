@@ -46,7 +46,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['genText'])) {
         die("Security error: Invalid or missing CSRF token. Please refresh the page and try again.");
     }
     
-    $options = sanitizeOptions($_POST['genText']);
+    $devForSave = getDevDetails($selint_id);
+    if ($devForSave && isIpscDeviceMode($devForSave['mode'])) {
+        $options = sanitizeIpscOptions($_POST['genText']);
+    } else {
+        $options = sanitizeOptions($_POST['genText']);
+    }
     
     if (!empty($options)) {
         $result = updateDevOptions($selint_id, $options);
@@ -92,6 +97,17 @@ if (!is_array($ts1Values)) {
 }
 if (!is_array($ts2Values)) {
     $ts2Values = empty($ts2Values) ? [] : [$ts2Values];
+}
+
+$isIpscDevice = isIpscDeviceMode($devDetails['mode']);
+
+// Labels for multi-device picker
+$devicePicker = [];
+foreach ($int_ids as $int_id) {
+    $pickerDetails = ($int_id === $selint_id) ? $devDetails : getDevDetails($int_id);
+    if ($pickerDetails) {
+        $devicePicker[$int_id] = formatDevicePickerLabel($int_id, $pickerDetails);
+    }
 }
 
 // ============================================
@@ -163,7 +179,13 @@ $csrfToken = generateCSRFToken();
                                     <h3 class="card-title">
                                         <?php echo "<b>" . escapeHtml($callsign) . "</b>  "; ?>
                                         <?php if (count($int_ids) === 1): ?>
-                                        <?php echo '   (' . escapeHtml($selint_id) . ')'; ?>
+                                        <?php
+                                        if ($isIpscDevice) {
+                                            echo '   (' . escapeHtml($selint_id) . ' IPSC)';
+                                        } else {
+                                            echo '   (' . escapeHtml($selint_id) . ')';
+                                        }
+                                        ?>
                                         <?php endif; ?>
                                     </h3>
                                     <div class="card-tools">
@@ -188,6 +210,7 @@ $csrfToken = generateCSRFToken();
                                         
                                         <!-- Hidden Configuration Inputs -->
                                         <input type="hidden" id="mode-status" value="<?php echo escapeHtml($devDetails['mode']); ?>">
+                                        <input type="hidden" id="ipsc-device" value="<?php echo $isIpscDevice ? '1' : '0'; ?>">
                                         <input type="hidden" id="device-id" value="<?php echo escapeHtml($selint_id); ?>">
                                         <input type="hidden" id="device-modified" value="<?php echo escapeHtml($devDetails['modified']); ?>">
                                         
@@ -200,12 +223,18 @@ $csrfToken = generateCSRFToken();
                                                             <input type="hidden" name="csrf_token" value="<?php echo escapeHtml($csrfToken); ?>">
                                                             <select class="form-control form-control-sm" name="int_id" onchange="this.form.submit()">
                                                                 <?php foreach ($int_ids as $int_id): ?>
-                                                                <option value="<?= escapeHtml($int_id) ?>" <?= (isset($_SESSION['selected_int_id']) && $_SESSION['selected_int_id'] === $int_id) ? 'selected' : '' ?>><?= escapeHtml($int_id) ?></option>
+                                                                <option value="<?= escapeHtml($int_id) ?>" <?= (isset($_SESSION['selected_int_id']) && $_SESSION['selected_int_id'] === $int_id) ? 'selected' : '' ?>><?= escapeHtml($devicePicker[$int_id] ?? $int_id) ?></option>
                                                                 <?php endforeach; ?>
                                                             </select>
                                                         </form>
                                                     <?php endif; ?>
-                                                    <span class="mt-3"><?php if ($devDetails['mode']== 4) { echo "SIMPLEX" ; } else { echo "DUPLEX" ; } ?></span>
+                                                    <?php if ($isIpscDevice): ?>
+                                                    <span class="mt-3 badge badge-warning">IPSC</span>
+                                                    <?php elseif ($devDetails['mode']== 4): ?>
+                                                    <span class="mt-3">SIMPLEX</span>
+                                                    <?php else: ?>
+                                                    <span class="mt-3">DUPLEX</span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
@@ -254,6 +283,7 @@ $csrfToken = generateCSRFToken();
                                                 </div>
                                             </div>
                                         </div>
+                                        <?php if (!$isIpscDevice): ?>
                                         <div class="row justify-content-center">
                                             <div class="col-8">
                                                 <table class="table table-sm border align-middle mt-4">
@@ -335,6 +365,7 @@ $csrfToken = generateCSRFToken();
                                                 </table>
                                             </div>
                                         </div>
+                                        <?php endif; ?>
                                         <div class="row justify-content-center mb-3">
                                             <div class="col-6">
                                                 <div class="row justify-content-center">

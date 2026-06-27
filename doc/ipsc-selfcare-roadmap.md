@@ -108,17 +108,19 @@ Within one poll interval, RYSEN logs show static bridge updates for the correct 
 
 ## Phase 3 — RYSEN-MONITOR: IPSC selfcare UI
 
+**Status:** implemented on `ipsc` branch.
+
 **Goal:** Sysop edits TS1/TS2 for their repeater. MMDVM pages unchanged.
 
 | Step | Change |
 |------|--------|
-| 3.1 | Login: if username is all digits, authenticate by `int_id` + password for `mode = 0` rows only |
-| 3.2 | MMDVM: existing callsign login path unchanged |
-| 3.3 | Device picker: show radio ID + IPSC label for `mode = 0` |
-| 3.4 | Form: TS1 / TS2 only for IPSC (hide PASS, DIAL, STICKY, etc.) |
-| 3.5 | `updateDevOptions()` unchanged — same `TS1=…;TS2=…;` string |
+| 3.1 | Login: all-digit username → `int_id` + password for `mode = 0`; callsign path adds `mode > 0` only |
+| 3.2 | Device picker: `235287 — GB7NR (IPSC)` for `mode = 0` |
+| 3.3 | Form: TS1 / TS2 only for IPSC (Functions table hidden) |
+| 3.4 | `sanitizeIpscOptions()` server-side; `updateDevOptions()` unchanged |
+| 3.5 | `proxy/proxy_db.py` `slct_db`: `AND mode > 0` |
 
-**Acceptance:** Login with `235287` + password → change TS2 → traffic uses new static TG after Phase 2 poll.
+**Acceptance:** Login with `235287` + password → change TS2 → RYSEN logs `(SELF SERVICE) Applied options for IPSC 235287` within ~5s. MMDVM callsign login unchanged.
 
 ---
 

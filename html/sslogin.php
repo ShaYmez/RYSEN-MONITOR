@@ -35,9 +35,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // Input validation
         $isValid = true;
         
-        // Validate username format (alphanumeric, underscore, hyphen - simplified for hotspot users)
-        // Must start and end with alphanumeric, allows underscore/hyphen in middle
-        if (!preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9_-]{0,18}[a-zA-Z0-9])?$/', $username)) {
+        // Callsign (MMDVM) or radio ID (IPSC, all digits)
+        if (ctype_digit($username)) {
+            if (!preg_match('/^[1-9][0-9]{0,8}$/', $username)) {
+                error_log("Invalid radio ID format: " . substr($username, 0, 10));
+                $errorMsg = "<span>Invalid radio ID format.</span>";
+                $isValid = false;
+            }
+        } elseif (!preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9_-]{0,18}[a-zA-Z0-9])?$/', $username)) {
             error_log("Invalid username format: " . substr($username, 0, 10));
             $errorMsg = "<span>Invalid username format. Must start and end with letter or number (1-20 characters).</span>";
             $isValid = false;
@@ -62,7 +67,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $errorMsg = "<span>" . htmlspecialchars($authResult) . "</span>";
                     error_log("Authentication failed for $username: $authResult");
                 } else {
-                    $errorMsg = "<span>Invalid callsign or password. Please try again.</span>";
+                    if (ctype_digit($username)) {
+                        $errorMsg = "<span>Invalid radio ID or password. Please try again.</span>";
+                    } else {
+                        $errorMsg = "<span>Invalid callsign or password. Please try again.</span>";
+                    }
                     error_log("Authentication failed for $username");
                 }
             }
