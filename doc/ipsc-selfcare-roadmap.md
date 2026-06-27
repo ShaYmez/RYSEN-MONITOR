@@ -56,14 +56,43 @@ Until IPSC is deployed, that line is not required on a MMDVM-only system.
 
 **Password on re-register:** IPSC upsert must **not** clear `psswd` (today’s proxy `ins_conf` sets `psswd = NULL` on reconnect — that path must not run for IPSC rows).
 
-## Work split
+## Repo ownership (source of truth)
 
-| Repo | Scope |
-|------|--------|
-| **RYSEN** (`ipsc` → `master`) | Register IPSC peers in `Clients`; poll `modified` IPSC rows; apply `options_config()` |
-| **RYSEN-MONITOR** (`ipsc`) | Docs, password script, then IPSC login + TS1/TS2-only UI |
+Core Python for the stack lives in **RYSEN**. Deployment images are built from segmented repos.
 
----
+```
+RYSEN                          RYSEN-SP-SELFCARE              Docker Hub
+(master copy of scripts)  →    (proxy stack only)        →    shaymez/rysen-sp-selfcare:latest
+                               hotspot_proxy_v2.py              proxy container :62031
+
+RYSEN                          (in same image / compose)
+ipsc_proxy.py             →    systemx / ipsc-proxy       →    :56002 UDP forward only (no selfcare)
+
+RYSEN-MONITOR                  Host Apache
+PHP selfcare UI           →    /var/www/html/dashboard
+```
+
+| File / concern | Source of truth | Deployed via |
+|----------------|-----------------|--------------|
+| `proxy_db.py`, `hotspot_proxy_v2.py` | **RYSEN** | Merge → **RYSEN-SP-SELFCARE** → proxy image |
+| IPSC register + options poll | **RYSEN** `ipsc` | `systemx` container rebuild |
+| `ipsc_proxy.py` | **RYSEN** | `ipsc-proxy` container (no selfcare changes) |
+| Selfcare PHP/JS, password script | **RYSEN-MONITOR** | Host web root (git pull) |
+| `RYSEN-MONITOR/proxy/` | **Reference only** (FDMR-Monitor fork) | **Not** used for Docker builds |
+
+**Do not** treat `RYSEN-MONITOR/proxy/proxy_db.py` as the deployment source. Edit **RYSEN**, merge to **RYSEN-SP-SELFCARE**, rebuild the image.
+
+### Shared `Clients` table — two consumers
+
+Both MMDVM and IPSC selfcare set `modified = 1` on the same MariaDB table. Two processes react:
+
+| Consumer | Poll filter | Action |
+|----------|-------------|--------|
+| **RYSEN master** (`systemx`) | `modified = 1 AND mode = 0` | `options_config()` for IPSC static TGs |
+| **Hotspot proxy** (`rysen-sp-selfcare`) | `modified = 1 AND mode > 0` | Homebrew RPTO to hotspots on :62031 |
+
+`ipsc_proxy` does not read `Clients` and needs **no** selfcare changes.
+
 
 ## Phase 1 — RYSEN: register IPSC peers in `Clients`
 
@@ -118,9 +147,35 @@ Within one poll interval, RYSEN logs show static bridge updates for the correct 
 | 3.2 | Device picker: `235287 — GB7NR (IPSC)` for `mode = 0` |
 | 3.3 | Form: TS1 / TS2 only for IPSC (Functions table hidden) |
 | 3.4 | `sanitizeIpscOptions()` server-side; `updateDevOptions()` unchanged |
-| 3.5 | `proxy/proxy_db.py` `slct_db`: `AND mode > 0` |
 
 **Acceptance:** Login with `235287` + password → change TS2 → RYSEN logs `(SELF SERVICE) Applied options for IPSC 235287` within ~5s. MMDVM callsign login unchanged.
+
+---
+
+## Phase 3b — Hotspot proxy: exclude IPSC rows from RPTO poll
+
+**Status:** pending — edit **RYSEN**, merge to **RYSEN-SP-SELFCARE**, rebuild image.
+
+**Goal:** Hotspot proxy ignores `mode = 0` rows so it does not attempt RPTO for IPSC repeaters. IPSC selfcare is **not** implemented in `ipsc_proxy` or the hotspot proxy — only this exclusion is needed.
+
+| Step | Repo | Change |
+|------|------|--------|
+| 3b.1 | **RYSEN** `ipsc` (then `master`) | `proxy_db.py` → `slct_db` adds `AND mode > 0` |
+| 3b.2 | **RYSEN-SP-SELFCARE** | Merge/copy `proxy_db.py` from RYSEN |
+| 3b.3 | **RYSEN-SP-SELFCARE** | CI or manual build → `shaymez/rysen-sp-selfcare:latest` |
+| 3b.4 | VM | `docker compose pull proxy && docker compose up -d proxy` |
+
+```python
+# proxy_db.py — slct_db (RYSEN source of truth)
+def slct_db(self):
+    return self.dbpool.runQuery(
+        "SELECT dmr_id, options FROM Clients "
+        "WHERE modified = True AND logged_in = True AND mode > 0")
+```
+
+**Acceptance:** IPSC save sets `modified=1` on `mode=0` → RYSEN master applies options; proxy logs show **no** RPTO attempt for that `dmr_id`. MMDVM hotspot save still sends RPTO as before.
+
+MMDVM-only sites: safe to defer until IPSC is enabled on that system.
 
 ---
 
@@ -128,14 +183,15 @@ Within one poll interval, RYSEN logs show static bridge updates for the correct 
 
 Minimal checklist when IPSC is merged and a site adds a repeater:
 
-1. Deploy RYSEN build with IPSC + selfcare hooks.
-2. Add `[SELF SERVICE]` to `rysen.cfg` if not already present (monitor may already use it).
-3. **No** DB migration.
-4. Patch proxy `slct_db` to `AND mode > 0` (one line, IPSC sites only).
-5. Commission repeater: `set_ipsc_selfcare_password.py <radio_id> '<password>'`.
-6. Repeater connects → row appears → sysop logs in with radio ID.
+1. Deploy RYSEN build with IPSC + selfcare hooks (`systemx`).
+2. Pull **RYSEN-MONITOR** `ipsc` on VM (PHP selfcare UI).
+3. Add `[SELF SERVICE]` to `rysen.cfg` if not already present.
+4. **No** DB migration.
+5. **RYSEN** `proxy_db.py` → merge **RYSEN-SP-SELFCARE** → rebuild `shaymez/rysen-sp-selfcare:latest` → redeploy `proxy` (IPSC sites only).
+6. Commission repeater: `set_ipsc_selfcare_password.py <radio_id> '<password>'`.
+7. Repeater connects → row appears → sysop logs in with radio ID.
 
-MMDVM-only sites: skip steps 4–6 until IPSC is added.
+MMDVM-only sites: skip step 5–7 until IPSC is added.
 
 ---
 
@@ -198,13 +254,15 @@ Not in scope for v1. When needed:
 | IPSC register → `Clients` row `mode=0` | RYSEN + DB |
 | Password script → login hash matches PHP | RYSEN-MONITOR script + `ssconfunc.php` |
 | `modified=1` → static bridges | RYSEN logs |
-| MMDVM hotspot selfcare regression | Existing site, no proxy query change until IPSC |
+| MMDVM hotspot selfcare regression | RYSEN-SP-SELFCARE proxy image |
 | Radio ID login | RYSEN-MONITOR Phase 3 |
+| Proxy ignores IPSC `modified` rows | RYSEN → RYSEN-SP-SELFCARE Phase 3b |
 
 ---
 
 ## References
 
-- RYSEN `ipsc` branch: `ipsc_master.py`, `bridge_master.py` (`options_config`, `make_static_tg`)
-- RYSEN-MONITOR: `proxy/proxy_db.py`, `html/ssconfunc.php`, `html/ssmain.php`
+- **RYSEN** `ipsc`: `ipsc_master.py`, `bridge_master.py`, `proxy_db.py`, `ipsc_proxy.py`
+- **RYSEN-SP-SELFCARE**: https://github.com/ShaYmez/RYSEN-SP-SELFCARE — builds `shaymez/rysen-sp-selfcare:latest`
+- **RYSEN-MONITOR**: `html/ssconfunc.php`, `html/ssmain.php`, `scripts/set_ipsc_selfcare_password.py`
 - IPSC cfg sample: RYSEN `IPSC-SAMPLE.cfg` (`TS1_STATIC`, `TS2_STATIC`, `MAX_PEERS: 1`)
