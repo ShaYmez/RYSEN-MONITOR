@@ -2,6 +2,7 @@
 // Initialize secure session settings before starting session
 require_once "error_handler.php";
 require_once "ssconfunc.php";
+require_once "include/functions.php";
 initSecureSession();
 session_start();
 
@@ -15,27 +16,66 @@ if (!isset($_SESSION['preloader_displayed'])) {
     $display_preloader = false;
 }
 
+$showClaimForm = false;
+$claimRadioId = null;
+$claimCallsign = '';
+
 // ============================================
 // Handle Login Form Submission
 // ============================================
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // Get client IP
     $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    
-    // Check rate limit before processing (very lenient for hotspot users)
+    $action = $_POST['action'] ?? 'login';
+
     $rateCheck = checkRateLimit($clientIP);
     if (!$rateCheck['allowed']) {
         $waitMinutes = ceil($rateCheck['wait_time'] / 60);
         $errorMsg = "<span>Too many failed attempts. Please try again in {$waitMinutes} minutes.</span>";
         error_log("Login attempt blocked for IP $clientIP - rate limited");
+    } elseif ($action === 'ipsc_claim') {
+        $username = $_POST['callsign'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $passwordConfirm = $_POST['password_confirm'] ?? '';
+
+        if (!ctype_digit($username) || !preg_match('/^[1-9][0-9]{0,8}$/', $username)) {
+            $errorMsg = "<span>Invalid radio ID format.</span>";
+        } elseif (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+            $errorMsg = "<span>Session expired. Please try again.</span>";
+        } elseif ($password !== $passwordConfirm) {
+            $showClaimForm = true;
+            $claimRadioId = (int) $username;
+            $claimRow = getIpscClaimRow($claimRadioId);
+            $claimCallsign = $claimRow ? trim($claimRow['callsign']) : '';
+            $errorMsg = "<span>Passwords do not match.</span>";
+        } else {
+            $claimResult = claimIpscPassword((int) $username, $password);
+            if ($claimResult === true) {
+                clearLoginAttempts($clientIP);
+                $row = getDevDetails((int) $username);
+                if ($row) {
+                    establishIpscSession($row);
+                }
+                try {
+                    logLoginSuccess($username);
+                    logPasswordChange((int) $username);
+                } catch (Exception $e) {
+                    error_log("Claim audit logging failed: " . $e->getMessage());
+                }
+                header("Location: ssmain.php");
+                exit();
+            }
+
+            $showClaimForm = true;
+            $claimRadioId = (int) $username;
+            $claimRow = getIpscClaimRow($claimRadioId);
+            $claimCallsign = $claimRow ? trim($claimRow['callsign']) : '';
+            $errorMsg = "<span>" . htmlspecialchars(is_string($claimResult) ? $claimResult : "Could not set password.") . "</span>";
+        }
     } else {
         $username = $_POST['callsign'] ?? '';
         $password = $_POST['password'] ?? '';
-        
-        // Input validation
         $isValid = true;
-        
-        // Callsign (MMDVM) or radio ID (IPSC, all digits)
+
         if (ctype_digit($username)) {
             if (!preg_match('/^[1-9][0-9]{0,8}$/', $username)) {
                 error_log("Invalid radio ID format: " . substr($username, 0, 10));
@@ -47,37 +87,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $errorMsg = "<span>Invalid username format. Must start and end with letter or number (1-20 characters).</span>";
             $isValid = false;
         }
-        
-        // Validate password length
-        if ($isValid && (strlen($password) > 100 || strlen($password) < 1)) {
-            $errorMsg = "<span>Invalid credentials format.</span>";
-            $isValid = false;
+
+        if ($isValid && ctype_digit($username) && $password === '') {
+            $claimRow = getIpscClaimRow((int) $username);
+            if ($claimRow) {
+                $showClaimForm = true;
+                $claimRadioId = (int) $username;
+                $claimCallsign = trim($claimRow['callsign']);
+            } else {
+                $hint = explainIpscClaimFailure((int) $username);
+                if ($hint) {
+                    $errorMsg = "<span>" . htmlspecialchars($hint) . "</span>";
+                } else {
+                    recordFailedLogin($clientIP);
+                    $errorMsg = "<span>Invalid radio ID or password. Please try again.</span>";
+                    error_log("Authentication failed for $username");
+                }
+            }
+        } elseif ($isValid) {
+            if (strlen($password) > 100 || strlen($password) < 1) {
+                $errorMsg = "<span>Invalid credentials format.</span>";
+                $isValid = false;
+            }
         }
 
-        if ($isValid) {
+        if ($isValid && !$showClaimForm) {
             $authResult = authenticateUser($username, $password);
             if ($authResult === true) {
                 clearLoginAttempts($clientIP);
                 header("Location: ssmain.php");
                 exit();
+            }
+
+            recordFailedLogin($clientIP);
+            if (is_string($authResult)) {
+                $errorMsg = "<span>" . htmlspecialchars($authResult) . "</span>";
+                error_log("Authentication failed for $username: $authResult");
             } else {
-                recordFailedLogin($clientIP);
-                // Show specific error if authentication returned one
-                if (is_string($authResult)) {
-                    $errorMsg = "<span>" . htmlspecialchars($authResult) . "</span>";
-                    error_log("Authentication failed for $username: $authResult");
+                if (ctype_digit($username)) {
+                    $errorMsg = "<span>Invalid radio ID or password. Please try again.</span>";
                 } else {
-                    if (ctype_digit($username)) {
-                        $errorMsg = "<span>Invalid radio ID or password. Please try again.</span>";
-                    } else {
-                        $errorMsg = "<span>Invalid callsign or password. Please try again.</span>";
-                    }
-                    error_log("Authentication failed for $username");
+                    $errorMsg = "<span>Invalid callsign or password. Please try again.</span>";
                 }
+                error_log("Authentication failed for $username");
             }
         }
     }
 }
+
+$csrfToken = generateCSRFToken();
 ?>
 <!DOCTYPE html>
 <html>
@@ -87,21 +145,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   
   <body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm">
     <div class="wrapper">
-      <!-- Preloader -->
       <?php if ($display_preloader): ?>
       <div class="preloader flex-column justify-content-center align-items-center">
         <img class="animation__wobble" src="img/Logo_mini.png" alt="" height="60" width="60">
       </div>
       <?php endif; ?>
       
-      <!-- Navigation -->
       <?php include 'elements/navbar.php';?>
       <?php include_once 'include/version.php';?>
       
-      <!-- Main Content Wrapper -->
       <div class="content-wrapper">
-        
-        <!-- Content Header -->
         <div class="content-header">
           <div class="container">
             <div class="row mb-2 justify-content-center">
@@ -113,11 +166,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           </div>
         </div>
         
-        <!-- Main Content -->
         <div class="content">
           <div class="container">
-            
-            <!-- Login Card -->
             <div class="row justify-content-center">
               <div class="login-box">
                 <div class="login-logo">
@@ -126,18 +176,56 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 
                 <div class="card">
                   <div class="card-body login-card-body">
-                    
-                    <!-- Error Message -->
                     <?php if (isset($errorMsg)): ?>
                     <p class="text-center">
                       <?php echo $errorMsg; ?>
                     </p>
                     <?php endif; ?>
 
-                    <!-- Login Form -->
+                    <?php if ($showClaimForm): ?>
+                    <p class="text-center mt-3">
+                      Set up selfcare for
+                      <b><?php echo htmlspecialchars($claimCallsign); ?></b>
+                      (<?php echo (int) $claimRadioId; ?>)
+                    </p>
+                    <form action="sslogin.php" method="post">
+                      <input type="hidden" name="action" value="ipsc_claim">
+                      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                      <input type="hidden" name="callsign" value="<?php echo (int) $claimRadioId; ?>">
+
+                      <div class="input-group mb-3 mt-3">
+                        <input type="password" class="form-control" name="password" placeholder="New password" minlength="6" maxlength="100" required autofocus>
+                        <div class="input-group-append">
+                          <div class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="input-group mb-3">
+                        <input type="password" class="form-control" name="password_confirm" placeholder="Confirm password" minlength="6" maxlength="100" required>
+                        <div class="input-group-append">
+                          <div class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <div class="col-8">
+                          <a href="sslogin.php" class="btn btn-default btn-block">Cancel</a>
+                        </div>
+                        <div class="col-4">
+                          <button type="submit" class="btn btn-primary btn-block">Save</button>
+                        </div>
+                      </div>
+                    </form>
+                    <?php else: ?>
                     <form action="sslogin.php" method="post">
                       <div class="input-group mb-3 mt-4">
-                        <input type="text" class="form-control" name="callsign" placeholder="" id="sslog_call" required>
+                        <input type="text" class="form-control" name="callsign" placeholder="" id="sslog_call" required
+                          data-toggle="tooltip" data-placement="top" data-html="true"
+                          title="Enter your callsign. For IPSC (Motorola) repeaters, use your DMR radio ID instead.">
                         <div class="input-group-append">
                           <div class="input-group-text">
                             <i class="fas fa-broadcast-tower"></i>
@@ -146,7 +234,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                       </div>
                       
                       <div class="input-group mb-3">
-                        <input type="password" class="form-control" name="password" placeholder="" min="6" id="sslog_pass" required>
+                        <input type="password" class="form-control" name="password" placeholder="" id="sslog_pass">
                         <div class="input-group-append">
                           <div class="input-group-text">
                             <i class="fas fa-lock"></i>
@@ -161,13 +249,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
                       </div>
                     </form>
-                    
+                    <?php endif; ?>
                   </div>
                 </div>
               </div>
             </div>
             
-            <!-- Instructions Card -->
             <div class="row justify-content-center mb-5">
               <div class="login-box mt-5 col-8">
                 <div class="card">
@@ -192,13 +279,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
       </div>
       
-      <!-- Footer -->
       <footer class="main-footer text-sm">
         <?php include 'elements/footer.php';?>
       </footer>
     </div>
     
-    <!-- Scripts -->
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>

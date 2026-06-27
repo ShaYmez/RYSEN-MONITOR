@@ -189,6 +189,11 @@ $csrfToken = generateCSRFToken();
                                         <?php endif; ?>
                                     </h3>
                                     <div class="card-tools">
+                                        <?php if (isIpscSession()): ?>
+                                        <a href="ssaccount.php" class="btn btn-tool">
+                                            <i class="fas fa-user-cog"></i> <b>Account</b>
+                                        </a>
+                                        <?php endif; ?>
                                         <a href="sslogout.php" class="btn btn-tool">
                                         <i class="fas fa-sign-out-alt"></i> <b><span id="calc_lout"></span></b>
                                         </a>

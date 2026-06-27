@@ -62,6 +62,260 @@ function verifyStoredPassword($storedPassword, $password)
 }
 
 /**
+ * Whether a Clients.psswd value is unset (first-time IPSC claim).
+ *
+ * @param mixed $storedPassword
+ * @return bool
+ */
+function isStoredPasswordEmpty($storedPassword)
+{
+    return $storedPassword === null || $storedPassword === '';
+}
+
+/**
+ * Hash a selfcare password for storage (matches set_ipsc_selfcare_password.py).
+ *
+ * @param string $password Plain-text password
+ * @return string Hex PBKDF2-SHA256 digest
+ */
+function hashPasswordForStorage($password)
+{
+    return hash_pbkdf2("sha256", $password, "RYSEN", 2000);
+}
+
+/**
+ * IPSC row eligible for first-time selfcare password claim.
+ *
+ * @param int $radioId DMR repeater ID
+ * @return array|null Clients row or null
+ */
+function getIpscClaimRow($radioId)
+{
+    if ($radioId < 1) {
+        return null;
+    }
+
+    $conn = connectDatabase();
+    $stmt = $conn->prepare(
+        "SELECT int_id, callsign, psswd, logged_in FROM Clients WHERE int_id = ? AND mode = ?"
+    );
+    if (!$stmt) {
+        $conn->close();
+        return null;
+    }
+
+    $ipscMode = IPSC_DEVICE_MODE;
+    $stmt->bind_param("ii", $radioId, $ipscMode);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        $conn->close();
+        return null;
+    }
+
+    $result = $stmt->get_result();
+    $row = ($result && $result->num_rows === 1) ? $result->fetch_assoc() : null;
+    $stmt->close();
+    $conn->close();
+
+    if (!$row || !isStoredPasswordEmpty($row['psswd']) || (int) $row['logged_in'] !== 1) {
+        return null;
+    }
+
+    return $row;
+}
+
+/**
+ * Set first-time selfcare password for a connected IPSC repeater.
+ *
+ * @param int $radioId DMR repeater ID
+ * @param string $password Plain-text password
+ * @return bool|string True on success, error message otherwise
+ */
+function claimIpscPassword($radioId, $password)
+{
+    if ($radioId < 1) {
+        return false;
+    }
+
+    if (strlen($password) < 6 || strlen($password) > 100) {
+        return "Password must be 6–100 characters.";
+    }
+
+    $row = getIpscClaimRow($radioId);
+    if (!$row) {
+        return "This repeater cannot be set up right now. Ensure it is online and has no password yet.";
+    }
+
+    $psswdHash = hashPasswordForStorage($password);
+    $conn = connectDatabase();
+    $stmt = $conn->prepare(
+        "UPDATE Clients SET psswd = ? WHERE int_id = ? AND mode = ? AND logged_in = 1 "
+        . "AND (psswd IS NULL OR psswd = '')"
+    );
+    if (!$stmt) {
+        $conn->close();
+        return "Database error. Please contact administrator.";
+    }
+
+    $ipscMode = IPSC_DEVICE_MODE;
+    $stmt->bind_param("sii", $psswdHash, $radioId, $ipscMode);
+    $stmt->execute();
+    $updated = $stmt->affected_rows === 1;
+    $stmt->close();
+    $conn->close();
+
+    if (!$updated) {
+        return "Could not set password. The repeater may already be set up or is offline.";
+    }
+
+    return true;
+}
+
+/**
+ * Change selfcare password for an IPSC repeater.
+ *
+ * @param int $radioId DMR repeater ID
+ * @param string $currentPassword Current plain-text password
+ * @param string $newPassword New plain-text password
+ * @return bool|string True on success, error message otherwise
+ */
+function changeIpscPassword($radioId, $currentPassword, $newPassword)
+{
+    if ($radioId < 1) {
+        return false;
+    }
+
+    if (strlen($newPassword) < 6 || strlen($newPassword) > 100) {
+        return "New password must be 6–100 characters.";
+    }
+
+    $conn = connectDatabase();
+    $stmt = $conn->prepare(
+        "SELECT psswd FROM Clients WHERE int_id = ? AND mode = ?"
+    );
+    if (!$stmt) {
+        $conn->close();
+        return "Database error. Please contact administrator.";
+    }
+
+    $ipscMode = IPSC_DEVICE_MODE;
+    $stmt->bind_param("ii", $radioId, $ipscMode);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        $conn->close();
+        return "Database error. Please contact administrator.";
+    }
+
+    $result = $stmt->get_result();
+    if (!$result || $result->num_rows !== 1) {
+        $stmt->close();
+        $conn->close();
+        return false;
+    }
+
+    $row = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!verifyStoredPassword($row['psswd'], $currentPassword)) {
+        $conn->close();
+        return "Current password is incorrect.";
+    }
+
+    $psswdHash = hashPasswordForStorage($newPassword);
+    $stmt = $conn->prepare("UPDATE Clients SET psswd = ? WHERE int_id = ? AND mode = ?");
+    if (!$stmt) {
+        $conn->close();
+        return "Database error. Please contact administrator.";
+    }
+
+    $stmt->bind_param("sii", $psswdHash, $radioId, $ipscMode);
+    $stmt->execute();
+    $updated = $stmt->affected_rows === 1;
+    $stmt->close();
+    $conn->close();
+
+    if (!$updated) {
+        return "Could not update password.";
+    }
+
+    return true;
+}
+
+/**
+ * Start a selfcare session for an IPSC repeater.
+ *
+ * @param array $row Clients row with int_id and callsign
+ * @return void
+ */
+function establishIpscSession($row)
+{
+    $_SESSION['user_id'] = trim($row['callsign']);
+    $_SESSION['int_ids'] = [(int) $row['int_id']];
+    $_SESSION['is_ipsc'] = true;
+}
+
+/**
+ * Whether the current session is an IPSC repeater sysop.
+ *
+ * @return bool
+ */
+function isIpscSession()
+{
+    return !empty($_SESSION['is_ipsc']);
+}
+
+/**
+ * User-facing hint when IPSC login with empty password is not claimable.
+ *
+ * @param int $radioId DMR repeater ID
+ * @return string|null Message or null if generic login failure applies
+ */
+function explainIpscClaimFailure($radioId)
+{
+    if ($radioId < 1) {
+        return null;
+    }
+
+    $conn = connectDatabase();
+    $stmt = $conn->prepare(
+        "SELECT psswd, logged_in FROM Clients WHERE int_id = ? AND mode = ?"
+    );
+    if (!$stmt) {
+        $conn->close();
+        return null;
+    }
+
+    $ipscMode = IPSC_DEVICE_MODE;
+    $stmt->bind_param("ii", $radioId, $ipscMode);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        $conn->close();
+        return null;
+    }
+
+    $result = $stmt->get_result();
+    if (!$result || $result->num_rows !== 1) {
+        $stmt->close();
+        $conn->close();
+        return "Repeater not found. It must connect to the network before you can set up selfcare.";
+    }
+
+    $row = $result->fetch_assoc();
+    $stmt->close();
+    $conn->close();
+
+    if (!isStoredPasswordEmpty($row['psswd'])) {
+        return null;
+    }
+
+    if ((int) $row['logged_in'] !== 1) {
+        return "Repeater is not online. Connect it to the network, then sign in with your radio ID and leave the password blank to set up selfcare.";
+    }
+
+    return null;
+}
+
+/**
  * Authenticate user with callsign or radio ID and password.
  *
  * All-digit username → IPSC login (int_id, mode = 0).
@@ -128,8 +382,7 @@ function authenticateUserByRadioId($radioId, $password)
         return false;
     }
 
-    $_SESSION['user_id'] = trim($row['callsign']);
-    $_SESSION['int_ids'] = [(int) $row['int_id']];
+    establishIpscSession($row);
     $conn->close();
 
     try {
@@ -186,6 +439,7 @@ function authenticateUserByCallsign($username, $password)
 
     if (!empty($int_ids)) {
         $_SESSION['int_ids'] = $int_ids;
+        $_SESSION['is_ipsc'] = false;
         $conn->close();
 
         try {
