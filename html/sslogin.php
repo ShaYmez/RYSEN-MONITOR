@@ -33,31 +33,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errorMsg = "<span>Too many failed attempts. Please try again in {$waitMinutes} minutes.</span>";
         error_log("Login attempt blocked for IP $clientIP - rate limited");
     } elseif ($action === 'ipsc_claim') {
-        $username = $_POST['callsign'] ?? '';
+        $claimRadioId = (int) ($_POST['claim_int_id'] ?? 0);
         $password = $_POST['password'] ?? '';
         $passwordConfirm = $_POST['password_confirm'] ?? '';
 
-        if (!ctype_digit($username) || !preg_match('/^[1-9][0-9]{0,8}$/', $username)) {
-            $errorMsg = "<span>Invalid radio ID format.</span>";
+        if ($claimRadioId < 1) {
+            $errorMsg = "<span>Invalid device. Please start again from the login screen.</span>";
         } elseif (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
             $errorMsg = "<span>Session expired. Please try again.</span>";
         } elseif ($password !== $passwordConfirm) {
             $showClaimForm = true;
-            $claimRadioId = (int) $username;
-            $claimRow = getIpscClaimRow($claimRadioId);
+            $claimRow = getIpscClaimRowByLogin((string) $claimRadioId);
             $claimCallsign = $claimRow ? trim($claimRow['callsign']) : '';
             $errorMsg = "<span>Passwords do not match.</span>";
         } else {
-            $claimResult = claimIpscPassword((int) $username, $password);
+            $claimResult = claimIpscPassword($claimRadioId, $password);
             if ($claimResult === true) {
                 clearLoginAttempts($clientIP);
-                $row = getDevDetails((int) $username);
+                $row = getDevDetails($claimRadioId);
                 if ($row) {
                     establishIpscSession($row);
                 }
                 try {
-                    logLoginSuccess($username);
-                    logPasswordChange((int) $username);
+                    logLoginSuccess((string) $claimRadioId);
+                    logPasswordChange($claimRadioId);
                 } catch (Exception $e) {
                     error_log("Claim audit logging failed: " . $e->getMessage());
                 }
@@ -66,41 +65,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
 
             $showClaimForm = true;
-            $claimRadioId = (int) $username;
-            $claimRow = getIpscClaimRow($claimRadioId);
+            $claimRow = getIpscClaimRowByLogin((string) $claimRadioId);
             $claimCallsign = $claimRow ? trim($claimRow['callsign']) : '';
             $errorMsg = "<span>" . htmlspecialchars(is_string($claimResult) ? $claimResult : "Could not set password.") . "</span>";
         }
     } else {
-        $username = $_POST['callsign'] ?? '';
+        $username = normalizeLoginUsername($_POST['callsign'] ?? '');
         $password = $_POST['password'] ?? '';
         $isValid = true;
 
-        if (ctype_digit($username)) {
-            if (!preg_match('/^[1-9][0-9]{0,8}$/', $username)) {
-                error_log("Invalid radio ID format: " . substr($username, 0, 10));
-                $errorMsg = "<span>Invalid radio ID format.</span>";
-                $isValid = false;
-            }
-        } elseif (!preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9_-]{0,18}[a-zA-Z0-9])?$/', $username)) {
-            error_log("Invalid username format: " . substr($username, 0, 10));
-            $errorMsg = "<span>Invalid username format. Must start and end with letter or number (1-20 characters).</span>";
+        if (!isValidLoginUsername($username)) {
+            error_log("Invalid login username format: " . substr($username, 0, 10));
+            $errorMsg = "<span>Invalid callsign or radio ID format.</span>";
             $isValid = false;
         }
 
-        if ($isValid && ctype_digit($username) && $password === '') {
-            $claimRow = getIpscClaimRow((int) $username);
+        if ($isValid && $password === '') {
+            $claimRow = getIpscClaimRowByLogin($username);
             if ($claimRow) {
                 $showClaimForm = true;
-                $claimRadioId = (int) $username;
+                $claimRadioId = (int) $claimRow['int_id'];
                 $claimCallsign = trim($claimRow['callsign']);
             } else {
-                $hint = explainIpscClaimFailure((int) $username);
+                $hint = explainIpscClaimFailureByLogin($username);
                 if ($hint) {
                     $errorMsg = "<span>" . htmlspecialchars($hint) . "</span>";
                 } else {
                     recordFailedLogin($clientIP);
-                    $errorMsg = "<span>Invalid radio ID or password. Please try again.</span>";
+                    $errorMsg = "<span>Invalid callsign, radio ID, or password. Please try again.</span>";
                     error_log("Authentication failed for $username");
                 }
             }
@@ -124,11 +116,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $errorMsg = "<span>" . htmlspecialchars($authResult) . "</span>";
                 error_log("Authentication failed for $username: $authResult");
             } else {
-                if (ctype_digit($username)) {
-                    $errorMsg = "<span>Invalid radio ID or password. Please try again.</span>";
-                } else {
-                    $errorMsg = "<span>Invalid callsign or password. Please try again.</span>";
-                }
+                $errorMsg = "<span>Invalid callsign, radio ID, or password. Please try again.</span>";
                 error_log("Authentication failed for $username");
             }
         }
@@ -191,7 +179,7 @@ $csrfToken = generateCSRFToken();
                     <form action="sslogin.php" method="post">
                       <input type="hidden" name="action" value="ipsc_claim">
                       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
-                      <input type="hidden" name="callsign" value="<?php echo (int) $claimRadioId; ?>">
+                      <input type="hidden" name="claim_int_id" value="<?php echo (int) $claimRadioId; ?>">
 
                       <div class="input-group mb-3 mt-3">
                         <input type="password" class="form-control" name="password" placeholder="New password" minlength="6" maxlength="100" required autofocus>
@@ -223,17 +211,18 @@ $csrfToken = generateCSRFToken();
                     <?php else: ?>
                     <form action="sslogin.php" method="post">
                       <div class="input-group mb-3 mt-4">
-                        <input type="text" class="form-control" name="callsign" placeholder="" id="sslog_call" required>
+                        <input type="text" class="form-control" name="callsign" placeholder="" id="sslog_call" required
+                          autocapitalize="characters" spellcheck="false" autocomplete="username">
                         <div class="input-group-append">
                           <div class="input-group-text" data-toggle="tooltip" data-placement="top"
-                            title="For IPSC (Motorola) repeaters, use your DMR radio ID instead of callsign.">
+                            title="Enter your callsign or DMR radio ID. Works for hotspots and IPSC repeaters.">
                             <i class="fas fa-broadcast-tower"></i>
                           </div>
                         </div>
                       </div>
                       
                       <div class="input-group mb-3">
-                        <input type="password" class="form-control" name="password" placeholder="" id="sslog_pass">
+                        <input type="password" class="form-control" name="password" placeholder="" id="sslog_pass" autocomplete="current-password">
                         <div class="input-group-append">
                           <div class="input-group-text">
                             <i class="fas fa-lock"></i>
@@ -289,5 +278,19 @@ $csrfToken = generateCSRFToken();
     <script src="scripts/mode.js"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
     <script src="scripts/monitor.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var loginField = document.getElementById('sslog_call');
+        if (!loginField) {
+          return;
+        }
+        loginField.addEventListener('input', function () {
+          var start = loginField.selectionStart;
+          var end = loginField.selectionEnd;
+          loginField.value = loginField.value.toUpperCase();
+          loginField.setSelectionRange(start, end);
+        });
+      });
+    </script>
   </body>
 </html>
