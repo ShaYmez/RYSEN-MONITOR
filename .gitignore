@@ -1,6 +1,6 @@
 *.pyc
 *.log
-*.json
+
 *.csv
 *.db
 fdmr-mon.cfg
