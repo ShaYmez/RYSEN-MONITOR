@@ -2,6 +2,9 @@
 """
 Set selfcare password for an IPSC repeater (Clients.mode = 0).
 
+Legacy CLI — prefer the interactive admin menu (no Python deps on host):
+  sudo ./scripts/selfcare-admin.sh
+
 Uses the same PBKDF2-SHA256 hash as html/ssconfunc.php:
   hash_pbkdf2('sha256', password, 'RYSEN', 2000)  # hex output
 

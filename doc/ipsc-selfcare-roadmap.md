@@ -195,22 +195,25 @@ MMDVM-only sites: skip step 5–7 until IPSC is added.
 
 ---
 
-## Admin password script
+## Admin selfcare tools
 
-Set or change selfcare password for an IPSC repeater **before or after** first connect.
+**Preferred (VM / production):** interactive bash menu — no Python on host; reads `[SELF SERVICE]` from `fdmr-mon.cfg`; SQL via `docker exec mariadb` when the container is running.
 
 ```bash
-# From repo (uses /etc/rysen/fdmr-mon.cfg by default)
+sudo /opt/RYSEN-MONITOR/scripts/selfcare-admin.sh
+# or: CONFIG_FILE=/etc/rysen/fdmr-mon.cfg DB_CONTAINER=mariadb
+```
+
+Menu: list IPSC repeaters, set/change password, reset password (first-time claim), pre-register.
+
+**Legacy CLI:** `scripts/set_ipsc_selfcare_password.py` (requires `mysqlclient` on host).
+
+```bash
 python3 scripts/set_ipsc_selfcare_password.py 235287 'your-secret'
-
-# Explicit config
-python3 scripts/set_ipsc_selfcare_password.py --config /etc/rysen/fdmr-mon.cfg 235287
-
-# Pre-provision before first connect (creates row with mode=0)
 python3 scripts/set_ipsc_selfcare_password.py --register --callsign GB7NR 235287 'your-secret'
 ```
 
-Uses the same PBKDF2-SHA256 hash as PHP selfcare (`salt=RYSEN`, 2000 rounds). Requires `mysqlclient` (see `requirements.txt`).
+Uses the same PBKDF2-SHA256 hash as PHP selfcare (`salt=RYSEN`, 2000 rounds). Bash menu hashes via `php-cli` when available.
 
 ---
 
