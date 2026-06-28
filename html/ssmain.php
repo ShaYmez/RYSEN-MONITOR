@@ -207,8 +207,8 @@ $csrfToken = generateCSRFToken();
                                     <?php endif; ?>
                                     <div class="blur-content">
                                         <div class="row justify-content-center">
-                                            <div class="col-4 text-center mb-4">
-                                                <h1>Selfcare<h1>
+                                            <div class="col-12 col-sm-auto text-center mb-4">
+                                                <h1 class="selfcare-page-heading">Selfcare</h1>
                                                     <h4><?php echo escapeHtml($callsign); ?></h4>
                                             </div>
                                         </div>

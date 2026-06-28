@@ -193,3 +193,9 @@ a.badge-ipsc:focus {
 .selfcare-account-page .content {
     padding-bottom: 2rem;
 }
+
+/* Selfcare main page — keep title on one line on narrow viewports */
+.selfcare-page-heading,
+.login-logo a {
+    white-space: nowrap;
+}
