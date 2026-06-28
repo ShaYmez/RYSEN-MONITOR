@@ -351,8 +351,8 @@ $csrfToken = generateCSRFToken();
                                                                    data-bs-toggle="tooltip" 
                                                                    data-bs-placement="top" 
                                                                    data-bs-html="true"
-                                                                   title="Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.">
-                                                                </i>
+                                                                   data-bs-title="" 
+                                                                   id="calchlpsticky"></i>
                                                             </td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="stickySelect">

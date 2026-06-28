@@ -142,7 +142,7 @@
                                         </td>
                                         <td>
                                             <select class="form-control form-control-sm" id="stickySelect" onchange="updateGeneratedText()">
-                                                <option value="-1" id="calc_stickysrv"></option>
+                                                <option value="-1" id="calc_stickysrv" selected></option>
                                                 <option value="0" id="calc_stickyoff"></option>
                                                 <option value="1" id="calc_stickyon"></option>
                                             </select>
