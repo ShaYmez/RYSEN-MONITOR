@@ -22,31 +22,38 @@
 }
 
 .dashboard-activity-card .card-body {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     min-height: 5.5rem;
     padding: 0.75rem 1rem;
 }
 
 .dashboard-activity-card .activity-qso-grid {
-    align-items: start;
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem 0.5rem;
     justify-content: center;
-    margin: 0 auto;
     width: 100%;
 }
 
 .dashboard-activity-card .activity-qso-badge {
-    display: flex;
-    flex: 0 0 calc(33.333% - 0.34rem);
-    justify-content: center;
-    max-width: calc(33.333% - 0.34rem);
+    flex: 0 0 auto;
 }
 
-@media (min-width: 576px) {
+/* Narrow phones: 3 badges per row, centred as a group */
+@media (max-width: 575.98px) {
+    .dashboard-activity-card .activity-qso-grid {
+        display: grid;
+        gap: 0.35rem 0.5rem;
+        grid-template-columns: repeat(3, max-content);
+        justify-content: center;
+        justify-items: center;
+    }
+
     .dashboard-activity-card .activity-qso-badge {
-        flex: 0 0 auto;
-        max-width: none;
+        min-width: 0;
     }
 }
 
