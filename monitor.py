@@ -1703,7 +1703,7 @@ if __name__ == "__main__":
         "\n\tFDMR-Monitor: Christian Quiroz, OA4DOA"
         "\n\tInitial PHP dashboard design: Bruno CS8ABG"
         "\n\tRYSEN-MONITOR / System X: Copyright (c) 2020-%s Shane Daley, M0VUB <shane@freestar.network>\n\n",
-        __import__("datetime").datetime.now().year,
+        datetime.now().year,
     )
 
     # Create an instance of MoniDB

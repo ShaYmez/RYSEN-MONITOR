@@ -97,7 +97,7 @@ function setModePreference() {
         return data;
       })
       .catch(function(error) {
-        console.log('Session update failed (non-critical):', error);
+        // Session touch is best-effort; ignore failures silently.
       });
   }
 

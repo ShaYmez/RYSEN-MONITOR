@@ -16,3 +16,4 @@ include_once __DIR__ . '/../include/version.php';
      <?php endforeach; ?>
      <div>DMR Server Software RYSEN Master+ <?php echo VERSION; ?>. System X Server &copy; <?php echo FOOTER_COPYRIGHT_YEAR; ?>. All Rights Reserved.</div>
 </marquee>
+<!-- <?php echo SYSTEMX_COPYRIGHT_LINE; ?> -->

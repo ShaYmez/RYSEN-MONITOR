@@ -137,7 +137,7 @@ Within one poll interval, RYSEN logs show static bridge updates for the correct 
 
 ## Phase 3 — RYSEN-MONITOR: IPSC selfcare UI
 
-**Status:** implemented (merged from `ipsc` into `master`).
+**Status:** implemented on `ipsc` (pending PR to `master`).
 
 **Goal:** Sysop edits TS1/TS2 for their repeater. MMDVM pages unchanged.
 

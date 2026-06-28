@@ -30,8 +30,8 @@ __author__     = 'Christian Quiroz, OA4DOA'
 __version__    = '1.0.0'
 __copyright__  = 'Copyright (c) 2021-2022 Christian Quiroz, OA4DOA; RYSEN-MONITOR reference Copyright (c) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>'
 __license__    = 'GNU GPLv3'
-__maintainer__ = 'Christian Quiroz, OA4DOA'
-__email__      = 'adm@dmr-peru.pe'
+__maintainer__ = 'Shane Daley, M0VUB'
+__email__      = 'shane@freestar.network'
 
 
 class ProxyDB:
