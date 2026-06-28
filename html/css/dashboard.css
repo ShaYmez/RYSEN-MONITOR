@@ -16,6 +16,14 @@
     pointer-events: none;
 }
 
+/* Dashboard stat-card anchors — clear fixed navbar when scrolling */
+#active-qso-statbtn,
+#rptrs-statbtn,
+#htspts-statbtn,
+#brdg-statbtn {
+    scroll-margin-top: 5rem;
+}
+
 .dashboard-stat h3 {
     font-variant-numeric: tabular-nums;
     min-width: 1.5ch;
