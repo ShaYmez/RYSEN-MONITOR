@@ -920,14 +920,25 @@ build_deferred = None
 
 
 def push_main_live(client=None):
-    """Push stats + activity only — last-heard tbody is never touched on live keys."""
-    if not CONFIG:
-        return
+    """Push stats + activity + connected — last-heard tbody updated separately."""
     if not client and not GROUPS["main"]:
         return
     ctx = {"_table": CTABLE}
     _send_main_section("2", MTPL["stats"].render(**ctx), client, "main-stats")
     _send_main_section("3", MTPL["activity"].render(**ctx), client, "main-activity")
+    connected = MTPL["connected"].render(**ctx)
+    _send_main_section("5", connected, client, "main-connected")
+
+
+def push_main_shell(client=None):
+    """Push home layout shell (e.g. after CTABLE populated or cleared)."""
+    if not client and not GROUPS["main"]:
+        return
+    shell = MTPL["shell"].render(_table=CTABLE)
+    if client:
+        client.sendMessage(("i" + shell).encode("utf-8"))
+    elif GROUPS["main"]:
+        dashboard_server.broadcast("i" + shell, "main")
 
 
 def _broadcast_table(opcode, html, group, client=None, cache_key=None):
@@ -1004,15 +1015,9 @@ def refresh_lastheard(client=None):
 @inlineCallbacks
 def render_main_dashboard(client=None):
     """Initial connect: shell layout then section fills."""
-    shell = MTPL["shell"].render(_table=CTABLE)
-    if client:
-        client.sendMessage(("i" + shell).encode("utf-8"))
-    elif GROUPS["main"]:
-        dashboard_server.broadcast("i" + shell, "main")
+    push_main_shell(client)
     push_main_live(client)
-    connected = MTPL["connected"].render(_table=CTABLE)
-    _send_main_section("5", connected, client, "main-connected")
-    yield refresh_lastheard(client)
+    ensureDeferred(refresh_lastheard(client))
 
 
 @inlineCallbacks
@@ -1034,6 +1039,8 @@ def build_stats():
             build_deferred.cancel()
 
     if CONFIG:
+        if GROUPS["main"]:
+            push_main_live()
         if GROUPS["lnksys"]:
             lnksys = "c" + ctemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
             dashboard_server.broadcast(lnksys, "lnksys")
@@ -1334,6 +1341,10 @@ def process_message(_bmessage):
             update_hblink_table(CONFIG, CTABLE)
         else:
             build_hblink_table(CONFIG, CTABLE)
+        if GROUPS["main"]:
+            push_main_shell()
+            push_main_live()
+            ensureDeferred(refresh_lastheard())
 
     elif opcode == OPCODE["BRIDGE_SND"]:
         logger.debug("got BRIDGE_SND opcode")
@@ -1473,9 +1484,13 @@ class reportClientFactory(ReconnectingClientFactory):
         CTABLE["PEERS"].clear()
         CTABLE["OPENBRIDGES"].clear()
         BTABLE["BRIDGES"].clear()
+        _section_html_cache.clear()
         logger.info(f"Lost connection.  Reason: {reason}")
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
         dashboard_server.broadcast("q" + "Connection to HBlink Lost", "all_clients")
+        if GROUPS["main"]:
+            push_main_shell()
+            push_main_live()
 
     def clientConnectionFailed(self, connector, reason):
         logger.info(f"Connection failed. Reason: {reason}")

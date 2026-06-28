@@ -177,25 +177,26 @@ function updateDashboardPane(container, message) {
     if (!container) {
         return;
     }
+    const prevHeight = container.offsetHeight;
+
+    cleanupTooltips();
+    container.classList.add('dashboard-updating');
+    if (prevHeight > 0) {
+        container.style.minHeight = prevHeight + 'px';
+    }
+
+    container.innerHTML = message;
+
     loadTranslations().then(translations => {
         const languageSelect = document.getElementById('languageSelect');
         const lang = languageSelect ? languageSelect.value : 'en';
-        const prevHeight = container.offsetHeight;
-
-        cleanupTooltips();
-        container.classList.add('dashboard-updating');
-        if (prevHeight > 0) {
-            container.style.minHeight = prevHeight + 'px';
-        }
-
-        container.innerHTML = message;
         translateElements(translations, lang);
         bindLanguageListener();
+    });
 
-        requestAnimationFrame(function () {
-            container.classList.remove('dashboard-updating');
-            container.style.minHeight = '';
-        });
+    requestAnimationFrame(function () {
+        container.classList.remove('dashboard-updating');
+        container.style.minHeight = '';
     });
 }
 
@@ -374,12 +375,10 @@ function log(_msg) {
 // Find tables that are present
 function conf_id() {
     const groups = ["main", "bridge", "lnksys", "opb", "statictg", "log", "lsthrd_log", "tgcount", "bulletin"];
-    const tags = [document.getElementsByTagName("p"), document.getElementsByTagName("pre")]
-    for (i = 0; i < tags.length; i++) {
-        for (j = 0; j < tags[i].length; j++)
-            if (groups.includes(tags[i][j].id)) {
-                conf_groups.push(tags[i][j].id);
-            }
-    }
+    groups.forEach(function (id) {
+        if (document.getElementById(id)) {
+            conf_groups.push(id);
+        }
+    });
     console.log(conf_groups)
 };
