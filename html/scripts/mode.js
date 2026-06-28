@@ -103,6 +103,9 @@ function setModePreference() {
 
   function setLanguagePreference() {
     const languageSelect = document.getElementById('languageSelect');
+    if (!languageSelect) {
+      return;
+    }
     const storedLanguage = localStorage.getItem('language');
     const pageLanguage = getCurrentPageLanguage();
 
@@ -123,11 +126,17 @@ function setModePreference() {
   
     localStorage.setItem('language', selectedLanguage);
     syncSessionLanguage(selectedLanguage);
+    if (typeof applyPageTranslations === 'function') {
+      applyPageTranslations(selectedLanguage);
+    }
   }
   
   document.addEventListener('DOMContentLoaded', function() {
     const languageSelect = document.getElementById('languageSelect');
-  
+    if (!languageSelect) {
+      return;
+    }
+
     languageSelect.addEventListener('change', function() {
       handleLanguageChange();
     });

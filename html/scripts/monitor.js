@@ -72,13 +72,35 @@ function initDelegatedTooltips() {
     });
 }
 
+function getPageLanguage() {
+    const languageSelect = document.getElementById('languageSelect');
+    if (languageSelect && languageSelect.value) {
+        return languageSelect.value;
+    }
+    const bodyLang = document.body && document.body.getAttribute('data-current-lang');
+    return bodyLang || 'en';
+}
+
+function applyPageTranslations(lang) {
+    if (!translationsCache) {
+        return;
+    }
+    translateElements(translationsCache, lang || getPageLanguage());
+}
+window.applyPageTranslations = applyPageTranslations;
+
 function loadTranslations() {
     if (translationsCache) {
         return Promise.resolve(translationsCache);
     }
     if (!translationsPromise) {
-        translationsPromise = fetch('translations.json')
-            .then(response => response.json())
+        translationsPromise = fetch('translations.json', { cache: 'no-store' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('translations.json HTTP ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
                 translationsCache = data;
                 return data;
@@ -97,7 +119,7 @@ function bindLanguageListener() {
         if (!translationsCache) {
             return;
         }
-        translateElements(translationsCache, languageSelect.value);
+        applyPageTranslations(languageSelect.value);
     });
 }
 
@@ -200,7 +222,7 @@ function updateDashboardPane(container, message) {
     });
 }
 
-window.onload = function () {
+window.addEventListener('load', function () {
     var wsuri;
     conf_id();
     markDashboardPanes();
@@ -218,12 +240,12 @@ window.onload = function () {
     lsthrd_log_tbl = document.getElementById('lsthrd_log');
     bulletin_tbl = document.getElementById('bulletin');
 
-    loadTranslations().then(translations => {
-        const languageSelect = document.getElementById('languageSelect');
-        if (languageSelect) {
-            translateElements(translations, languageSelect.value);
-            bindLanguageListener();
-        }
+    loadTranslations().then(function (translations) {
+        applyPageTranslations(getPageLanguage());
+        bindLanguageListener();
+        initDelegatedTooltips();
+    }).catch(function (err) {
+        console.error('Failed to load translations:', err);
     });
 
     // HBMonv2 pattern: Direct WebSocket connection to port 9000
@@ -304,7 +326,9 @@ window.onload = function () {
                     log(message);
                 }
             } else if (opcode == "q") {
-                log(message);
+                if (ellog != null) {
+                    log(message);
+                }
                 cleanupTooltips();
                 for (i = 0; i < conf_groups.length; i++) {
                     var group = conf_groups[i];
@@ -327,11 +351,13 @@ window.onload = function () {
                     }
                 }
             } else {
-                log("Unknown Message Received: " + message);
+                if (ellog != null) {
+                    log("Unknown Message Received: " + message);
+                }
             }
         }
     }
-};
+});
 
 
 function Bmsg(_msg) {

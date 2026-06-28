@@ -46,7 +46,7 @@ $selfcareUrl = (isset($_SESSION['user_id']) && !empty($_SESSION['int_ids'])) ? '
                     <a href="index.php?p=monitor" class="nav-link" id="nav_mon"></a>
                 </li>
                 <li class="nav-item">
-                    <a href="index.php?p=bulletin" class="nav-link"><i class="bi bi-megaphone-fill"></i> <span id="bulletin_board"></span></a>
+                    <a href="index.php?p=bulletin" class="nav-link"><i class="fas fa-bullhorn"></i> <span id="bulletin_board"></span></a>
                 </li>
                 <li class="nav-item">
                     <a href="<?php echo htmlspecialchars($selfcareUrl, ENT_QUOTES, 'UTF-8'); ?>" class="nav-link">Selfcare</a>
