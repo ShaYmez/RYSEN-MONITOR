@@ -942,7 +942,7 @@ def push_main_shell(client=None):
 
 
 def _broadcast_table(opcode, html, group, client=None, cache_key=None):
-    if cache_key is not None and _section_html_cache.get(cache_key) == html:
+    if client is None and cache_key is not None and _section_html_cache.get(cache_key) == html:
         return
     if cache_key is not None:
         _section_html_cache[cache_key] = html
@@ -980,7 +980,7 @@ def push_live_dashboard(client=None):
 
 
 def _send_main_section(opcode, html, client=None, cache_key=None):
-    if cache_key is not None and _section_html_cache.get(cache_key) == html:
+    if client is None and cache_key is not None and _section_html_cache.get(cache_key) == html:
         return
     if cache_key is not None:
         _section_html_cache[cache_key] = html
@@ -1012,11 +1012,24 @@ def refresh_lastheard(client=None):
     push_lastheard_rows(result, client)
 
 
+def _warm_main_section_cache():
+    ctx = {"_table": CTABLE}
+    _section_html_cache["main-stats"] = MTPL["stats"].render(**ctx)
+    _section_html_cache["main-activity"] = MTPL["activity"].render(**ctx)
+    _section_html_cache["main-connected"] = MTPL["connected"].render(**ctx)
+
+
 @inlineCallbacks
 def render_main_dashboard(client=None):
-    """Initial connect: shell layout then section fills."""
-    push_main_shell(client)
-    push_main_live(client)
+    """Initial connect: full dashboard in one message, then last-heard rows."""
+    if not client and not GROUPS["main"]:
+        return
+    html = MTPL["initial"].render(_table=CTABLE)
+    if client:
+        client.sendMessage(("i" + html).encode("utf-8"))
+    elif GROUPS["main"]:
+        dashboard_server.broadcast("i" + html, "main")
+    _warm_main_section_cache()
     ensureDeferred(refresh_lastheard(client))
 
 
@@ -1706,6 +1719,7 @@ if __name__ == "__main__":
     butemplate = env.get_template("bulletin_board.html")
     MTPL.update({
         "shell": env.get_template("main/shell.html"),
+        "initial": env.get_template("main/initial.html"),
         "stats": env.get_template("main/stats.html"),
         "activity": env.get_template("main/activity.html"),
         "lastheard_rows": env.get_template("main/lastheard_rows.html"),
