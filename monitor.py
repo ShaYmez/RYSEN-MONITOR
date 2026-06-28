@@ -24,6 +24,11 @@
 #
 #  FDMR-Monitor (2021-22) Version by Christian Quiroz OA4DOA <adm@dmr-peru.pe>
 #
+#  FDMR Monitor with Selfcare — initial PHP dashboard design: Bruno CS8ABG
+#
+#  RYSEN-MONITOR / System X derivative work
+#  Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
+#
 ###############################################################################
 
 # Standard modules
@@ -1691,9 +1696,15 @@ if __name__ == "__main__":
     logger = create_logger(log_conf)
 
     logger.info("monitor.py starting up")
-    logger.info("\n\n\tCopyright (c) 2016-2022\n\tThe Regents of the K0USY Group. All rights "
-                "reserved.\n\n\tPython 3 port:\n\t2019 Steve Miller, KC1AWV <smiller@kc1awv.net>"
-                "\n\n\tFDMR-Monitor OA4DOA 2023 - CS8ABG 2023\n\n")
+    logger.info(
+        "\n\n\tCopyright (c) 2016-2022 The Regents of the K0USY Group. All rights reserved."
+        "\n\n\tPython 3 port: 2019 Steve Miller, KC1AWV <smiller@kc1awv.net>"
+        "\n\tHBMonitor v2: Waldek SP2ONG"
+        "\n\tFDMR-Monitor: Christian Quiroz, OA4DOA"
+        "\n\tInitial PHP dashboard design: Bruno CS8ABG"
+        "\n\tRYSEN-MONITOR / System X: Copyright (c) 2020-%s Shane Daley, M0VUB <shane@freestar.network>\n\n",
+        __import__("datetime").datetime.now().year,
+    )
 
     # Create an instance of MoniDB
     db_conn = MoniDB(CONF["DB"]["SERVER"], CONF["DB"]["USER"], CONF["DB"]["PASSWD"],

@@ -14,6 +14,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/language-support.php';
 require_once __DIR__ . '/marquee-loader.php';
+require_once __DIR__ . '/../config/footer.php';
+require_once __DIR__ . '/copyright.php';
 require_once __DIR__ . '/version.php';
 
 $valid_languages = get_supported_language_codes();
@@ -26,7 +28,7 @@ $valid_languages = get_supported_language_codes();
  */
 function build_language_response($lang) {
     $lines = array_values(get_marquee_for_language($lang));
-    $footer = 'DMR Server Software RYSEN Master+ ' . VERSION . '. System X Server © 2026. All Rights Reserved.';
+    $footer = 'DMR Server Software RYSEN Master+ ' . VERSION . '. System X Server &copy; ' . FOOTER_COPYRIGHT_YEAR . '. ' . SYSTEMX_COPYRIGHT_LINE . '. All Rights Reserved.';
 
     return array(
         'status' => 'success',

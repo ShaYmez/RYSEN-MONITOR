@@ -1,8 +1,10 @@
 <?php
 /**
  * Selfcare Configuration Functions
- * 
- * Database connection and user authentication functions for the selfcare module
+ *
+ * Database connection and user authentication functions for the selfcare module.
+ *
+ * Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
  */
 
 // Include audit logger at file level for reliable loading

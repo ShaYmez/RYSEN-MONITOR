@@ -1,6 +1,8 @@
 /**
  * Apply cached translations as soon as the navbar exists (before page paint completes).
  * monitor.js refreshes the cache and re-applies for the full page.
+ *
+ * Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
  */
 (function () {
     var STORAGE_KEY = 'rysen_translations';

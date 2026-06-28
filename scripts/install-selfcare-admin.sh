@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 # Install selfcare-admin menu into /usr/local/sbin (run as root).
+# Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
 #
 set -euo pipefail
 

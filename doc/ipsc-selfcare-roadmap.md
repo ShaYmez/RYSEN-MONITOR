@@ -1,6 +1,6 @@
 # IPSC selfcare roadmap
 
-Surgical plan for IPSC repeater static talkgroup (TS1/TS2) selfcare. MMDVM hotspot selfcare stays as-is. IPSC is not required on live systems until RYSEN `ipsc` is merged to `master` and deployed.
+Surgical plan for IPSC repeater static talkgroup (TS1/TS2) selfcare. MMDVM hotspot selfcare stays as-is. IPSC UI ships with RYSEN-MONITOR; live IPSC apply still requires RYSEN `ipsc` merged to `master` and deployed on `systemx`.
 
 ## How it fits together
 
@@ -137,7 +137,7 @@ Within one poll interval, RYSEN logs show static bridge updates for the correct 
 
 ## Phase 3 — RYSEN-MONITOR: IPSC selfcare UI
 
-**Status:** implemented on `ipsc` branch.
+**Status:** implemented (merged from `ipsc` into `master`).
 
 **Goal:** Sysop edits TS1/TS2 for their repeater. MMDVM pages unchanged.
 
@@ -205,7 +205,7 @@ After `git pull` on the VM:
 | Dashboard templates (`templates/`) | Rebuild monitor image: `docker compose build monitor && docker compose up -d monitor` |
 | Admin menu | Once per host: `sudo ./scripts/install-selfcare-admin.sh` → `sudo selfcare-admin` |
 
-Run the [manual regression checklist](#manual-regression-checklist) before merging `ipsc` to `master`.
+Run the [manual regression checklist](#manual-regression-checklist) before production upgrade.
 
 ---
 
@@ -279,7 +279,7 @@ Self-service first-time claim (empty password + online IPSC) is **in v1**. Still
 
 ### Manual regression checklist
 
-Run on a test VM before merging `ipsc` → `master`.
+Run on a test VM before production upgrade.
 
 **MMDVM (unchanged)**
 

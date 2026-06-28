@@ -1,3 +1,7 @@
+/**
+ * RYSEN-MONITOR dashboard WebSocket client.
+ * Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
+ */
 var sock = null;
 var ellog = null;
 const conf_groups = [];
@@ -453,5 +457,4 @@ function conf_id() {
             conf_groups.push(id);
         }
     });
-    console.log(conf_groups)
 };

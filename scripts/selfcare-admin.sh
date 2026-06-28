@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
 # System X selfcare admin menu (IPSC + overview).
+# Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
+#
 # No Python required on the host — uses docker exec mariadb + php-cli for password hashes.
 #
 # Usage:
