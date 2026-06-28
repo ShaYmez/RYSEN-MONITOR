@@ -101,6 +101,35 @@ function bindLanguageListener() {
     });
 }
 
+function initDashboardStatLinks() {
+    const anchorOffset = 80;
+
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('#main-stats a.dashboard-stat-link');
+        if (!link) {
+            return;
+        }
+        const hash = link.getAttribute('href');
+        if (!hash || hash.charAt(0) !== '#') {
+            return;
+        }
+        const target = document.getElementById(hash.slice(1));
+        if (!target) {
+            return;
+        }
+        e.preventDefault();
+        const top = target.getBoundingClientRect().top + window.scrollY - anchorOffset;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+        document.querySelectorAll('.dashboard-scroll-flash').forEach(function (el) {
+            el.classList.remove('dashboard-scroll-flash');
+        });
+        target.classList.add('dashboard-scroll-flash');
+        window.setTimeout(function () {
+            target.classList.remove('dashboard-scroll-flash');
+        }, 1400);
+    });
+}
+
 function markDashboardPanes() {
     const paneIds = ['main', 'lnksys', 'statictg', 'bridge', 'opb', 'tgcount', 'lsthrd_log', 'bulletin'];
     paneIds.forEach(function (id) {
@@ -174,6 +203,7 @@ window.onload = function () {
     var wsuri;
     conf_id();
     markDashboardPanes();
+    initDashboardStatLinks();
     initDelegatedTooltips();
 
     ellog = document.getElementById('log');

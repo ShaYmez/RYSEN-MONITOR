@@ -24,6 +24,62 @@
     scroll-margin-top: 5rem;
 }
 
+/* Top stat cards — in-page scroll (not AdminLTE-restricted) */
+#main-stats a.dashboard-stat-link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+}
+
+#main-stats a.dashboard-stat-link .small-box {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#main-stats a.dashboard-stat-link:hover .small-box {
+    box-shadow: 0 0.35rem 0.85rem rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+#main-stats a.dashboard-stat-link:active .small-box {
+    transform: translateY(0);
+}
+
+.dashboard-scroll-flash .card {
+    animation: dashboard-target-flash 1.4s ease-out;
+}
+
+@keyframes dashboard-target-flash {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.5);
+    }
+
+    35% {
+        box-shadow: 0 0 0 0.4rem rgba(0, 123, 255, 0.28);
+    }
+
+    100% {
+        box-shadow: none;
+    }
+}
+
+.dark-mode .dashboard-scroll-flash .card {
+    animation-name: dashboard-target-flash-dark;
+}
+
+@keyframes dashboard-target-flash-dark {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+    }
+
+    35% {
+        box-shadow: 0 0 0 0.4rem rgba(255, 255, 255, 0.18);
+    }
+
+    100% {
+        box-shadow: none;
+    }
+}
+
 .dashboard-stat h3 {
     font-variant-numeric: tabular-nums;
     min-width: 1.5ch;
