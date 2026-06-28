@@ -21,10 +21,10 @@ Static talkgroups for IPSC are applied **on the server** (`bridge_master.options
 
 | Topic | Decision |
 |-------|----------|
-| MMDVM login | **Callsign + password** — no change |
-| IPSC login | **Radio ID + password** (DMR repeater ID, e.g. `235287`) |
-| First password | Admin runs `scripts/set_ipsc_selfcare_password.py` when commissioning |
-| Claim / email verify | **Deferred** — see [Future](#future-claim--email-verification) |
+| MMDVM login | **Callsign + password** — `mode > 0` only |
+| IPSC login | **Callsign or radio ID + password** — routes by logged-in `Clients` row and `mode` (`0` = IPSC) |
+| First password | Admin via `selfcare-admin`, **or** sysop first-time claim on login when `psswd` empty and repeater online |
+| Claim / email verify | **Self-service claim in v1**; email magic-link verification **deferred** — see [Future](#future-email-verification) |
 | New IPSC proxy | **No** — reuse existing `ipsc-proxy`; master reads `Clients` directly |
 | DB schema on live systems | **No ALTER TABLE** — use reserved `mode` value (see below) |
 
@@ -77,7 +77,7 @@ PHP selfcare UI           →    /var/www/html/dashboard
 | `proxy_db.py`, `hotspot_proxy_v2.py` | **RYSEN** | Merge → **RYSEN-SP-SELFCARE** → proxy image |
 | IPSC register + options poll | **RYSEN** `ipsc` | `systemx` container rebuild |
 | `ipsc_proxy.py` | **RYSEN** | `ipsc-proxy` container (no selfcare changes) |
-| Selfcare PHP/JS, password script | **RYSEN-MONITOR** | Host web root (git pull) |
+| Selfcare PHP/JS, admin script | **RYSEN-MONITOR** | Host web root (git pull) |
 | `RYSEN-MONITOR/proxy/` | **Reference only** (FDMR-Monitor fork) | **Not** used for Docker builds |
 
 **Do not** treat `RYSEN-MONITOR/proxy/proxy_db.py` as the deployment source. Edit **RYSEN**, merge to **RYSEN-SP-SELFCARE**, rebuild the image.
@@ -143,12 +143,14 @@ Within one poll interval, RYSEN logs show static bridge updates for the correct 
 
 | Step | Change |
 |------|--------|
-| 3.1 | Login: all-digit username → `int_id` + password for `mode = 0`; callsign path adds `mode > 0` only |
+| 3.1 | Login: callsign **or** all-digit radio ID; `findClientsByLogin()` + `authenticateUser()` route by **logged-in** row `mode` (`0` = IPSC, `> 0` = MMDVM). Same DMR ID can swap hardware — one `Clients` row per `int_id`. |
+| 3.1b | First-time claim: empty `psswd` + online IPSC row → set password on login (`claimIpscPassword()`). |
+| 3.1c | Account page: `ssaccount.php` — IPSC password change; link from `ssmain.php` when `is_ipsc` session. |
 | 3.2 | Device picker: `235287 — GB7NR (IPSC)` for `mode = 0` |
 | 3.3 | Form: TS1 / TS2 only for IPSC (Functions table hidden) |
 | 3.4 | `sanitizeIpscOptions()` server-side; `updateDevOptions()` unchanged |
 
-**Acceptance:** Login with `235287` + password → change TS2 → RYSEN logs `(SELF SERVICE) Applied options for IPSC 235287` within ~5s. MMDVM callsign login unchanged.
+**Acceptance:** Login with callsign or `235287` + password → change TS2 → RYSEN logs `(SELF SERVICE) Applied options for IPSC 235287` within ~5s. MMDVM callsign login unchanged. First-time claim works when admin reset password to empty.
 
 ---
 
@@ -183,15 +185,27 @@ MMDVM-only sites: safe to defer until IPSC is enabled on that system.
 
 Minimal checklist when IPSC is merged and a site adds a repeater:
 
-1. Deploy RYSEN build with IPSC + selfcare hooks (`systemx`).
-2. Pull **RYSEN-MONITOR** `ipsc` on VM (PHP selfcare UI).
+1. Deploy RYSEN build with IPSC + selfcare hooks (`systemx` container rebuild).
+2. Pull **RYSEN-MONITOR** on VM — PHP/CSS/JS (see [VM deploy](#vm-deploy-notes) below).
 3. Add `[SELF SERVICE]` to `rysen.cfg` if not already present.
 4. **No** DB migration.
 5. **RYSEN** `proxy_db.py` → merge **RYSEN-SP-SELFCARE** → rebuild `shaymez/rysen-sp-selfcare:latest` → redeploy `proxy` (IPSC sites only).
-6. Commission repeater: `set_ipsc_selfcare_password.py <radio_id> '<password>'`.
-7. Repeater connects → row appears → sysop logs in with radio ID.
+6. Commission repeater: `sudo selfcare-admin` → set password or reset for first-time claim.
+7. Repeater connects → row appears → sysop logs in with callsign or radio ID.
 
 MMDVM-only sites: skip step 5–7 until IPSC is added.
+
+### VM deploy notes
+
+After `git pull` on the VM:
+
+| Change type | Action |
+|-------------|--------|
+| PHP / CSS / JS under `html/` | Reload Apache (`sudo systemctl reload apache2` or your site equivalent). Symlinked docroot (`/var/www/html/dashboard` → repo `html/`) picks up files on pull. |
+| Dashboard templates (`templates/`) | Rebuild monitor image: `docker compose build monitor && docker compose up -d monitor` |
+| Admin menu | Once per host: `sudo ./scripts/install-selfcare-admin.sh` → `sudo selfcare-admin` |
+
+Run the [manual regression checklist](#manual-regression-checklist) before merging `ipsc` to `master`.
 
 ---
 
@@ -199,21 +213,24 @@ MMDVM-only sites: skip step 5–7 until IPSC is added.
 
 **Preferred (VM / production):** interactive bash menu — no Python on host; reads `[SELF SERVICE]` from `fdmr-mon.cfg`; SQL via `docker exec mariadb` when the container is running.
 
+Install once (symlink into `/usr/local/sbin`):
+
+```bash
+cd /opt/RYSEN-MONITOR
+sudo ./scripts/install-selfcare-admin.sh
+sudo selfcare-admin
+```
+
+Or run directly:
+
 ```bash
 sudo /opt/RYSEN-MONITOR/scripts/selfcare-admin.sh
-# or: CONFIG_FILE=/etc/rysen/fdmr-mon.cfg DB_CONTAINER=mariadb
+# CONFIG_FILE=/etc/rysen/fdmr-mon.cfg DB_CONTAINER=mariadb
 ```
 
-Menu: list IPSC repeaters, set/change password, reset password (first-time claim), pre-register.
+Menu: list IPSC repeaters, set/change password, reset password (enables first-time claim), pre-register.
 
-**Legacy CLI:** `scripts/set_ipsc_selfcare_password.py` (requires `mysqlclient` on host).
-
-```bash
-python3 scripts/set_ipsc_selfcare_password.py 235287 'your-secret'
-python3 scripts/set_ipsc_selfcare_password.py --register --callsign GB7NR 235287 'your-secret'
-```
-
-Uses the same PBKDF2-SHA256 hash as PHP selfcare (`salt=RYSEN`, 2000 rounds). Bash menu hashes via `php-cli` when available.
+Uses PBKDF2-SHA256 (`salt=RYSEN`, 2000 rounds) via `php-cli` when available — same hash as PHP selfcare (`ssconfunc.php`).
 
 ---
 
@@ -236,15 +253,14 @@ Docker services use `DB_HOST=mariadb`. Host PHP and admin scripts use the **IP**
 
 ### `fdmr-mon.cfg` (monitor / PHP — unchanged for MMDVM)
 
-Existing `[SELF SERVICE]` section continues to serve PHP selfcare and the password script.
+Existing `[SELF SERVICE]` section continues to serve PHP selfcare and `selfcare-admin`.
 
 ---
 
-## Future: claim / email verification
+## Future: email verification
 
-Not in scope for v1. When needed:
+Self-service first-time claim (empty password + online IPSC) is **in v1**. Still deferred:
 
-- Self-service “claim repeater” while `logged_in = 1` and row has empty `psswd`
 - Email magic link; optional cross-check against operator registry or RadioID-style database
 - Separate `owner_email` column would be added then — not required now
 
@@ -255,11 +271,43 @@ Not in scope for v1. When needed:
 | Test | Where |
 |------|--------|
 | IPSC register → `Clients` row `mode=0` | RYSEN + DB |
-| Password script → login hash matches PHP | RYSEN-MONITOR script + `ssconfunc.php` |
+| Admin password / claim hash matches PHP login | `selfcare-admin` + `ssconfunc.php` |
 | `modified=1` → static bridges | RYSEN logs |
 | MMDVM hotspot selfcare regression | RYSEN-SP-SELFCARE proxy image |
-| Radio ID login | RYSEN-MONITOR Phase 3 |
+| IPSC login (callsign + radio ID) | RYSEN-MONITOR Phase 3 |
 | Proxy ignores IPSC `modified` rows | RYSEN → RYSEN-SP-SELFCARE Phase 3b |
+
+### Manual regression checklist
+
+Run on a test VM before merging `ipsc` → `master`.
+
+**MMDVM (unchanged)**
+
+- [ ] Callsign + password login
+- [ ] Device picker and options save → proxy RPTO / `modified` clears
+- [ ] Talkgroup fields: can type values that share a prefix with an existing TG (e.g. `2350` when `235` in TS1) — dupe check on blur only
+- [ ] Logout and session timeout
+
+**IPSC**
+
+- [ ] Repeater online → `Clients` row `mode=0`, `logged_in=1`
+- [ ] Admin: `selfcare-admin` set password
+- [ ] Login with **radio ID** + password → TS1/TS2 form only (no Functions table)
+- [ ] Login with **callsign** + password (same repeater)
+- [ ] Save TS1/TS2 → `modified=1` → RYSEN applies static bridges within poll interval
+- [ ] Account page (`ssaccount.php`): change password; footer spacing and dark-mode link colours
+- [ ] Admin reset password → first-time claim on login (empty password flow)
+- [ ] Logout; re-login with new password
+
+**Dashboard (if templates changed on branch)**
+
+- [ ] Activity QSO badges: desktop flex layout; mobile 3-column grid
+- [ ] Linked Systems shows IPSC repeater when connected
+
+**Deploy smoke**
+
+- [ ] `git pull` + Apache reload picks up PHP/CSS
+- [ ] `docker compose build monitor` if templates changed
 
 ---
 
@@ -267,5 +315,5 @@ Not in scope for v1. When needed:
 
 - **RYSEN** `ipsc`: `ipsc_master.py`, `bridge_master.py`, `proxy_db.py`, `ipsc_proxy.py`
 - **RYSEN-SP-SELFCARE**: https://github.com/ShaYmez/RYSEN-SP-SELFCARE — builds `shaymez/rysen-sp-selfcare:latest`
-- **RYSEN-MONITOR**: `html/ssconfunc.php`, `html/ssmain.php`, `scripts/set_ipsc_selfcare_password.py`
+- **RYSEN-MONITOR**: `html/ssconfunc.php`, `html/sslogin.php`, `html/ssaccount.php`, `html/ssmain.php`, `scripts/selfcare-admin.sh`, `scripts/install-selfcare-admin.sh`
 - IPSC cfg sample: RYSEN `IPSC-SAMPLE.cfg` (`TS1_STATIC`, `TS2_STATIC`, `MAX_PEERS: 1`)

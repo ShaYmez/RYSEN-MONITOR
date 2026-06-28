@@ -73,7 +73,7 @@ function isStoredPasswordEmpty($storedPassword)
 }
 
 /**
- * Hash a selfcare password for storage (matches set_ipsc_selfcare_password.py).
+ * Hash a selfcare password for storage (PBKDF2-SHA256; same as selfcare-admin.sh / php-cli).
  *
  * @param string $password Plain-text password
  * @return string Hex PBKDF2-SHA256 digest

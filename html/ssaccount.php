@@ -43,13 +43,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 $csrfToken = generateCSRFToken();
+$ss_page_title = 'System X DMR Global | IPSC Selfcare Account | ' . escapeHtml($callsign);
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <?php include 'elements/header.php';?>
 </head>
-<body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm">
+<body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm selfcare-account-page">
     <div class="wrapper">
         <?php include 'elements/navbar.php';?>
 
@@ -66,10 +67,10 @@ $csrfToken = generateCSRFToken();
 
             <div class="content">
                 <div class="container">
-                    <div class="row justify-content-center">
+                    <div class="row justify-content-center mb-5">
                         <div class="login-box">
                             <div class="login-logo">
-                                <a href="ssmain.php">Selfcare Account</a>
+                                <a href="ssmain.php">IPSC Selfcare Account</a>
                             </div>
 
                             <div class="card">

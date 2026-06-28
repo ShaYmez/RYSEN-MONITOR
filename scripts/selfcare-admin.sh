@@ -4,6 +4,7 @@
 # No Python required on the host — uses docker exec mariadb + php-cli for password hashes.
 #
 # Usage:
+#   sudo selfcare-admin                    # after install (see install-selfcare-admin.sh)
 #   sudo ./scripts/selfcare-admin.sh
 #   CONFIG_FILE=/etc/rysen/fdmr-mon.cfg DB_CONTAINER=mariadb ./scripts/selfcare-admin.sh
 #

@@ -11,7 +11,7 @@ include_once __DIR__ . '/../config/branding.php';
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Page Title -->
-<title><?php echo PAGE_TITLE; ?></title>
+<title><?php echo isset($ss_page_title) ? htmlspecialchars($ss_page_title, ENT_QUOTES, 'UTF-8') : PAGE_TITLE; ?></title>
 <!-- Favicon -->
 <link rel="apple-touch-icon" sizes="180x180" href="<?php echo FAVICON_ICON; ?>">
 <link rel="icon" type="image/png" sizes="32x32" href="<?php echo FAVICON_32; ?>">
