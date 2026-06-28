@@ -13,6 +13,7 @@ include_once __DIR__ . '/../config/branding.php';
 // Merge defaults with any custom overrides (preserved config keeps old lists complete)
 $custom_languages = isset($available_languages) ? $available_languages : array();
 $available_languages = array_merge($default_languages, $custom_languages);
+$selfcareUrl = (isset($_SESSION['user_id']) && !empty($_SESSION['int_ids'])) ? 'ssmain.php' : 'sslogin.php';
 ?>
 <nav class="main-header navbar navbar-expand-lg navbar-light navbar-dark text-sm">
     <div class="container text-nowrap">
@@ -48,7 +49,7 @@ $available_languages = array_merge($default_languages, $custom_languages);
                     <a href="index.php?p=bulletin" class="nav-link"><i class="bi bi-megaphone-fill"></i> <span id="bulletin_board"></span></a>
                 </li>
                 <li class="nav-item">
-                    <a href="sslogin.php" class="nav-link">Selfcare</a>
+                    <a href="<?php echo htmlspecialchars($selfcareUrl, ENT_QUOTES, 'UTF-8'); ?>" class="nav-link">Selfcare</a>
                 </li>
                 <li class="nav-item dropdown dropdown-hover">
                     <a id="dropdownSubMenu1" href="#" role="button" data-toggle="dropdown" aria-haspopup="true"

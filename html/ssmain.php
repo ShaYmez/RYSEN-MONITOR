@@ -10,9 +10,9 @@ checkSessionTimeout();
 // ============================================
 // Authentication Check
 // ============================================
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['int_ids'])) {
-    error_log("Access denied to ssmain.php - user not authenticated. Session user_id: " . 
-              (isset($_SESSION['user_id']) ? 'set' : 'not set') . 
+if (!isSelfcareLoggedIn()) {
+    error_log("Access denied to ssmain.php - user not authenticated. Session user_id: " .
+              (isset($_SESSION['user_id']) ? 'set' : 'not set') .
               ", int_ids: " . (isset($_SESSION['int_ids']) ? 'set' : 'not set'));
     header("Location: sslogin.php");
     exit();

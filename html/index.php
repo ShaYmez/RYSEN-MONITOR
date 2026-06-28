@@ -4,6 +4,10 @@ require_once "ssconfunc.php";
 initSecureSession();
 session_start();
 
+if (isSelfcareLoggedIn()) {
+    $_SESSION['last_activity'] = time();
+}
+
 require_once __DIR__ . '/include/language-support.php';
 init_session_language();
 

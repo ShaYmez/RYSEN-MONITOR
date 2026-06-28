@@ -342,6 +342,8 @@ function establishIpscSession($row)
     $_SESSION['user_id'] = trim($row['callsign']);
     $_SESSION['int_ids'] = [(int) $row['int_id']];
     $_SESSION['is_ipsc'] = true;
+    $_SESSION['last_activity'] = time();
+    session_regenerate_id(true);
 }
 
 /**
@@ -433,6 +435,8 @@ function establishMmdvmSession(array $rows)
         $rows
     );
     $_SESSION['is_ipsc'] = false;
+    $_SESSION['last_activity'] = time();
+    session_regenerate_id(true);
 }
 
 /**
@@ -550,6 +554,20 @@ function authenticateUserByCallsign($username, $password)
 }
 
 /**
+ * Whether the browser has an active selfcare login session.
+ *
+ * @return bool
+ */
+function isSelfcareLoggedIn()
+{
+    return isset($_SESSION['user_id'])
+        && $_SESSION['user_id'] !== ''
+        && isset($_SESSION['int_ids'])
+        && is_array($_SESSION['int_ids'])
+        && !empty($_SESSION['int_ids']);
+}
+
+/**
  * Check and enforce session timeout
  * 
  * Destroys session and redirects to login if inactive for more than configured timeout.
@@ -580,18 +598,23 @@ function checkSessionTimeout()
  */
 function initSecureSession()
 {
-    // Prevent JavaScript access to session cookie
-    ini_set('session.cookie_httponly', 1);
-    
-    // Only send cookie over HTTPS if available (but don't require it)
-    $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        return;
+    }
+
+    $lifetime = SESSION_TIMEOUT_SECONDS;
+    $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                 || (! empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
-    ini_set('session.cookie_secure', $isSecure ? 1 : 0);
-    
-    // Relaxed SameSite for device-based authentication
-    ini_set('session.cookie_samesite', 'Lax');
-    
-    // Prevent session ID in URLs
+
+    session_set_cookie_params([
+        'lifetime' => $lifetime,
+        'path' => '/',
+        'secure' => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+
+    ini_set('session.gc_maxlifetime', (string) $lifetime);
     ini_set('session.use_only_cookies', 1);
 }
 

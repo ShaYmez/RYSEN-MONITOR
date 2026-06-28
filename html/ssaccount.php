@@ -5,7 +5,7 @@ initSecureSession();
 session_start();
 checkSessionTimeout();
 
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['int_ids']) || !isIpscSession()) {
+if (!isSelfcareLoggedIn() || !isIpscSession()) {
     header("Location: sslogin.php");
     exit();
 }

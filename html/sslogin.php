@@ -6,6 +6,15 @@ require_once "include/functions.php";
 initSecureSession();
 session_start();
 
+// Already logged in — skip the login form when returning from other pages
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && isSelfcareLoggedIn()) {
+    checkSessionTimeout();
+    if (isSelfcareLoggedIn()) {
+        header('Location: ssmain.php');
+        exit();
+    }
+}
+
 // ============================================
 // Preloader Display Logic
 // ============================================
