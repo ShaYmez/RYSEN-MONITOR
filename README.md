@@ -2,13 +2,13 @@
 
 ![Dashboard](./screenshot.png)
 
-***This version has been forked from FDMR Monitor with Selfcare by CS8ABG. Thanks for all contrib***
+Forked from [FDMR Monitor with Selfcare](https://github.com/CS8ABG/FDMR-Monitor) by Bruno **CS8ABG** (initial PHP dashboard design). Maintained as **RYSEN-MONITOR / System X** v1.5.0 by Shane Daley **M0VUB** <shane@freestar.network>.
 
 ---
 
 **FDMR Monitor by OA4DOA**
 
-FDMR Monitor for FreeDMR Servera based on HBMonv2 https://github.com/yuvelq/FDMR-Monitor 
+FDMR Monitor for FreeDMR Servers based on HBMonv2 https://github.com/yuvelq/FDMR-Monitor
 
 ---
 
@@ -24,8 +24,23 @@ Python 3 implementation of N0MJS HBmonitor for HBlink https://github.com/kc1awv/
 
 ---
 
-Copyright (C) 2013-2018  Cortney T. Buffington, N0MJS <n0mjs@me.com>
+## Motorola IPSC repeaters
 
+RYSEN reports IPSC systems (`MODE: IPSC`, `PROTOCOL: IPSC`) on the TCP report socket (default port 4321). These appear on **Linked Systems** in the Repeaters section with callsign, DMR ID, Motorola software/hardware, and live TS1/TS2 activity. Point `[FDMR CONNECTION]` in `fdmr-mon.cfg` at your RYSEN instance (use the container IP on Docker Compose, not `127.0.0.1`).
+
+IPSC repeater selfcare (static TS1/TS2) is included in this release; MMDVM hotspot selfcare is unchanged. See [doc/ipsc-selfcare-roadmap.md](doc/ipsc-selfcare-roadmap.md).
+
+**Admin (IPSC):** install once with `sudo ./scripts/install-selfcare-admin.sh`, then run `sudo selfcare-admin` (symlink in `/usr/local/sbin`; bash + docker + php-cli for hashes — no Python on host).
+
+---
+
+## Copyright
+
+**RYSEN-MONITOR / System X** — Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
+
+Upstream lineage: N0MJS (HBmonitor/HBlink), KC1AWV (Python 3 port), SP2ONG (HBMonitor v2), OA4DOA (FDMR-Monitor), **CS8ABG** (initial dashboard design), G4KLX (MMDVM), G7RZU (FDMR Peer Server). See [COPYRIGHT](COPYRIGHT) for the full notice.
+
+Copyright (C) 2013-2018 Cortney T. Buffington, N0MJS <n0mjs@me.com>
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of 
 the License, or (at your option) any later version.
 

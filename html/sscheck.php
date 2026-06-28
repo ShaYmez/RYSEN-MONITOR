@@ -8,7 +8,7 @@ session_start();
 // ============================================
 // Authentication and Authorization Check
 // ============================================
-if (!isset($_SESSION['selected_int_id']) || !isset($_SESSION['user_id'])) {
+if (!isSelfcareLoggedIn() || !isset($_SESSION['selected_int_id'])) {
     header("Location: sslogin.php");
     exit();
 }

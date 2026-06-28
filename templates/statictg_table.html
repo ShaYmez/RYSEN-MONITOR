@@ -17,7 +17,7 @@
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table m-0 table-sm table-bordered">
+          <table class="table m-0 table-sm table-bordered dashboard-table">
             <thead>
               <tr>
                 <th class="align-middle" style="width: 180px;"><span id="trpt_callsign"></span> <span
@@ -34,27 +34,32 @@
               {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0) and
               emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
               {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-              {% if _client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
+              {% if _cdata.get('PROTOCOL') == 'IPSC' or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
+                {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
                 <tr>
-                  <td>
-                    {% set ctrynum = _client|flag_code %}
-                    <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                    <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
+                  <td class="peer-id-cell">
+                    {% set ctrynum = _peer_id|flag_code %}
+                    <div class="peer-id-row">
+                      <img class="peer-flag" src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
+                      <a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
+                          class="peer-callsign{% if _cdata.get('PROTOCOL') == 'IPSC' %} peer-callsign-ipsc{% endif %}"
                           data-html="true" title="
 {{_master}}
-{% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
+{% if _cdata.get('PROTOCOL') == 'IPSC' %}Type: IPSC Repeater ({{ _cdata['SLOTS'] }})
+Mode: {{ _cdata['DESCRIPTION'] }}
+{% elif _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
 TX: {{_cdata['TX_FREQ'] }}
 RX: {{_cdata['RX_FREQ'] }}
-TS1: {{ _cdata['TS1_STATIC']|join(', ') }}
-TS2: {{ _cdata['TS2_STATIC']|join(', ') }}{% endif %}
-Power: {{ _cdata['TX_POWER'] }}
+TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
+TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}{% endif %}
+{% if _cdata.get('PROTOCOL') != 'IPSC' %}Power: {{ _cdata['TX_POWER'] }}
 Latitude: {{ _cdata['LATITUDE'] }}
 Longitude: {{ _cdata['LONGITUDE'] }}
 Height: {{ _cdata['HEIGHT'] }}
-Software: {{_cdata['SOFTWARE_ID'] }}
-Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
-                    </span>
-                    <span class="badge badge-info">{{ _client }}</span>
+{% endif %}Software: {{_cdata['SOFTWARE_ID'] }}
+Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
+                      <span class="badge peer-id-badge {% if _cdata.get('PROTOCOL') == 'IPSC' %}badge-ipsc{% else %}badge-info{% endif %}">{{ _peer_id }}</span>
+                    </div>
                   </td>
                   <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                   <td class="table-active align-middle text-center"><span
@@ -66,7 +71,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                   <td class="table-active align-middle text-center">{{ _cdata['SINGLE_TS1']['TO'] if 'SINGLE_TS1' in
                     _cdata else '' }}</td>
                 <tr>
-                  <td class="p-0 align-middle text-center">{{_cdata['LOCATION']}}</td>
+                  <td class="peer-loc-cell align-middle text-center">{{_cdata['LOCATION']}}</td>
                   <td class="align-middle text-center"><span class="badge badge-pill badge-danger">TS2</span></td>
                   <td class="align-middle"><span class="badge badge-danger">{{ _cdata['TS2_STATIC']|join('</span> <span
                       class="badge badge-danger">')|safe }}</span></td>
@@ -104,7 +109,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table m-0 table-sm table-bordered">
+          <table class="table m-0 table-sm table-bordered dashboard-table">
             <thead>
               <tr>
                 <th class="align-middle" style="width: 180px;"><span id="thtsp_callsign"></span> <span
@@ -186,7 +191,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table m-0 table-sm table-bordered">
+          <table class="table m-0 table-sm table-bordered dashboard-table">
             <thead>
               <tr>
                 <th class="align-middle" style="width: 180px;"><span id="tbrdg_callsign"></span> <span
@@ -203,7 +208,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
               {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0) and
               emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
               {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-              {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}
+              {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
               <tr>
                 <td>
                   {% set ctrynum = _client|flag_code %}

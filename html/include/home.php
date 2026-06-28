@@ -1,3 +1,3 @@
 <div class="container">
-    <p id="main"></p>
+    <div id="main" class="dashboard-pane"></div>
 </div>

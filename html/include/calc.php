@@ -142,7 +142,7 @@
                                         </td>
                                         <td>
                                             <select class="form-control form-control-sm" id="stickySelect" onchange="updateGeneratedText()">
-                                                <option value="-1" id="calc_stickysrv"></option>
+                                                <option value="-1" id="calc_stickysrv" selected></option>
                                                 <option value="0" id="calc_stickyoff"></option>
                                                 <option value="1" id="calc_stickyon"></option>
                                             </select>
@@ -248,9 +248,9 @@
         var languageRow = document.getElementById('languagerow');
 
         if (voiceSelect.value !== '1') {
-            languagerow.style.display = 'none';
+            languageRow.style.display = 'none';
         } else {
-            languagerow.style.display = 'table-row';
+            languageRow.style.display = 'table-row';
         }
 
         updateGeneratedText();
@@ -312,6 +312,7 @@
         var singleModeSelect = document.getElementById('singleModeSelect');
         var stickySelect = document.getElementById('stickySelect');
         var timeoutInput = document.getElementById('timeoutInput');
+        var modeSelector = document.getElementById('modeSelector');
         var timeslots1 = [];
         var timeslots2 = [];
         for (var i = 0; i < timeslotTable.rows.length; i++) {
@@ -334,7 +335,7 @@
         var singleModeValue = singleModeSelect.value;
         var stickyValue = stickySelect ? stickySelect.value : '-1';
         var timeoutValue = timeoutInput.value;
-        var modeSelectorValue = modeSelector.value;
+        var modeSelectorValue = modeSelector ? modeSelector.value : 'Duplex';
         var generatedTextWithQuotes = 'Options="';
         if (timeslots1.length > 0 && modeSelectorValue === 'Duplex') {
             generatedTextWithQuotes += 'TS1=' + timeslots1.join(',') + ';';
@@ -391,14 +392,20 @@
         checkDupes();
     }
 
-    // Update generated text when inputs change
-    var inputs = document.querySelectorAll('input, select');
-    for (var i = 0; i < inputs.length; i++) {
-        inputs[i].addEventListener('input', updateGeneratedText);
+    function initCalcPage() {
+        var inputs = document.querySelectorAll('input, select');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].addEventListener('input', updateGeneratedText);
+            inputs[i].addEventListener('change', updateGeneratedText);
+        }
+        toggleTimeslotTable();
+        toggleLanguageDropdown();
+        updateGeneratedText();
     }
 
-    // Initial update of generated text
-    updateGeneratedText();
-    toggleTimeslotTable();
-    toggleLanguageDropdown();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCalcPage);
+    } else {
+        initCalcPage();
+    }
 </script>

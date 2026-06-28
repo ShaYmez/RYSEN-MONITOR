@@ -158,3 +158,44 @@
     background-color: #6c757d !important;
     color: #000000 !important;
 }
+
+/* Motorola IPSC repeaters — distinct from green MMDVM pills */
+.badge-ipsc {
+    background-color: #ff6600;
+    color: #fff;
+}
+
+a.badge-ipsc:hover,
+a.badge-ipsc:focus {
+    color: #fff;
+    opacity: 0.92;
+}
+
+.dark-mode .main-footer a {
+    color: #c2c7d0;
+}
+
+.dark-mode .main-footer a:hover,
+.dark-mode .main-footer a:focus {
+    color: #fff;
+}
+
+.light-mode .main-footer a {
+    color: #6c757d;
+}
+
+.light-mode .main-footer a:hover,
+.light-mode .main-footer a:focus {
+    color: #343a40;
+}
+
+/* Selfcare account page — breathing room above footer */
+.selfcare-account-page .content {
+    padding-bottom: 2rem;
+}
+
+/* Selfcare main page — keep title on one line on narrow viewports */
+.selfcare-page-heading,
+.login-logo a {
+    white-space: nowrap;
+}

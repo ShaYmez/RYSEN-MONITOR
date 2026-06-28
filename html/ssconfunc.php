@@ -1,8 +1,10 @@
 <?php
 /**
  * Selfcare Configuration Functions
- * 
- * Database connection and user authentication functions for the selfcare module
+ *
+ * Database connection and user authentication functions for the selfcare module.
+ *
+ * Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
  */
 
 // Include audit logger at file level for reliable loading
@@ -25,87 +27,546 @@ if (!defined('RATE_LIMIT_LOCKOUT_MINUTES')) {
     define('RATE_LIMIT_LOCKOUT_MINUTES', 30); // How long to lock out after exceeding max attempts
 }
 
+/** Clients.mode value reserved for IPSC repeaters (see doc/ipsc-selfcare-roadmap.md). */
+if (!defined('IPSC_DEVICE_MODE')) {
+    define('IPSC_DEVICE_MODE', 0);
+}
+
 /**
- * Authenticate user with callsign and password
- * 
- * Validates user credentials against the database using PBKDF2 hashing.
- * Sets session variables for authenticated users.
- * Uses prepared statements to prevent SQL injection.
- * 
- * @param string $username User callsign
+ * Whether a Clients.mode value identifies an IPSC repeater row.
+ *
+ * @param mixed $mode Clients.mode column value
+ * @return bool
+ */
+function isIpscDeviceMode($mode)
+{
+    return (int) $mode === IPSC_DEVICE_MODE;
+}
+
+/**
+ * Verify password against stored hash (PBKDF2 or bcrypt).
+ *
+ * @param string|null $storedPassword Value from Clients.psswd
+ * @param string $password Plain-text password
+ * @return bool
+ */
+function verifyStoredPassword($storedPassword, $password)
+{
+    if ($storedPassword === null || $storedPassword === '') {
+        return false;
+    }
+
+    if (hash_pbkdf2("sha256", $password, "RYSEN", 2000) === $storedPassword) {
+        return true;
+    }
+
+    return password_verify($password, $storedPassword);
+}
+
+/**
+ * Whether a Clients.psswd value is unset (first-time IPSC claim).
+ *
+ * @param mixed $storedPassword
+ * @return bool
+ */
+function isStoredPasswordEmpty($storedPassword)
+{
+    return $storedPassword === null || $storedPassword === '';
+}
+
+/**
+ * Hash a selfcare password for storage (PBKDF2-SHA256; same as selfcare-admin.sh / php-cli).
+ *
+ * @param string $password Plain-text password
+ * @return string Hex PBKDF2-SHA256 digest
+ */
+function hashPasswordForStorage($password)
+{
+    return hash_pbkdf2("sha256", $password, "RYSEN", 2000);
+}
+
+/**
+ * Normalize login username: trim; uppercase callsigns; leave radio IDs as digits.
+ *
+ * @param string $username
+ * @return string
+ */
+function normalizeLoginUsername($username)
+{
+    $username = trim($username);
+    if ($username === '') {
+        return '';
+    }
+
+    if (ctype_digit($username)) {
+        return $username;
+    }
+
+    return strtoupper($username);
+}
+
+/**
+ * Validate callsign or radio ID for selfcare login.
+ *
+ * @param string $username
+ * @return bool
+ */
+function isValidLoginUsername($username)
+{
+    $username = normalizeLoginUsername($username);
+    if ($username === '') {
+        return false;
+    }
+
+    if (ctype_digit($username)) {
+        return (bool) preg_match('/^[1-9][0-9]{0,8}$/', $username);
+    }
+
+    return (bool) preg_match('/^[A-Z0-9]([A-Z0-9_-]{0,18}[A-Z0-9])?$/', $username);
+}
+
+/**
+ * Find Clients rows matching callsign or radio ID.
+ *
+ * @param string $username Callsign or DMR ID
+ * @param bool $loggedInOnly Only return logged_in = 1 rows
+ * @return array<int, array>
+ */
+function findClientsByLogin($username, $loggedInOnly = true)
+{
+    $username = normalizeLoginUsername($username);
+    if ($username === '') {
+        return [];
+    }
+
+    $conn = connectDatabase();
+    if (ctype_digit($username)) {
+        $sql = "SELECT int_id, callsign, psswd, mode, logged_in FROM Clients WHERE int_id = ?";
+        if ($loggedInOnly) {
+            $sql .= " AND logged_in = 1";
+        }
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            $conn->close();
+            return [];
+        }
+        $radioId = (int) $username;
+        $stmt->bind_param("i", $radioId);
+    } else {
+        $sql = "SELECT int_id, callsign, psswd, mode, logged_in FROM Clients "
+            . "WHERE UPPER(TRIM(callsign)) = ?";
+        if ($loggedInOnly) {
+            $sql .= " AND logged_in = 1";
+        }
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            $conn->close();
+            return [];
+        }
+        $stmt->bind_param("s", $username);
+    }
+
+    if (!$stmt->execute()) {
+        $stmt->close();
+        $conn->close();
+        return [];
+    }
+
+    $result = $stmt->get_result();
+    $rows = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+        }
+    }
+
+    $stmt->close();
+    $conn->close();
+
+    return $rows;
+}
+
+/**
+ * IPSC row eligible for first-time selfcare password claim.
+ *
+ * @param string $username Callsign or DMR radio ID
+ * @return array|null Clients row or null
+ */
+function getIpscClaimRowByLogin($username)
+{
+    $rows = findClientsByLogin($username, true);
+    foreach ($rows as $row) {
+        if (
+            isIpscDeviceMode($row['mode'])
+            && isStoredPasswordEmpty($row['psswd'])
+            && (int) $row['logged_in'] === 1
+        ) {
+            return $row;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * @deprecated Use getIpscClaimRowByLogin()
+ */
+function getIpscClaimRow($radioId)
+{
+    return getIpscClaimRowByLogin((string) $radioId);
+}
+
+/**
+ * Set first-time selfcare password for a connected IPSC repeater.
+ *
+ * @param int $radioId DMR repeater ID
+ * @param string $password Plain-text password
+ * @return bool|string True on success, error message otherwise
+ */
+function claimIpscPassword($radioId, $password)
+{
+    if ($radioId < 1) {
+        return false;
+    }
+
+    if (strlen($password) < 6 || strlen($password) > 100) {
+        return "Password must be 6–100 characters.";
+    }
+
+    $row = getIpscClaimRow($radioId);
+    if (!$row) {
+        return "This repeater cannot be set up right now. Ensure it is online and has no password yet.";
+    }
+
+    $psswdHash = hashPasswordForStorage($password);
+    $conn = connectDatabase();
+    $stmt = $conn->prepare(
+        "UPDATE Clients SET psswd = ? WHERE int_id = ? AND mode = ? AND logged_in = 1 "
+        . "AND (psswd IS NULL OR psswd = '')"
+    );
+    if (!$stmt) {
+        $conn->close();
+        return "Database error. Please contact administrator.";
+    }
+
+    $ipscMode = IPSC_DEVICE_MODE;
+    $stmt->bind_param("sii", $psswdHash, $radioId, $ipscMode);
+    $stmt->execute();
+    $updated = $stmt->affected_rows === 1;
+    $stmt->close();
+    $conn->close();
+
+    if (!$updated) {
+        return "Could not set password. The repeater may already be set up or is offline.";
+    }
+
+    return true;
+}
+
+/**
+ * Change selfcare password for an IPSC repeater.
+ *
+ * @param int $radioId DMR repeater ID
+ * @param string $currentPassword Current plain-text password
+ * @param string $newPassword New plain-text password
+ * @return bool|string True on success, error message otherwise
+ */
+function changeIpscPassword($radioId, $currentPassword, $newPassword)
+{
+    if ($radioId < 1) {
+        return false;
+    }
+
+    if (strlen($newPassword) < 6 || strlen($newPassword) > 100) {
+        return "New password must be 6–100 characters.";
+    }
+
+    $conn = connectDatabase();
+    $stmt = $conn->prepare(
+        "SELECT psswd FROM Clients WHERE int_id = ? AND mode = ?"
+    );
+    if (!$stmt) {
+        $conn->close();
+        return "Database error. Please contact administrator.";
+    }
+
+    $ipscMode = IPSC_DEVICE_MODE;
+    $stmt->bind_param("ii", $radioId, $ipscMode);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        $conn->close();
+        return "Database error. Please contact administrator.";
+    }
+
+    $result = $stmt->get_result();
+    if (!$result || $result->num_rows !== 1) {
+        $stmt->close();
+        $conn->close();
+        return false;
+    }
+
+    $row = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!verifyStoredPassword($row['psswd'], $currentPassword)) {
+        $conn->close();
+        return "Current password is incorrect.";
+    }
+
+    $psswdHash = hashPasswordForStorage($newPassword);
+    $stmt = $conn->prepare("UPDATE Clients SET psswd = ? WHERE int_id = ? AND mode = ?");
+    if (!$stmt) {
+        $conn->close();
+        return "Database error. Please contact administrator.";
+    }
+
+    $stmt->bind_param("sii", $psswdHash, $radioId, $ipscMode);
+    $stmt->execute();
+    $updated = $stmt->affected_rows === 1;
+    $stmt->close();
+    $conn->close();
+
+    if (!$updated) {
+        return "Could not update password.";
+    }
+
+    return true;
+}
+
+/**
+ * Start a selfcare session for an IPSC repeater.
+ *
+ * @param array $row Clients row with int_id and callsign
+ * @return void
+ */
+function establishIpscSession($row)
+{
+    $_SESSION['user_id'] = trim($row['callsign']);
+    $_SESSION['int_ids'] = [(int) $row['int_id']];
+    $_SESSION['is_ipsc'] = true;
+    $_SESSION['last_activity'] = time();
+    session_regenerate_id(true);
+}
+
+/**
+ * Whether the current session is an IPSC repeater sysop.
+ *
+ * @return bool
+ */
+function isIpscSession()
+{
+    return !empty($_SESSION['is_ipsc']);
+}
+
+/**
+ * User-facing hint when IPSC login with empty password is not claimable.
+ *
+ * @param string $username Callsign or DMR radio ID
+ * @return string|null Message or null if generic login failure applies
+ */
+function explainIpscClaimFailureByLogin($username)
+{
+    $username = normalizeLoginUsername($username);
+    if ($username === '') {
+        return null;
+    }
+
+    $loggedInRows = findClientsByLogin($username, true);
+    $ipscLoggedIn = array_values(array_filter(
+        $loggedInRows,
+        static function ($row) {
+            return isIpscDeviceMode($row['mode']);
+        }
+    ));
+
+    if (!empty($ipscLoggedIn)) {
+        if (!isStoredPasswordEmpty($ipscLoggedIn[0]['psswd'])) {
+            return null;
+        }
+        return null;
+    }
+
+    $anyRows = findClientsByLogin($username, false);
+    if (empty($anyRows)) {
+        return "Device not found. It must connect to the network before you can set up selfcare.";
+    }
+
+    $ipscAny = array_values(array_filter(
+        $anyRows,
+        static function ($row) {
+            return isIpscDeviceMode($row['mode']);
+        }
+    ));
+
+    if (empty($ipscAny)) {
+        return null;
+    }
+
+    if (!isStoredPasswordEmpty($ipscAny[0]['psswd'])) {
+        return null;
+    }
+
+    if ((int) $ipscAny[0]['logged_in'] !== 1) {
+        return "Device is not online. Connect it to the network, then sign in with callsign or radio ID and leave the password blank to set up selfcare.";
+    }
+
+    return null;
+}
+
+/**
+ * @deprecated Use explainIpscClaimFailureByLogin()
+ */
+function explainIpscClaimFailure($radioId)
+{
+    return explainIpscClaimFailureByLogin((string) $radioId);
+}
+
+/**
+ * Start a selfcare session for one or more MMDVM devices.
+ *
+ * @param array<int, array> $rows Clients rows (mode > 0)
+ * @return void
+ */
+function establishMmdvmSession(array $rows)
+{
+    $_SESSION['user_id'] = trim($rows[0]['callsign']);
+    $_SESSION['int_ids'] = array_map(
+        static function ($row) {
+            return (int) $row['int_id'];
+        },
+        $rows
+    );
+    $_SESSION['is_ipsc'] = false;
+    $_SESSION['last_activity'] = time();
+    session_regenerate_id(true);
+}
+
+/**
+ * Authenticate user with callsign or radio ID and password.
+ *
+ * Looks up logged-in device(s), verifies password, then routes by Clients.mode.
+ *
+ * @param string $username Callsign or DMR radio ID
  * @param string $password User password
  * @return bool|string True if authentication successful, error message string otherwise
  */
 function authenticateUser($username, $password)
 {
-    $conn = connectDatabase();
-    
-    // Use prepared statement to prevent SQL injection
-    $stmt = $conn->prepare("SELECT int_id, callsign, psswd FROM Clients WHERE callsign = ?");
-    if (!$stmt) {
-        error_log("Database prepare error: " . $conn->error);
-        $conn->close();
-        return "Database error. Please contact administrator.";
+    $username = normalizeLoginUsername($username);
+    if ($username === '') {
+        return false;
     }
-    
-    $stmt->bind_param("s", $username);
-    if (!$stmt->execute()) {
-        error_log("Database execute error: " . $stmt->error);
-        $stmt->close();
-        $conn->close();
-        return "Database error. Please contact administrator.";
+
+    $rows = findClientsByLogin($username, true);
+    if (empty($rows)) {
+        logLoginFailure($username, 'device_not_online');
+        return false;
     }
-    
-    $result = $stmt->get_result();
-    $int_ids = [];
-    
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $storedPassword = $row['psswd'];
-            $authenticated = false;
-            
-            // Use PBKDF2 SHA256 (original simple method for hotspot users)
-            if (hash_pbkdf2("sha256", $password, "RYSEN", 2000) === $storedPassword) {
-                $authenticated = true;
-            }
-            // Also try bcrypt for compatibility (but don't migrate)
-            elseif (password_verify($password, $storedPassword)) {
-                $authenticated = true;
-            }
-            
-            if ($authenticated) {
-                $_SESSION['user_id'] = $row['callsign'];
-                $int_ids[] = $row['int_id'];
-            }
+
+    $matched = [];
+    foreach ($rows as $row) {
+        if (verifyStoredPassword($row['psswd'], $password)) {
+            $matched[] = $row;
         }
     }
-    
-    $stmt->close();
 
-    if (!empty($int_ids)) {
-        $_SESSION['int_ids'] = $int_ids;
-        $conn->close();
-        
-        // Log successful login (non-blocking - use try-catch for visibility)
+    if (empty($matched)) {
+        logLoginFailure($username);
+        return false;
+    }
+
+    $ipscRows = array_values(array_filter(
+        $matched,
+        static function ($row) {
+            return isIpscDeviceMode($row['mode']);
+        }
+    ));
+    $mmdvmRows = array_values(array_filter(
+        $matched,
+        static function ($row) {
+            return !isIpscDeviceMode($row['mode']);
+        }
+    ));
+
+    if (count($matched) === 1) {
+        $row = $matched[0];
+        if (isIpscDeviceMode($row['mode'])) {
+            establishIpscSession($row);
+        } else {
+            establishMmdvmSession([$row]);
+        }
+
         try {
             logLoginSuccess($username);
         } catch (Exception $e) {
             error_log("Login audit logging failed: " . $e->getMessage());
         }
-        
+
         return true;
-    } else {
-        $conn->close();
-        
-        // Log failed login (non-blocking - use try-catch for visibility)
-        try {
-            logLoginFailure($username);
-        } catch (Exception $e) {
-            error_log("Failed login audit logging failed: " . $e->getMessage());
-        }
-        
-        return false;
     }
+
+    if (count($ipscRows) === 1 && empty($mmdvmRows)) {
+        establishIpscSession($ipscRows[0]);
+        try {
+            logLoginSuccess($username);
+        } catch (Exception $e) {
+            error_log("Login audit logging failed: " . $e->getMessage());
+        }
+        return true;
+    }
+
+    if (empty($ipscRows) && !empty($mmdvmRows)) {
+        establishMmdvmSession($mmdvmRows);
+        try {
+            logLoginSuccess($username);
+        } catch (Exception $e) {
+            error_log("Login audit logging failed: " . $e->getMessage());
+        }
+        return true;
+    }
+
+    if (count($ipscRows) === 1) {
+        establishIpscSession($ipscRows[0]);
+        try {
+            logLoginSuccess($username);
+        } catch (Exception $e) {
+            error_log("Login audit logging failed: " . $e->getMessage());
+        }
+        return true;
+    }
+
+    logLoginFailure($username, 'ambiguous_login');
+    return false;
+}
+
+/**
+ * @deprecated Use authenticateUser()
+ */
+function authenticateUserByRadioId($radioId, $password)
+{
+    return authenticateUser((string) $radioId, $password);
+}
+
+/**
+ * @deprecated Use authenticateUser()
+ */
+function authenticateUserByCallsign($username, $password)
+{
+    return authenticateUser($username, $password);
+}
+
+/**
+ * Whether the browser has an active selfcare login session.
+ *
+ * @return bool
+ */
+function isSelfcareLoggedIn()
+{
+    return isset($_SESSION['user_id'])
+        && $_SESSION['user_id'] !== ''
+        && isset($_SESSION['int_ids'])
+        && is_array($_SESSION['int_ids'])
+        && !empty($_SESSION['int_ids']);
 }
 
 /**
@@ -139,18 +600,23 @@ function checkSessionTimeout()
  */
 function initSecureSession()
 {
-    // Prevent JavaScript access to session cookie
-    ini_set('session.cookie_httponly', 1);
-    
-    // Only send cookie over HTTPS if available (but don't require it)
-    $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        return;
+    }
+
+    $lifetime = SESSION_TIMEOUT_SECONDS;
+    $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                 || (! empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
-    ini_set('session.cookie_secure', $isSecure ? 1 : 0);
-    
-    // Relaxed SameSite for device-based authentication
-    ini_set('session.cookie_samesite', 'Lax');
-    
-    // Prevent session ID in URLs
+
+    session_set_cookie_params([
+        'lifetime' => $lifetime,
+        'path' => '/',
+        'secure' => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+
+    ini_set('session.gc_maxlifetime', (string) $lifetime);
     ini_set('session.use_only_cookies', 1);
 }
 

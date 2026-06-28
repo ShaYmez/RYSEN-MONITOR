@@ -10,9 +10,9 @@ checkSessionTimeout();
 // ============================================
 // Authentication Check
 // ============================================
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['int_ids'])) {
-    error_log("Access denied to ssmain.php - user not authenticated. Session user_id: " . 
-              (isset($_SESSION['user_id']) ? 'set' : 'not set') . 
+if (!isSelfcareLoggedIn()) {
+    error_log("Access denied to ssmain.php - user not authenticated. Session user_id: " .
+              (isset($_SESSION['user_id']) ? 'set' : 'not set') .
               ", int_ids: " . (isset($_SESSION['int_ids']) ? 'set' : 'not set'));
     header("Location: sslogin.php");
     exit();
@@ -46,7 +46,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['genText'])) {
         die("Security error: Invalid or missing CSRF token. Please refresh the page and try again.");
     }
     
-    $options = sanitizeOptions($_POST['genText']);
+    $devForSave = getDevDetails($selint_id);
+    if ($devForSave && isIpscDeviceMode($devForSave['mode'])) {
+        $options = sanitizeIpscOptions($_POST['genText']);
+    } else {
+        $options = sanitizeOptions($_POST['genText']);
+    }
     
     if (!empty($options)) {
         $result = updateDevOptions($selint_id, $options);
@@ -92,6 +97,17 @@ if (!is_array($ts1Values)) {
 }
 if (!is_array($ts2Values)) {
     $ts2Values = empty($ts2Values) ? [] : [$ts2Values];
+}
+
+$isIpscDevice = isIpscDeviceMode($devDetails['mode']);
+
+// Labels for multi-device picker
+$devicePicker = [];
+foreach ($int_ids as $int_id) {
+    $pickerDetails = ($int_id === $selint_id) ? $devDetails : getDevDetails($int_id);
+    if ($pickerDetails) {
+        $devicePicker[$int_id] = formatDevicePickerLabel($int_id, $pickerDetails);
+    }
 }
 
 // ============================================
@@ -163,10 +179,21 @@ $csrfToken = generateCSRFToken();
                                     <h3 class="card-title">
                                         <?php echo "<b>" . escapeHtml($callsign) . "</b>  "; ?>
                                         <?php if (count($int_ids) === 1): ?>
-                                        <?php echo '   (' . escapeHtml($selint_id) . ')'; ?>
+                                        <?php
+                                        if ($isIpscDevice) {
+                                            echo '   (' . escapeHtml($selint_id) . ' IPSC)';
+                                        } else {
+                                            echo '   (' . escapeHtml($selint_id) . ')';
+                                        }
+                                        ?>
                                         <?php endif; ?>
                                     </h3>
                                     <div class="card-tools">
+                                        <?php if (isIpscSession()): ?>
+                                        <a href="ssaccount.php" class="btn btn-tool">
+                                            <i class="fas fa-user-cog"></i> <b>Account</b>
+                                        </a>
+                                        <?php endif; ?>
                                         <a href="sslogout.php" class="btn btn-tool">
                                         <i class="fas fa-sign-out-alt"></i> <b><span id="calc_lout"></span></b>
                                         </a>
@@ -180,14 +207,15 @@ $csrfToken = generateCSRFToken();
                                     <?php endif; ?>
                                     <div class="blur-content">
                                         <div class="row justify-content-center">
-                                            <div class="col-4 text-center mb-4">
-                                                <h1>Selfcare<h1>
+                                            <div class="col-12 col-sm-auto text-center mb-4">
+                                                <h1 class="selfcare-page-heading">Selfcare</h1>
                                                     <h4><?php echo escapeHtml($callsign); ?></h4>
                                             </div>
                                         </div>
                                         
                                         <!-- Hidden Configuration Inputs -->
                                         <input type="hidden" id="mode-status" value="<?php echo escapeHtml($devDetails['mode']); ?>">
+                                        <input type="hidden" id="ipsc-device" value="<?php echo $isIpscDevice ? '1' : '0'; ?>">
                                         <input type="hidden" id="device-id" value="<?php echo escapeHtml($selint_id); ?>">
                                         <input type="hidden" id="device-modified" value="<?php echo escapeHtml($devDetails['modified']); ?>">
                                         
@@ -200,12 +228,18 @@ $csrfToken = generateCSRFToken();
                                                             <input type="hidden" name="csrf_token" value="<?php echo escapeHtml($csrfToken); ?>">
                                                             <select class="form-control form-control-sm" name="int_id" onchange="this.form.submit()">
                                                                 <?php foreach ($int_ids as $int_id): ?>
-                                                                <option value="<?= escapeHtml($int_id) ?>" <?= (isset($_SESSION['selected_int_id']) && $_SESSION['selected_int_id'] === $int_id) ? 'selected' : '' ?>><?= escapeHtml($int_id) ?></option>
+                                                                <option value="<?= escapeHtml($int_id) ?>" <?= (isset($_SESSION['selected_int_id']) && $_SESSION['selected_int_id'] === $int_id) ? 'selected' : '' ?>><?= escapeHtml($devicePicker[$int_id] ?? $int_id) ?></option>
                                                                 <?php endforeach; ?>
                                                             </select>
                                                         </form>
                                                     <?php endif; ?>
-                                                    <span class="mt-3"><?php if ($devDetails['mode']== 4) { echo "SIMPLEX" ; } else { echo "DUPLEX" ; } ?></span>
+                                                    <?php if ($isIpscDevice): ?>
+                                                    <span class="mt-3 badge badge-warning">IPSC</span>
+                                                    <?php elseif ($devDetails['mode']== 4): ?>
+                                                    <span class="mt-3">SIMPLEX</span>
+                                                    <?php else: ?>
+                                                    <span class="mt-3">DUPLEX</span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
@@ -254,6 +288,7 @@ $csrfToken = generateCSRFToken();
                                                 </div>
                                             </div>
                                         </div>
+                                        <?php if (!$isIpscDevice): ?>
                                         <div class="row justify-content-center">
                                             <div class="col-8">
                                                 <table class="table table-sm border align-middle mt-4">
@@ -316,8 +351,8 @@ $csrfToken = generateCSRFToken();
                                                                    data-bs-toggle="tooltip" 
                                                                    data-bs-placement="top" 
                                                                    data-bs-html="true"
-                                                                   title="Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.">
-                                                                </i>
+                                                                   data-bs-title="" 
+                                                                   id="calchlpsticky"></i>
                                                             </td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="stickySelect">
@@ -335,6 +370,7 @@ $csrfToken = generateCSRFToken();
                                                 </table>
                                             </div>
                                         </div>
+                                        <?php endif; ?>
                                         <div class="row justify-content-center mb-3">
                                             <div class="col-6">
                                                 <div class="row justify-content-center">

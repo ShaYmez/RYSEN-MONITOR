@@ -1,4 +1,4 @@
 <?php
-define("VERSION", "Ver 1.4.1");
-define("DASH", "SE21.06.26");
+define("VERSION", "Ver 1.5.0");
+define("DASH", "1.5.0");
 ?>

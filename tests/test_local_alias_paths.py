@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock
 
 
-REPO_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = Path(__file__).resolve().parent.parent
 MONITOR_FILE = REPO_ROOT / "monitor.py"
 
 

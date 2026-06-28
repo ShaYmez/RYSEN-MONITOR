@@ -146,6 +146,62 @@ function sanitizeOptions($options) {
 }
 
 /**
+ * Sanitize IPSC repeater options (TS1 and TS2 only).
+ *
+ * @param string $options Raw options string
+ * @return string Sanitized options string or empty string if invalid
+ */
+function sanitizeIpscOptions($options)
+{
+    $options = strip_tags($options);
+    $options = str_replace("\0", "", $options);
+
+    if (!preg_match('/^(TS[12]=[0-9,]+;?)+$/', $options)) {
+        return '';
+    }
+
+    $allowedKeys = ['TS1', 'TS2'];
+    $pairs = explode(';', trim($options, ';'));
+
+    foreach ($pairs as $pair) {
+        if (empty($pair)) {
+            continue;
+        }
+
+        if (strpos($pair, '=') === false) {
+            return '';
+        }
+
+        list($key, $value) = explode('=', $pair, 2);
+        if (!in_array($key, $allowedKeys, true)) {
+            return '';
+        }
+
+        if (!preg_match('/^[0-9,]+$/', $value)) {
+            return '';
+        }
+    }
+
+    return $options;
+}
+
+/**
+ * Label for selfcare device picker.
+ *
+ * @param int $intId Device int_id
+ * @param array $devDetails Row from Clients
+ * @return string
+ */
+function formatDevicePickerLabel($intId, $devDetails)
+{
+    if (isIpscDeviceMode($devDetails['mode'])) {
+        return $intId . ' — ' . trim($devDetails['callsign']) . ' (IPSC)';
+    }
+
+    return (string) $intId;
+}
+
+/**
  * Generate CSRF token for form protection
  * 
  * Creates a unique token stored in the session to prevent CSRF attacks.

@@ -1,0 +1,288 @@
+/* Dashboard live-update stability and layout polish */
+
+#main,
+#lnksys,
+#statictg,
+#bridge,
+#opb,
+#tgcount,
+#lsthrd_log,
+#bulletin {
+    transition: opacity 0.12s ease;
+}
+
+.dashboard-pane.dashboard-updating {
+    opacity: 0.94;
+    pointer-events: none;
+}
+
+/* Dashboard stat-card anchors — clear fixed navbar when scrolling */
+#active-qso-statbtn,
+#rptrs-statbtn,
+#htspts-statbtn,
+#brdg-statbtn {
+    scroll-margin-top: 5rem;
+}
+
+/* Top stat cards — in-page scroll (not AdminLTE-restricted) */
+#main-stats a.dashboard-stat-link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+}
+
+#main-stats a.dashboard-stat-link .small-box {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#main-stats a.dashboard-stat-link:hover .small-box {
+    box-shadow: 0 0.35rem 0.85rem rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+#main-stats a.dashboard-stat-link:active .small-box {
+    transform: translateY(0);
+}
+
+.dashboard-scroll-flash .card {
+    animation: dashboard-target-flash 1.4s ease-out;
+}
+
+@keyframes dashboard-target-flash {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.5);
+    }
+
+    35% {
+        box-shadow: 0 0 0 0.4rem rgba(0, 123, 255, 0.28);
+    }
+
+    100% {
+        box-shadow: none;
+    }
+}
+
+.dark-mode .dashboard-scroll-flash .card {
+    animation-name: dashboard-target-flash-dark;
+}
+
+@keyframes dashboard-target-flash-dark {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+    }
+
+    35% {
+        box-shadow: 0 0 0 0.4rem rgba(255, 255, 255, 0.18);
+    }
+
+    100% {
+        box-shadow: none;
+    }
+}
+
+.dashboard-stat h3 {
+    font-variant-numeric: tabular-nums;
+    min-width: 1.5ch;
+}
+
+.dashboard-activity-card .card-body {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    min-height: 5.5rem;
+    padding: 0.75rem 1rem;
+}
+
+.dashboard-activity-card .activity-qso-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    justify-content: center;
+    width: 100%;
+}
+
+.dashboard-activity-card .activity-qso-badge {
+    flex: 0 0 auto;
+}
+
+/* Narrow phones: 3 badges per row, centred as a group */
+@media (max-width: 575.98px) {
+    .dashboard-activity-card .activity-qso-grid {
+        display: grid;
+        gap: 0.35rem 0.5rem;
+        grid-template-columns: repeat(3, max-content);
+        justify-content: center;
+        justify-items: center;
+    }
+
+    .dashboard-activity-card .activity-qso-badge {
+        min-width: 0;
+    }
+}
+
+.peer-pill-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+/* Linked Systems / Static TG — callsign + ID column */
+.peer-id-cell {
+    vertical-align: middle !important;
+}
+
+.peer-id-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: flex-start;
+}
+
+.peer-callsign {
+    color: inherit;
+    flex: 0 0 auto;
+    font-weight: 700;
+    max-width: 9ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.peer-callsign:hover {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.peer-callsign-ipsc {
+    color: #ff6600;
+}
+
+.peer-callsign-ipsc:hover {
+    color: #e55a00;
+}
+
+.peer-id-badge {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.peer-loc-cell {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.dashboard-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.dashboard-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.015);
+}
+
+.peer-flag {
+    flex-shrink: 0;
+    height: 16px;
+    width: auto;
+}
+
+/* Last heard — stable rows and aligned ID badges */
+.lh-table .lh-row {
+    min-height: 2rem;
+}
+
+.lh-table .lh-date-cell {
+    white-space: nowrap;
+    width: 6.5rem;
+}
+
+.lh-table .lh-time-cell {
+    white-space: nowrap;
+    width: 4.5rem;
+}
+
+.lh-table .lh-callsign-cell {
+    min-width: 11rem;
+    width: 11rem;
+}
+
+.lh-table .lh-tgnum-cell {
+    white-space: nowrap;
+    width: 4.5rem;
+}
+
+.lh-table .lh-tx-cell {
+    text-align: center;
+    white-space: nowrap;
+    width: 3rem;
+}
+
+.lh-id-row,
+.lh-tg-row {
+    align-items: center;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+}
+
+.lh-callsign {
+    color: inherit;
+    flex: 1 1 auto;
+    font-weight: 700;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.lh-callsign:hover {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.lh-id-badge {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+.lh-tg-name {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dashboard-flag {
+    display: inline-block;
+    flex-shrink: 0;
+    height: 13px;
+    vertical-align: middle;
+    width: 18px;
+}
+
+.dashboard-flag-protocol {
+    flex-shrink: 0;
+}
+
+/* Bootstrap tooltips / popovers — left-aligned, readable line spacing */
+.tooltip .tooltip-inner {
+    line-height: 1.6;
+    max-width: 280px;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    white-space: pre-line;
+}
+
+.popover .popover-header,
+.popover .popover-body {
+    line-height: 1.6;
+    text-align: left;
+    white-space: pre-line;
+}
+
+.popover .popover-body {
+    padding: 0.65rem 0.85rem;
+}

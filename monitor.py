@@ -24,6 +24,11 @@
 #
 #  FDMR-Monitor (2021-22) Version by Christian Quiroz OA4DOA <adm@dmr-peru.pe>
 #
+#  FDMR Monitor with Selfcare — initial PHP dashboard design: Bruno CS8ABG
+#
+#  RYSEN-MONITOR / System X derivative work
+#  Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
+#
 ###############################################################################
 
 # Standard modules
@@ -46,7 +51,7 @@ from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import NetstringReceiver
 from twisted.internet import reactor, task
 from twisted.internet.threads import deferToThread
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import ensureDeferred, inlineCallbacks
 from twisted.web.resource import Resource
 from twisted.web.server import Site
 # Autobahn provides websocket service under Twisted
@@ -88,6 +93,11 @@ CONF = mk_config("fdmr-mon.cfg")
 CONFIG = {}
 # Number of rows showed on the lastheard log page
 LASTHEARD_LOG_ROWS = 70
+# Last-heard DB refresh interval (seconds) — safety timer, not on live keys
+LASTHEARD_REFRESH = 45
+_lastheard_cache = []
+_section_html_cache = {}
+MTPL = {}
 CTABLE = {
     "MASTERS": {},
     "PEERS": {},
@@ -280,9 +290,15 @@ def fill_table(_path, _file, _table, wipe_tbl=True):
             if _table == "peer_ids":
                 for record in records:
                     try:
-                        temp_lst.append((int(record["id"]), record["callsign"]))
-
-                    except:
+                        rid = int(record["id"])
+                        callsign = record.get("callsign") or record.get("call_sign") or ""
+                        temp_lst.append((rid, callsign))
+                        peer_ids[rid] = {
+                            "CALLSIGN": callsign,
+                            "CITY": record.get("city") or "",
+                            "STATE": record.get("state") or "",
+                        }
+                    except Exception:
                         pass
 
             elif _table == "subscriber_ids":
@@ -522,6 +538,90 @@ def cleanTE():
                 del CTABLE["OPENBRIDGES"][system]["STREAMS"][streamId]
 
 
+ROUTING_MASTER_MODES = ("MASTER", "IPSC")
+
+
+def is_routing_master(mode):
+    return mode in ROUTING_MASTER_MODES
+
+
+def _hb_field_str(value):
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace").rstrip("\x00").strip()
+    if value is None:
+        return ""
+    return str(value).rstrip("\x00").strip()
+
+
+def _alias_location(radio_id):
+    try:
+        rid = int(radio_id)
+    except (TypeError, ValueError):
+        return ""
+    alias = get_alias(rid, peer_ids, "CITY", "STATE")
+    if isinstance(alias, list):
+        parts = [str(part).strip() for part in alias if part]
+        return ", ".join(parts)
+    return ""
+
+
+def _ipsc_location(peer_conf, radio_id):
+    location = _hb_field_str(peer_conf.get("LOCATION", ""))
+    if location:
+        return location
+    return _alias_location(radio_id)
+
+
+def _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer):
+    _ctable_peer["PROTOCOL"] = "IPSC"
+    _ctable_peer["RADIO_ID"] = _ipsc_radio_id(_peer_conf, _peer)
+    _ctable_peer["CALLSIGN"] = _ipsc_callsign(
+        _peer_conf, _peer, _ctable_peer["RADIO_ID"])
+    for field in ("SOFTWARE_ID", "PACKAGE_ID", "DESCRIPTION"):
+        _ctable_peer[field] = _hb_field_str(_peer_conf.get(field, ""))
+    _ctable_peer["LOCATION"] = _ipsc_location(
+        _peer_conf, _ctable_peer["RADIO_ID"])
+    for field in ("SOFTWARE_ID", "PACKAGE_ID"):
+        if not _ctable_peer[field]:
+            _ctable_peer[field] = "—"
+
+
+def refresh_hb_peer(_peer_conf, _ctable_peer, _peer):
+    """Refresh CTABLE peer metadata from config without resetting timeslots."""
+    _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]
+    _ctable_peer["CONNECTED"] = time_str(_peer_conf["CONNECTED"], "since")
+    _ctable_peer["IP"] = _peer_conf["IP"]
+    _ctable_peer["PORT"] = _peer_conf["PORT"]
+    if _peer_conf.get("PROTOCOL") == "IPSC":
+        _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
+
+
+def _ipsc_radio_id(peer_conf, peer):
+    if "RADIO_ID" not in peer_conf:
+        return str(int_id(peer))
+    rid = peer_conf["RADIO_ID"]
+    if isinstance(rid, bytes):
+        text = rid.decode("utf-8", errors="replace").rstrip("\x00").strip()
+        return text or str(int_id(peer))
+    text = str(rid).strip()
+    return text or str(int_id(peer))
+
+
+def _ipsc_callsign(peer_conf, peer, radio_id):
+    callsign = peer_conf.get("CALLSIGN", "")
+    if isinstance(callsign, bytes):
+        callsign = callsign.decode("utf-8", errors="replace").rstrip("\x00").strip()
+    else:
+        callsign = str(callsign).strip()
+    peer_key = str(int_id(peer))
+    if callsign and callsign not in (radio_id, peer_key):
+        return callsign
+    alias = alias_call(int(radio_id), peer_ids)
+    if str(alias) not in (str(radio_id), peer_key):
+        return str(alias)
+    return callsign or radio_id
+
+
 def add_hb_peer(_peer_conf, _ctable_loc, _peer):
     _ctable_loc[int_id(_peer)] = {}
     _ctable_peer = _ctable_loc[int_id(_peer)]
@@ -560,60 +660,26 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer["SLOTS"] = "Simplex"
 
     # Simple translation items
-    if str(type(_peer_conf["PACKAGE_ID"])).find("bytes") != -1:
-        _ctable_peer["PACKAGE_ID"] = _peer_conf["PACKAGE_ID"].decode("utf-8")
-    else:
-        _ctable_peer["PACKAGE_ID"] = _peer_conf["PACKAGE_ID"]
+    _ctable_peer["PACKAGE_ID"] = _hb_field_str(_peer_conf.get("PACKAGE_ID", ""))
+    _ctable_peer["SOFTWARE_ID"] = _hb_field_str(_peer_conf.get("SOFTWARE_ID", ""))
+    _ctable_peer["LOCATION"] = _hb_field_str(_peer_conf.get("LOCATION", ""))
+    _ctable_peer["DESCRIPTION"] = _hb_field_str(_peer_conf.get("DESCRIPTION", ""))
+    _ctable_peer["URL"] = _hb_field_str(_peer_conf.get("URL", ""))
+    _ctable_peer["CALLSIGN"] = _hb_field_str(_peer_conf.get("CALLSIGN", ""))
+    _ctable_peer["COLORCODE"] = _hb_field_str(_peer_conf.get("COLORCODE", ""))
 
-    if str(type(_peer_conf["SOFTWARE_ID"])).find("bytes") != -1:
-        _ctable_peer["SOFTWARE_ID"] = _peer_conf["SOFTWARE_ID"].decode("utf-8")
-    else:
-        _ctable_peer["SOFTWARE_ID"] = _peer_conf["SOFTWARE_ID"]
+    for field in ("TX_POWER", "LATITUDE", "LONGITUDE", "HEIGHT"):
+        value = _peer_conf.get(field, "")
+        if str(type(value)).find("bytes") != -1:
+            _ctable_peer[field] = value.decode("utf-8").strip()
+        else:
+            _ctable_peer[field] = value
 
-    if str(type(_peer_conf["LOCATION"])).find("bytes") != -1:
-        _ctable_peer["LOCATION"] = _peer_conf["LOCATION"].decode("utf-8").strip()
-    else:
-        _ctable_peer["LOCATION"] = _peer_conf["LOCATION"]
-
-    if str(type(_peer_conf["DESCRIPTION"])).find("bytes") != -1:
-        _ctable_peer["DESCRIPTION"] = _peer_conf["DESCRIPTION"].decode("utf-8").strip()
-    else:
-        _ctable_peer["DESCRIPTION"] = _peer_conf["DESCRIPTION"]
-
-    if str(type(_peer_conf["URL"])).find("bytes") != -1:
-        _ctable_peer["URL"] = _peer_conf["URL"].decode("utf-8").strip()
-    else:
-        _ctable_peer["URL"] = _peer_conf["URL"]
-
-    if str(type(_peer_conf["CALLSIGN"])).find("bytes") != -1:
-        _ctable_peer["CALLSIGN"] = _peer_conf["CALLSIGN"].decode("utf-8").strip()
-    else:
-        _ctable_peer["CALLSIGN"] = _peer_conf["CALLSIGN"]
-
-    if str(type(_peer_conf["COLORCODE"])).find("bytes") != -1:
-        _ctable_peer["COLORCODE"] = _peer_conf["COLORCODE"].decode("utf-8").strip()
-    else:
-        _ctable_peer["COLORCODE"] = _peer_conf["COLORCODE"]
-
-    if str(type(_peer_conf["TX_POWER"])).find("bytes") != -1:
-        _ctable_peer["TX_POWER"] = _peer_conf["TX_POWER"].decode("utf-8").strip()
-    else:
-        _ctable_peer["TX_POWER"] = _peer_conf["TX_POWER"]
-
-    if str(type(_peer_conf["LATITUDE"])).find("bytes") != -1:
-        _ctable_peer["LATITUDE"] = _peer_conf["LATITUDE"].decode("utf-8").strip()
-    else:
-        _ctable_peer["LATITUDE"] = _peer_conf["LATITUDE"]
-
-    if str(type(_peer_conf["LONGITUDE"])).find("bytes") != -1:
-        _ctable_peer["LONGITUDE"] = _peer_conf["LONGITUDE"].decode("utf-8").strip()
-    else:
-        _ctable_peer["LONGITUDE"] = _peer_conf["LONGITUDE"]
-
-    if str(type(_peer_conf["HEIGHT"])).find("bytes") != -1:
-        _ctable_peer["HEIGHT"] = _peer_conf["HEIGHT"].decode("utf-8").strip()
-    else:
-        _ctable_peer["HEIGHT"] = _peer_conf["HEIGHT"]
+    if _peer_conf.get("PROTOCOL") == "IPSC":
+        _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
+        logger.info(
+            f"IPSC peer registered: {_ctable_peer['CALLSIGN']} "
+            f"(Id: {_ctable_peer['RADIO_ID']})")
 
     _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]
     _ctable_peer["CONNECTED"] = time_str(_peer_conf["CONNECTED"], "since")
@@ -639,7 +705,7 @@ def build_hblink_table(_config, _stats_table):
     for _hbp, _hbp_data in list(_config.items()):
         if _hbp_data["ENABLED"] == True:
             # Process Master Systems
-            if _hbp_data["MODE"] == "MASTER":
+            if is_routing_master(_hbp_data["MODE"]):
                 _stats_table["MASTERS"][_hbp] = {}
                 if _hbp_data["REPEAT"]:
                     _stats_table["MASTERS"][_hbp]["REPEAT"] = "repeat"
@@ -728,32 +794,51 @@ def build_hblink_table(_config, _stats_table):
                 _stats_table["OPENBRIDGES"][_hbp]["STREAMS"] = {}
 
 
+def _routing_master_entry(_hbp_data):
+    return {
+        "REPEAT": "repeat" if _hbp_data["REPEAT"] else "isolate",
+        "PEERS": {},
+    }
+
+
 def update_hblink_table(_config, _stats_table):
-    # Is there a system in HBlink's config monitor doesn't know about?
-    for _hbp in _config:
-        if _config[_hbp]["MODE"] == "MASTER":
-            for _peer in _config[_hbp]["PEERS"]:
-                if int_id(_peer) not in _stats_table["MASTERS"][_hbp]["PEERS"] and _config[_hbp]["PEERS"][_peer]["CONNECTION"] == "YES":
-                    logger.info(f"Adding peer to CTABLE that has registerred: {int_id(_peer)}")
-                    add_hb_peer(_config[_hbp]["PEERS"][_peer], _stats_table["MASTERS"][_hbp]["PEERS"], _peer)
+    for _hbp, _hbp_data in _config.items():
+        if not _hbp_data.get("ENABLED"):
+            continue
+        if not is_routing_master(_hbp_data["MODE"]):
+            continue
+        if _hbp not in _stats_table["MASTERS"]:
+            _stats_table["MASTERS"][_hbp] = _routing_master_entry(_hbp_data)
+        for _peer in _hbp_data["PEERS"]:
+            if (int_id(_peer) not in _stats_table["MASTERS"][_hbp]["PEERS"]
+                    and _hbp_data["PEERS"][_peer]["CONNECTION"] == "YES"):
+                logger.info(f"Adding peer to CTABLE that has registerred: {int_id(_peer)}")
+                add_hb_peer(_hbp_data["PEERS"][_peer], _stats_table["MASTERS"][_hbp]["PEERS"], _peer)
 
     # Is there a system in monitor that's been removed from HBlink's config?
-    for _hbp in _stats_table["MASTERS"]:
+    for _hbp in list(_stats_table["MASTERS"]):
+        if _hbp not in _config or not is_routing_master(_config[_hbp]["MODE"]):
+            logger.info(f"Deleting stats master not in hblink config: {_hbp}")
+            del _stats_table["MASTERS"][_hbp]
+            continue
         remove_list = []
-        if _config[_hbp]["MODE"] == "MASTER":
-            for _peer in _stats_table["MASTERS"][_hbp]["PEERS"]:
-                if bytes_4(_peer) not in _config[_hbp]["PEERS"]:
-                    remove_list.append(_peer)
+        for _peer in _stats_table["MASTERS"][_hbp]["PEERS"]:
+            if bytes_4(_peer) not in _config[_hbp]["PEERS"]:
+                remove_list.append(_peer)
 
-            for _peer in remove_list:
-                logger.info(f"Deleting stats peer not in hblink config: {_peer}")
-                del (_stats_table["MASTERS"][_hbp]["PEERS"][_peer])
-    # Update connection time
+        for _peer in remove_list:
+            logger.info(f"Deleting stats peer not in hblink config: {_peer}")
+            del _stats_table["MASTERS"][_hbp]["PEERS"][_peer]
+    # Update connection time and refresh peer metadata from latest config
     for _hbp in _stats_table["MASTERS"]:
         for _peer in _stats_table["MASTERS"][_hbp]["PEERS"]:
-            if bytes_4(_peer) in _config[_hbp]["PEERS"]:
-                _stats_table["MASTERS"][_hbp]["PEERS"][_peer]["CONNECTED"] = time_str(
-                    _config[_hbp]["PEERS"][bytes_4(_peer)]["CONNECTED"],"since")
+            peer_key = bytes_4(_peer)
+            if peer_key in _config[_hbp]["PEERS"]:
+                peer_conf = _config[_hbp]["PEERS"][peer_key]
+                refresh_hb_peer(
+                    peer_conf,
+                    _stats_table["MASTERS"][_hbp]["PEERS"][_peer],
+                    peer_key)
 
     for _hbp in _stats_table["PEERS"]:
         if _stats_table["PEERS"][_hbp]["MODE"] == "XLXPEER":
@@ -837,6 +922,128 @@ def build_bridge_table(_bridges):
 #
 build_time = 0
 build_deferred = None
+
+
+def push_main_live(client=None):
+    """Push stats + activity + connected — last-heard tbody updated separately."""
+    if not client and not GROUPS["main"]:
+        return
+    ctx = {"_table": CTABLE}
+    _send_main_section("2", MTPL["stats"].render(**ctx), client, "main-stats")
+    _send_main_section("3", MTPL["activity"].render(**ctx), client, "main-activity")
+    connected = MTPL["connected"].render(**ctx)
+    _send_main_section("5", connected, client, "main-connected")
+
+
+def push_main_shell(client=None):
+    """Push home layout shell (e.g. after CTABLE populated or cleared)."""
+    if not client and not GROUPS["main"]:
+        return
+    shell = MTPL["shell"].render(_table=CTABLE)
+    if client:
+        client.sendMessage(("i" + shell).encode("utf-8"))
+    elif GROUPS["main"]:
+        dashboard_server.broadcast("i" + shell, "main")
+
+
+def _broadcast_table(opcode, html, group, client=None, cache_key=None):
+    if client is None and cache_key is not None and _section_html_cache.get(cache_key) == html:
+        return
+    if cache_key is not None:
+        _section_html_cache[cache_key] = html
+    if client:
+        client.sendMessage((opcode + html).encode("utf-8"))
+    elif GROUPS[group]:
+        dashboard_server.broadcast(opcode + html, group)
+
+
+def push_lnksys_live(client=None):
+    """Push full linked-systems table on live QSO events."""
+    if not CONFIG:
+        return
+    if not client and not GROUPS["lnksys"]:
+        return
+    html = ctemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
+    _broadcast_table("c", html, "lnksys", client, "lnksys-live")
+
+
+def push_statictg_live(client=None):
+    """Push static TG tables on live QSO events."""
+    if not CONFIG:
+        return
+    if not client and not GROUPS["statictg"]:
+        return
+    html = stemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
+    _broadcast_table("s", html, "statictg", client, "statictg-live")
+
+
+def push_live_dashboard(client=None):
+    """Immediate CTABLE-driven updates when a QSO starts or ends."""
+    push_main_live(client)
+    push_lnksys_live(client)
+    push_statictg_live(client)
+
+
+def _send_main_section(opcode, html, client=None, cache_key=None):
+    if client is None and cache_key is not None and _section_html_cache.get(cache_key) == html:
+        return
+    if cache_key is not None:
+        _section_html_cache[cache_key] = html
+    if client:
+        client.sendMessage((opcode + html).encode("utf-8"))
+    elif GROUPS["main"]:
+        dashboard_server.broadcast(opcode + html, "main")
+
+
+def push_lastheard_rows(result, client=None):
+    global _lastheard_cache
+    _lastheard_cache = result
+    if not CONF["GLOBAL"]["LH_INC"]:
+        return
+    html = MTPL["lastheard_rows"].render(_table=CTABLE, lastheard=result)
+    _send_main_section("4", html, client, "main-lastheard")
+
+
+@inlineCallbacks
+def refresh_lastheard(client=None):
+    """Query last_heard from DB and patch tbody only."""
+    if not CONF["GLOBAL"]["LH_INC"]:
+        return
+    if not client and not GROUPS["main"]:
+        return
+    result = yield db_conn.slct_2render("last_heard", CONF["GLOBAL"]["LH_ROWS"])
+    if result is None:
+        return
+    push_lastheard_rows(result, client)
+
+
+def _warm_main_section_cache():
+    ctx = {"_table": CTABLE}
+    _section_html_cache["main-stats"] = MTPL["stats"].render(**ctx)
+    _section_html_cache["main-activity"] = MTPL["activity"].render(**ctx)
+    _section_html_cache["main-connected"] = MTPL["connected"].render(**ctx)
+
+
+@inlineCallbacks
+def render_main_dashboard(client=None):
+    """Initial connect: full dashboard in one message, then last-heard rows."""
+    if not client and not GROUPS["main"]:
+        return
+    html = MTPL["initial"].render(_table=CTABLE)
+    if client:
+        client.sendMessage(("i" + html).encode("utf-8"))
+    elif GROUPS["main"]:
+        dashboard_server.broadcast("i" + html, "main")
+    _warm_main_section_cache()
+    ensureDeferred(refresh_lastheard(client))
+
+
+@inlineCallbacks
+def record_lastheard(qso_time, qso_type, system, tg_num, dmr_id):
+    yield db_conn.ins_lstheard(qso_time, qso_type, system, tg_num, dmr_id)
+    yield refresh_lastheard()
+
+
 def build_stats():
     global build_time, build_deferred
     if time() - build_time < 1:
@@ -851,7 +1058,7 @@ def build_stats():
 
     if CONFIG:
         if GROUPS["main"]:
-            render_fromdb("last_heard", CONF["GLOBAL"]["LH_ROWS"])
+            push_main_live()
         if GROUPS["lnksys"]:
             lnksys = "c" + ctemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
             dashboard_server.broadcast(lnksys, "lnksys")
@@ -883,8 +1090,7 @@ def render_fromdb(_tbl, _row_num, _snd=False):
         if result:
             if not _snd:
                 if _tbl == "last_heard":
-                    main = "i" + itemplate.render(_table=CTABLE, lastheard=result)
-                    dashboard_server.broadcast(main, "main")
+                    push_lastheard_rows(result)
 
                 elif _tbl == "lstheard_log":
                     lsth_log = "h" + htemplate.render(_table=result)
@@ -896,8 +1102,7 @@ def render_fromdb(_tbl, _row_num, _snd=False):
 
             else:
                 if _tbl == "last_heard":
-                    _snd.sendMessage(
-                        ("i" + itemplate.render(_table=CTABLE, lastheard=result)).encode("utf-8"))
+                    push_lastheard_rows(result, _snd)
 
                 elif _tbl == "lstheard_log":
                     _snd.sendMessage(("h" + htemplate.render(_table=result)).encode("utf-8"))
@@ -985,9 +1190,9 @@ def generate_rss_feed():
 
 
 def build_tgstats():
+    tmp_dict = {}
     if CONFIG and CTABLE:
         CTABLE["SERVER"] ={"TS1":[],"TS2":[]}
-        tmp_dict = {}
         srv_info = 0
         # make a list with occupied systems
         for system in CTABLE["MASTERS"]:
@@ -1016,16 +1221,18 @@ def build_tgstats():
             for peer in CTABLE["MASTERS"][system]["PEERS"]:
                 CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS1"] = {"TGID": "", "TO": ""}
                 CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS2"] = {"TGID": "", "TO": ""}
-                if isinstance(CONFIG[system]["TS1_STATIC"], bool):
+                ts1_static = CONFIG[system].get("TS1_STATIC")
+                if isinstance(ts1_static, bool) or ts1_static is None:
                     CTABLE["MASTERS"][system]["PEERS"][peer]["TS1_STATIC"] = []
                 else:
                     CTABLE["MASTERS"][system]["PEERS"][peer]["TS1_STATIC"] = (
-                        CONFIG[system]["TS1_STATIC"].split(","))
-                if isinstance(CONFIG[system]["TS2_STATIC"], bool):
+                        ts1_static.split(","))
+                ts2_static = CONFIG[system].get("TS2_STATIC")
+                if isinstance(ts2_static, bool) or ts2_static is None:
                     CTABLE["MASTERS"][system]["PEERS"][peer]["TS2_STATIC"] = []
                 else:
                     CTABLE["MASTERS"][system]["PEERS"][peer]["TS2_STATIC"] = (
-                        CONFIG[system]["TS2_STATIC"].split(","))
+                        ts2_static.split(","))
     # Find Single TG
     if CTABLE and BRIDGES and tmp_dict:
         for bridge in BRIDGES:
@@ -1045,7 +1252,7 @@ def timeout_clients():
         for group in dashboard_server.clients:
             for client in dashboard_server.clients[group]:
                 if dashboard_server.clients[group][client] + CONF["WS"]["CLT_TO"] < now:
-                    logger.info(f"TIMEOUT: disconnecting client {dashboard_server.clients[client]}")
+                    logger.info(f"TIMEOUT: disconnecting client {client_peer(client)}")
                     try:
                         dashboard.sendClose(client)
                     except Exception as err:
@@ -1130,7 +1337,7 @@ def rts_update(p):
             CTABLE["PEERS"][system][timeSlot]["TG"] = ""
             CTABLE["PEERS"][system][timeSlot]["TRX"] = ""
 
-    build_stats()
+    push_live_dashboard()
 
 
 ######################################################################
@@ -1152,6 +1359,10 @@ def process_message(_bmessage):
             update_hblink_table(CONFIG, CTABLE)
         else:
             build_hblink_table(CONFIG, CTABLE)
+        if GROUPS["main"]:
+            push_main_shell()
+            push_main_live()
+            ensureDeferred(refresh_lastheard())
 
     elif opcode == OPCODE["BRIDGE_SND"]:
         logger.debug("got BRIDGE_SND opcode")
@@ -1193,8 +1404,7 @@ def process_message(_bmessage):
                     db_conn.ins_lstheard_log(p[9], p[0], p[3], p[8], p[6])
                     # use >= 0 instead of > 2 if you want to record all activities
                     if int(float(p[9])) > 2:
-                        # Insert voice qso into lstheard DB table
-                        db_conn.ins_lstheard(p[9], p[0], p[3], p[8], p[6])
+                        ensureDeferred(record_lastheard(p[9], p[0], p[3], p[8], p[6]))
 
                 # Removing obsolete entries from the sys_dict (3 sec)
                 if not sys_dict["lst_clean"] or time() - sys_dict["lst_clean"] >= 3:
@@ -1234,8 +1444,7 @@ def process_message(_bmessage):
 
         elif p[0] == "UNIT DATA HEADER" and p[2] != "TX" and p[5] not in CONF["OPB_FLTR"]["OPB_FILTER"]:
             logger.info(f"BRIDGE EVENT: {_message[1:]}")
-            # Insert data qso into lstheard DB table
-            db_conn.ins_lstheard(None, p[0], p[3], p[8], p[6])
+            ensureDeferred(record_lastheard(None, p[0], p[3], p[8], p[6]))
             # Insert data qso into lstheard_log DB table
             db_conn.ins_lstheard_log(None, p[0], p[3], p[8], p[6])
 
@@ -1293,9 +1502,13 @@ class reportClientFactory(ReconnectingClientFactory):
         CTABLE["PEERS"].clear()
         CTABLE["OPENBRIDGES"].clear()
         BTABLE["BRIDGES"].clear()
+        _section_html_cache.clear()
         logger.info(f"Lost connection.  Reason: {reason}")
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
         dashboard_server.broadcast("q" + "Connection to HBlink Lost", "all_clients")
+        if GROUPS["main"]:
+            push_main_shell()
+            push_main_live()
 
     def clientConnectionFailed(self, connector, reason):
         logger.info(f"Connection failed. Reason: {reason}")
@@ -1351,7 +1564,7 @@ class dashboard(WebSocketServerProtocol):
                             ("o" + otemplate.render(
                                 _table=CTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])).encode("utf-8"))
                     elif group == "main":
-                        render_fromdb("last_heard", CONF["GLOBAL"]["LH_ROWS"], self)
+                        ensureDeferred(render_main_dashboard(self))
                     elif group == "statictg":
                         self.sendMessage(
                             ("s" + stemplate.render(
@@ -1483,9 +1696,15 @@ if __name__ == "__main__":
     logger = create_logger(log_conf)
 
     logger.info("monitor.py starting up")
-    logger.info("\n\n\tCopyright (c) 2016-2022\n\tThe Regents of the K0USY Group. All rights "
-                "reserved.\n\n\tPython 3 port:\n\t2019 Steve Miller, KC1AWV <smiller@kc1awv.net>"
-                "\n\n\tFDMR-Monitor OA4DOA 2023 - CS8ABG 2023\n\n")
+    logger.info(
+        "\n\n\tCopyright (c) 2016-2022 The Regents of the K0USY Group. All rights reserved."
+        "\n\n\tPython 3 port: 2019 Steve Miller, KC1AWV <smiller@kc1awv.net>"
+        "\n\tHBMonitor v2: Waldek SP2ONG"
+        "\n\tFDMR-Monitor: Christian Quiroz, OA4DOA"
+        "\n\tInitial PHP dashboard design: Bruno CS8ABG"
+        "\n\tRYSEN-MONITOR / System X: Copyright (c) 2020-%s Shane Daley, M0VUB <shane@freestar.network>\n\n",
+        datetime.now().year,
+    )
 
     # Create an instance of MoniDB
     db_conn = MoniDB(CONF["DB"]["SERVER"], CONF["DB"]["USER"], CONF["DB"]["PASSWD"],
@@ -1509,10 +1728,22 @@ if __name__ == "__main__":
     htemplate = env.get_template("lasthrd_log.html")
     ttemplate = env.get_template("tgcount_table.html")
     butemplate = env.get_template("bulletin_board.html")
+    MTPL.update({
+        "shell": env.get_template("main/shell.html"),
+        "initial": env.get_template("main/initial.html"),
+        "stats": env.get_template("main/stats.html"),
+        "activity": env.get_template("main/activity.html"),
+        "lastheard_rows": env.get_template("main/lastheard_rows.html"),
+        "connected": env.get_template("main/connected.html"),
+    })
 
     # Start update loop
     update_stats = task.LoopingCall(build_stats)
     update_stats.start((CONF["WS"]["FREQ"])).addErrback(error_hdl)
+
+    if CONF["GLOBAL"]["LH_INC"]:
+        lastheard_refresh = task.LoopingCall(refresh_lastheard)
+        lastheard_refresh.start(LASTHEARD_REFRESH).addErrback(error_hdl)
 
     # Start the timeout loop
     if CONF["WS"]["CLT_TO"]:

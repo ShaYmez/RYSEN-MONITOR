@@ -3,11 +3,11 @@ from pathlib import Path
 from logging.config import dictConfig
 
 __author__ = 'Christian Quiroz, OA4DOA'
-__verion__ = '1.0.0'
-__copyright__ = 'Copyright (c) 2023 Christian Quiroz, OA4DOA'
+__version__ = '1.0.0'
+__copyright__ = 'Copyright (c) 2023 Christian Quiroz, OA4DOA; RYSEN-MONITOR modifications Copyright (c) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>'
 __license__ = 'GNU GPLv3'
-__maintainer__ = 'Christian Quiroz, OA4DOA'
-__email__ = 'adm@dmr-peru.net'
+__maintainer__ = 'Shane Daley, M0VUB'
+__email__ = 'shane@freestar.network'
 
 def create_logger(conf):
     dictConfig({

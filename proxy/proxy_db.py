@@ -3,6 +3,9 @@
 ###############################################################################
 #   Copyright (C) 2021-2022 Christian Quiroz, OA4DOA <adm@dmr-peru.pe>
 #
+#   RYSEN-MONITOR reference copy; deployment source is RYSEN / RYSEN-SP-SELFCARE.
+#   Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
+#
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
 #   the Free Software Foundation; either version 3 of the License, or
@@ -25,10 +28,10 @@ from twisted.internet.defer import inlineCallbacks
 
 __author__     = 'Christian Quiroz, OA4DOA'
 __version__    = '1.0.0'
-__copyright__  = 'Copyright (c) 2021-2022 Christian Quiroz, OA4DOA'
+__copyright__  = 'Copyright (c) 2021-2022 Christian Quiroz, OA4DOA; RYSEN-MONITOR reference Copyright (c) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>'
 __license__    = 'GNU GPLv3'
-__maintainer__ = 'Christian Quiroz, OA4DOA'
-__email__      = 'adm@dmr-peru.pe'
+__maintainer__ = 'Shane Daley, M0VUB'
+__email__      = 'shane@freestar.network'
 
 
 class ProxyDB:
@@ -97,7 +100,8 @@ class ProxyDB:
 
     def slct_db(self):
         return self.dbpool.runQuery(
-            "SELECT dmr_id, options FROM Clients WHERE modified = True and logged_in = True")
+            "SELECT dmr_id, options FROM Clients "
+            "WHERE modified = True AND logged_in = True AND mode > 0")
 
     def slct_opt(self, _peer_id):
         return self.dbpool.runQuery("SELECT options FROM Clients WHERE dmr_id = %s", (_peer_id,))

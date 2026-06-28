@@ -6,8 +6,8 @@
  * Configure footer content, credits, and links
  */
 
-// Organization footer info
-define('FOOTER_COPYRIGHT_YEAR', '2024');
+// Organization footer info (year updates automatically)
+define('FOOTER_COPYRIGHT_YEAR', date('Y'));
 define('FOOTER_MAIN_LINK', 'https://freestar.network/systemx-dmr');
 define('FOOTER_MAIN_TEXT', 'System X');
 
@@ -15,9 +15,9 @@ define('FOOTER_MAIN_TEXT', 'System X');
 $credits = array(
     array('name' => 'Cort', 'callsign' => 'N0MJS', 'title' => 'HBlink Creator. First line of code!', 'url' => 'https://github.com/n0mjs710'),
     array('name' => 'Jonathan', 'callsign' => 'G4KLX', 'title' => 'MMDVM Developer', 'url' => 'https://github.com/G4KLX'),
-    array('name' => 'Bruno', 'callsign' => 'CS8ABG', 'title' => 'CS8ABG Dash Variant', 'url' => 'https://github.com/CS8ABG/FDMR-Monitor.git'),
+    array('name' => 'Bruno', 'callsign' => 'CS8ABG', 'title' => 'Initial dashboard design', 'url' => 'https://github.com/CS8ABG/FDMR-Monitor'),
     array('name' => 'Simon', 'callsign' => 'G7RZU', 'title' => 'Official FDMR Peer Server', 'url' => 'https://github.com/hacknix'),
-    array('name' => 'Shane', 'callsign' => 'M0VUB', 'title' => 'Official RYSEN Master+ / SystemX derivative Server', 'url' => 'https://github.com/shaymez/RYSEN'),
+    array('name' => 'Shane', 'callsign' => 'M0VUB', 'title' => 'RYSEN Master+ / System X', 'url' => 'https://github.com/shaymez/RYSEN'),
 );
 
 // Additional footer links (customize per organization)

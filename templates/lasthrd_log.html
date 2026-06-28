@@ -15,7 +15,7 @@
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table m-0 table-striped table-sm">
+          <table class="table m-0 table-striped table-sm dashboard-table lh-table">
             <thead>
               <tr>
                 <th style="width: 105px;" id="lh_date"></th>
@@ -38,15 +38,23 @@
                 <td></td>
                 {% else %}
                 {% set ctryusr = itm[6]|flag_code %}
-                <td><img src="./flags/{{ ctryusr }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctryusr }}">&nbsp;<strong><a target="_blank" href=https://qrz.com/db/{{itm[7][0]}}>{{ itm[7][0] }}</a></strong><span>&nbsp;({{
-                    itm[6] }})</span></td>
+                <td class="lh-callsign-cell">
+                  <div class="lh-id-row">
+                    <img class="dashboard-flag" src="./flags/{{ ctryusr }}.png" width="18" height="13"
+                      onerror="this.onerror=null;this.src='./flags/world.png'" alt="">
+                    <a class="lh-callsign" target="_blank" href="https://qrz.com/db/{{itm[7][0]}}">{{ itm[7][0] }}</a>
+                    <span class="badge badge-info lh-id-badge">{{ itm[6] }}</span>
+                  </div>
+                </td>
                 <td><strong>{{ itm[7][1] }}</strong></td>
                 {% endif %}
                 <td class="text-warning"><strong>{{ itm[4] }}</strong></td>
-                <td>
+                <td class="lh-tg-cell">
+                  <div class="lh-tg-row">
                   {% set ctrynum = itm[4]|flag_code %}
-                  <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                  <strong>&nbsp;{{ '' if not itm[5] else itm[5]|safe }}&nbsp;</strong>
+                  <img class="dashboard-flag" src="./flags/{{ ctrynum }}.png" width="18" height="13"
+                    onerror="this.onerror=null;this.src='./flags/world.png'" alt="">
+                  <strong class="lh-tg-name">{{ '' if not itm[5] else itm[5]|safe }}</strong>
                   {% set tgname = itm[5]|safe %}
                   {% if 'fcs' in tgname.lower() or 'ysf' in tgname.lower() or 'wiresx' in tgname.lower() %}
                   <img src="./flags/yaesu.png" alt="Yaesu System Fusion">
@@ -64,8 +72,9 @@
                   <img src="./flags/dstar.png" alt="XLX">
                   {% endif %}
                   {% if 'm17' in tgname.lower() %}
-                  <img src="./flags/m17.png" alt="M17">
+                  <img class="dashboard-flag dashboard-flag-protocol" src="./flags/m17.png" width="18" height="13" alt="">
                   {% endif %}
+                  </div>
                 </td>
                 <td>{{ 'DATA' if not itm[1] else itm[1]|int }}</td>
                 <td>{{ itm[3] }}</td>

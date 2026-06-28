@@ -1,0 +1,122 @@
+<div class="row">
+  <div class="col-12" id="active-qso-statbtn">
+    <div class="card dashboard-activity-card">
+      <div class="card-header">
+        <h3 class="card-title" id="act_tbl"></h3>
+      </div>
+      <div class="card-body">
+        <div class="activity-qso-grid">
+          {% for _master in _table['MASTERS'] %}
+          {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+          {% if _cdata[1]['TS'] == True or _cdata[2]['TS'] == True %}
+          {% if _cdata[1]['TRX'] == "RX" %}
+          <div class="activity-qso-badge">
+            <span class="badge badge-danger text-sm">
+              <table>
+                <tbody>
+                  <tr>
+                    <td rowspan="2">TX |</td>
+                    <td>{{ _cdata[1]['CALL']|safe }}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-xs text-dark">{{ _cdata[1]['TG']|safe }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </span>
+          </div>
+          {% endif %}
+          {% if _cdata[2]['TRX'] == "RX" %}
+          <div class="activity-qso-badge">
+            <span class="badge badge-danger text-sm">
+              <table>
+                <tbody>
+                  <tr>
+                    <td rowspan="2">TX |</td>
+                    <td>{{ _cdata[2]['CALL']|safe}}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-xs text-dark">{{_cdata[2]['TG']|safe}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </span>
+          </div>
+          {% endif %}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+          {% for _peer, _pdata in _table['PEERS'].items() %}
+          {% if _pdata[1]['TS'] == True or _pdata[2]['TS'] == True %}
+          {% if _pdata[1]['TRX'] == "RX" %}
+          <div class="activity-qso-badge">
+            <span class="badge badge-danger text-sm">
+              <table>
+                <tbody>
+                  <tr>
+                    <td rowspan="2">TX |</td>
+                    <td>{{ _pdata[1]['CALL']|safe }}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-xs text-dark">{{ _pdata[1]['TG']|safe }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </span>
+          </div>
+          {% endif %}
+          {% if _pdata[2]['TRX'] == "RX" %}
+          <div class="activity-qso-badge">
+            <span class="badge badge-danger text-sm">
+              <table>
+                <tbody>
+                  <tr>
+                    <td rowspan="2">TX |</td>
+                    <td>{{ _pdata[2]['CALL']|safe }}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-xs text-dark">{{ _pdata[2]['TG']|safe }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </span>
+          </div>
+          {% endif %}
+          {% endif %}
+          {% endfor %}
+          {% if _table['OPENBRIDGES']|length >0 %}
+          {% for _openbridge in _table['OPENBRIDGES'] %}
+          {% set rx = namespace(value=0) %}
+          {% if _table['OPENBRIDGES'][_openbridge]['STREAMS']|length >0 %}
+          {% for entry in _table['OPENBRIDGES'][_openbridge]['STREAMS'] if
+          _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0]=='RX' %}
+          {% set rx.value=1 %}
+          {% endfor %}
+          {% if rx.value == 1 %}
+          {% for entry in _table['OPENBRIDGES'][_openbridge]['STREAMS'] if
+          _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0] == 'RX' %}
+          <div class="activity-qso-badge">
+            <span class="badge badge-success text-sm">
+              <table>
+                <tbody>
+                  <tr>
+                    <td rowspan="2">{{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0]}} |</td>
+                    <td>{{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][1]}}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-xs text-dark">TG {{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][2]}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </span>
+          </div>
+          {% endfor %}
+          {% endif %}
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
