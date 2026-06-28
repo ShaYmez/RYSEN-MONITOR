@@ -5,12 +5,12 @@
         <h3 class="card-title" id="act_tbl"></h3>
       </div>
       <div class="card-body">
-        <div class="row justify-content-center w-100 m-0">
+        <div class="activity-qso-grid">
           {% for _master in _table['MASTERS'] %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
           {% if _cdata[1]['TS'] == True or _cdata[2]['TS'] == True %}
           {% if _cdata[1]['TRX'] == "RX" %}
-          <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
+          <div class="activity-qso-badge">
             <span class="badge badge-danger text-sm">
               <table>
                 <tbody>
@@ -27,7 +27,7 @@
           </div>
           {% endif %}
           {% if _cdata[2]['TRX'] == "RX" %}
-          <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
+          <div class="activity-qso-badge">
             <span class="badge badge-danger text-sm">
               <table>
                 <tbody>
@@ -49,7 +49,7 @@
           {% for _peer, _pdata in _table['PEERS'].items() %}
           {% if _pdata[1]['TS'] == True or _pdata[2]['TS'] == True %}
           {% if _pdata[1]['TRX'] == "RX" %}
-          <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
+          <div class="activity-qso-badge">
             <span class="badge badge-danger text-sm">
               <table>
                 <tbody>
@@ -66,7 +66,7 @@
           </div>
           {% endif %}
           {% if _pdata[2]['TRX'] == "RX" %}
-          <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
+          <div class="activity-qso-badge">
             <span class="badge badge-danger text-sm">
               <table>
                 <tbody>
@@ -95,7 +95,7 @@
           {% if rx.value == 1 %}
           {% for entry in _table['OPENBRIDGES'][_openbridge]['STREAMS'] if
           _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0] == 'RX' %}
-          <div class="col col-lg-auto col-md-auto col-sm-auto activity-qso-badge">
+          <div class="activity-qso-badge">
             <span class="badge badge-success text-sm">
               <table>
                 <tbody>

@@ -22,17 +22,32 @@
 }
 
 .dashboard-activity-card .card-body {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
     min-height: 5.5rem;
     padding: 0.75rem 1rem;
 }
 
+.dashboard-activity-card .activity-qso-grid {
+    align-items: start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    justify-content: center;
+    margin: 0 auto;
+    width: 100%;
+}
+
 .dashboard-activity-card .activity-qso-badge {
-    flex: 0 0 auto;
+    display: flex;
+    flex: 0 0 calc(33.333% - 0.34rem);
+    justify-content: center;
+    max-width: calc(33.333% - 0.34rem);
+}
+
+@media (min-width: 576px) {
+    .dashboard-activity-card .activity-qso-badge {
+        flex: 0 0 auto;
+        max-width: none;
+    }
 }
 
 .peer-pill-grid {
