@@ -123,3 +123,4 @@ $selfcareUrl = (isset($_SESSION['user_id']) && !empty($_SESSION['int_ids'])) ? '
         </ul>
     </div>
 </nav>
+<script src="scripts/i18n-boot.js"></script>

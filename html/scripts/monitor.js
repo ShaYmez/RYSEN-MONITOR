@@ -7,6 +7,27 @@ let translationsCache = null;
 let translationsPromise = null;
 let languageListenerBound = false;
 let delegatedTooltipsReady = false;
+const TRANSLATIONS_STORAGE_KEY = 'rysen_translations';
+
+function readStoredTranslations() {
+    try {
+        const raw = sessionStorage.getItem(TRANSLATIONS_STORAGE_KEY);
+        if (!raw) {
+            return null;
+        }
+        return JSON.parse(raw);
+    } catch (err) {
+        return null;
+    }
+}
+
+function persistTranslations(data) {
+    try {
+        sessionStorage.setItem(TRANSLATIONS_STORAGE_KEY, JSON.stringify(data));
+    } catch (err) {
+        // sessionStorage full or unavailable
+    }
+}
 
 function formatDashboardLabel(text) {
     if (typeof text !== 'string') {
@@ -93,6 +114,12 @@ function loadTranslations() {
     if (translationsCache) {
         return Promise.resolve(translationsCache);
     }
+
+    const cached = readStoredTranslations();
+    if (cached) {
+        translationsCache = cached;
+    }
+
     if (!translationsPromise) {
         translationsPromise = fetch('translations.json', { cache: 'no-store' })
             .then(response => {
@@ -103,9 +130,22 @@ function loadTranslations() {
             })
             .then(data => {
                 translationsCache = data;
+                persistTranslations(data);
                 return data;
+            })
+            .catch(err => {
+                if (translationsCache) {
+                    return translationsCache;
+                }
+                translationsPromise = null;
+                throw err;
             });
     }
+
+    if (translationsCache) {
+        return Promise.resolve(translationsCache);
+    }
+
     return translationsPromise;
 }
 
@@ -222,12 +262,27 @@ function updateDashboardPane(container, message) {
     });
 }
 
+function initPageTranslations() {
+    loadTranslations().then(function () {
+        applyPageTranslations(getPageLanguage());
+        bindLanguageListener();
+        initDelegatedTooltips();
+    }).catch(function (err) {
+        console.error('Failed to load translations:', err);
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPageTranslations);
+} else {
+    initPageTranslations();
+}
+
 window.addEventListener('load', function () {
     var wsuri;
     conf_id();
     markDashboardPanes();
     initDashboardStatLinks();
-    initDelegatedTooltips();
 
     ellog = document.getElementById('log');
 
@@ -239,14 +294,6 @@ window.addEventListener('load', function () {
     tgcount_tbl = document.getElementById('tgcount');
     lsthrd_log_tbl = document.getElementById('lsthrd_log');
     bulletin_tbl = document.getElementById('bulletin');
-
-    loadTranslations().then(function (translations) {
-        applyPageTranslations(getPageLanguage());
-        bindLanguageListener();
-        initDelegatedTooltips();
-    }).catch(function (err) {
-        console.error('Failed to load translations:', err);
-    });
 
     // HBMonv2 pattern: Direct WebSocket connection to port 9000
     // Production installer will modify this to use /wss/ if Mode 2 selected

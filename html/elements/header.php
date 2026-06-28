@@ -29,3 +29,4 @@ include_once __DIR__ . '/../config/branding.php';
 <link rel="stylesheet" href="css/marquee.css">
 <link rel="stylesheet" href="css/custom.css">
 <link rel="stylesheet" href="css/dashboard.css">
+<link rel="preload" href="translations.json" as="fetch" crossorigin="anonymous">
