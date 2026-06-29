@@ -964,7 +964,7 @@ def push_lnksys_live(client=None):
     if not client and not GROUPS["lnksys"]:
         return
     html = ctemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
-    _broadcast_table("c", html, "lnksys", client, "lnksys-live")
+    _broadcast_table("c", html, "lnksys", client, "lnksys")
 
 
 def push_statictg_live(client=None):
@@ -974,7 +974,7 @@ def push_statictg_live(client=None):
     if not client and not GROUPS["statictg"]:
         return
     html = stemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
-    _broadcast_table("s", html, "statictg", client, "statictg-live")
+    _broadcast_table("s", html, "statictg", client, "statictg")
 
 
 def push_live_dashboard(client=None):
@@ -1060,14 +1060,14 @@ def build_stats():
         if GROUPS["main"]:
             push_main_live()
         if GROUPS["lnksys"]:
-            lnksys = "c" + ctemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
-            dashboard_server.broadcast(lnksys, "lnksys")
+            html = ctemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
+            _broadcast_table("c", html, "lnksys", cache_key="lnksys")
         if GROUPS["opb"]:
-            opb = "o" + otemplate.render(_table=CTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])
-            dashboard_server.broadcast(opb, "opb")
+            html = otemplate.render(_table=CTABLE, dbridges=CONF["GLOBAL"]["BRDG_INC"])
+            _broadcast_table("o", html, "opb", cache_key="opb")
         if GROUPS["statictg"]:
-            statictg = "s" + stemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
-            dashboard_server.broadcast(statictg, "statictg")
+            html = stemplate.render(_table=CTABLE, emaster=CONF["GLOBAL"]["EMPTY_MASTERS"])
+            _broadcast_table("s", html, "statictg", cache_key="statictg")
         if GROUPS["lsthrd_log"]:
             render_fromdb("lstheard_log", LASTHEARD_LOG_ROWS)
         if "BULLETIN_BOARD" in CONF and CONF["BULLETIN_BOARD"]["BB_INC"]:
@@ -1075,8 +1075,8 @@ def build_stats():
 
     if BRIDGES and CONF["GLOBAL"]["BRDG_INC"]:
         if GROUPS["bridge"]:
-            bridges = "b" + btemplate.render(_table=BTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])
-            dashboard_server.broadcast(bridges, "bridge")
+            html = btemplate.render(_table=BTABLE, dbridges=CONF["GLOBAL"]["BRDG_INC"])
+            _broadcast_table("b", html, "bridge", cache_key="bridge")
     build_time = time()
 
 
@@ -1360,7 +1360,6 @@ def process_message(_bmessage):
         else:
             build_hblink_table(CONFIG, CTABLE)
         if GROUPS["main"]:
-            push_main_shell()
             push_main_live()
             ensureDeferred(refresh_lastheard())
 
@@ -1489,8 +1488,6 @@ class reportClientFactory(ReconnectingClientFactory):
 
     def startedConnecting(self, connector):
         logger.info("Initiating Connection to Server.")
-        if "dashboard_server" in locals() or "dashboard_server" in globals():
-            dashboard_server.broadcast("q" + "Connection to HBlink Established", "all_clients")
 
     def buildProtocol(self, addr):
         logger.info("Connected, resetting connection delay")
@@ -1505,7 +1502,7 @@ class reportClientFactory(ReconnectingClientFactory):
         _section_html_cache.clear()
         logger.info(f"Lost connection.  Reason: {reason}")
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
-        dashboard_server.broadcast("q" + "Connection to HBlink Lost", "all_clients")
+        dashboard_server.broadcast("l" + "Connection to HBlink Lost", "log")
         if GROUPS["main"]:
             push_main_shell()
             push_main_live()

@@ -243,6 +243,9 @@ function updateDashboardPane(container, message) {
     if (!container) {
         return;
     }
+    if (container.innerHTML === message) {
+        return;
+    }
     const prevHeight = container.offsetHeight;
 
     cleanupTooltips();
@@ -380,6 +383,9 @@ window.addEventListener('load', function () {
                 if (ellog != null) {
                     log(message);
                 }
+                if (message.indexOf('Lost') === -1) {
+                    return;
+                }
                 cleanupTooltips();
                 for (i = 0; i < conf_groups.length; i++) {
                     var group = conf_groups[i];
@@ -420,6 +426,13 @@ function Cmsg(_msg) {
 }
 
 function Imsg(_msg) {
+    if (!main_tbl) {
+        return;
+    }
+    // Full shell paint only when home pane is empty (connect or after backend loss).
+    if (main_tbl.querySelector('#main-stats')) {
+        return;
+    }
     updateDashboardPane(main_tbl, _msg);
 }
 
