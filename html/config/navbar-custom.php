@@ -21,9 +21,14 @@ $custom_navbar_items = array(
 // Social media links (customize per organization)
 $social_links = array(
     array(
-        'icon' => 'fab fa-telegram-plane',
-        'url' => 'https://twitter.com/freestarnetwork/',
-        'title' => 'Telegram'
+        'icon' => 'fas fa-fire-extinguisher',
+        'url' => 'https://hosepipe.freestar.network',
+        'title' => 'HosePipe.'
+    ),
+    array(
+        'icon' => 'fab fa-discord',
+        'url' => 'https://discord.com/invite/TD5tKyqFPR',
+        'title' => 'Discord'
     ),
     array(
         'icon' => 'fab fa-facebook',
