@@ -91,7 +91,6 @@ if (!isset($_SESSION['preloader_displayed'])) {
     <!-- Scripts -->
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="scripts/mode.js"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
     <script src="scripts/dashboard-watch.js"></script>

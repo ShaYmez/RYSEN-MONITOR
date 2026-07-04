@@ -283,7 +283,6 @@ $csrfToken = generateCSRFToken();
     
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="scripts/mode.js"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
     <script src="scripts/monitor.js"></script>

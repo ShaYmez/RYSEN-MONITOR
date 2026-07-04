@@ -10,8 +10,8 @@ var bulletin_tbl = null;
 let translationsCache = null;
 let translationsPromise = null;
 let languageListenerBound = false;
-let delegatedTooltipsReady = false;
 const TRANSLATIONS_STORAGE_KEY = 'rysen_translations';
+const TOOLTIP_SELECTOR = '[data-bs-toggle="tooltip"], [data-toggle="tooltip"]';
 
 function readStoredTranslations() {
     try {
@@ -72,29 +72,59 @@ function translateElements(translations, selectedLanguage) {
 }
 
 function cleanupTooltips() {
-    if (typeof $ === 'undefined' || !$.fn.tooltip) {
+    document.querySelectorAll('.tooltip, .bs-tooltip-auto').forEach(function (el) {
+        el.remove();
+    });
+
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        document.querySelectorAll(TOOLTIP_SELECTOR).forEach(function (el) {
+            const instance = bootstrap.Tooltip.getInstance(el);
+            if (instance) {
+                instance.dispose();
+            }
+        });
+    }
+
+    if (typeof $ !== 'undefined' && $.fn && $.fn.tooltip) {
+        try {
+            $(TOOLTIP_SELECTOR).each(function () {
+                $(this).tooltip('dispose');
+            });
+        } catch (err) {
+            // Ignore stale jQuery tooltip instances after DOM replacement.
+        }
+    }
+}
+
+function bindDashboardTooltips(root) {
+    if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) {
         return;
     }
-    try {
-        $('[data-toggle="tooltip"], [data-bs-toggle="tooltip"]').tooltip('hide');
-    } catch (err) {
-        // Ignore stale tooltip instances after DOM replacement.
-    }
-    $('.tooltip').remove();
+
+    const scope = root || document;
+    scope.querySelectorAll(TOOLTIP_SELECTOR).forEach(function (el) {
+        if (bootstrap.Tooltip.getInstance(el)) {
+            return;
+        }
+
+        const html = el.getAttribute('data-bs-html') === 'true'
+            || el.getAttribute('data-html') === 'true';
+        const placement = el.getAttribute('data-bs-placement')
+            || el.getAttribute('data-placement')
+            || 'top';
+
+        new bootstrap.Tooltip(el, {
+            container: 'body',
+            html: html,
+            placement: placement,
+            trigger: 'hover',
+            sanitize: false
+        });
+    });
 }
 
 function initDelegatedTooltips() {
-    if (delegatedTooltipsReady || typeof $ === 'undefined' || !$.fn.tooltip) {
-        return;
-    }
-    delegatedTooltipsReady = true;
-    $('body').tooltip({
-        selector: '[data-toggle="tooltip"]',
-        trigger: 'hover',
-        html: true,
-        container: 'body',
-        boundary: 'window'
-    });
+    bindDashboardTooltips(document);
 }
 
 function getPageLanguage() {
@@ -164,6 +194,8 @@ function bindLanguageListener() {
             return;
         }
         applyPageTranslations(languageSelect.value);
+        cleanupTooltips();
+        bindDashboardTooltips(document);
     });
 }
 
@@ -211,11 +243,15 @@ function updateSection(sectionId, html) {
     if (!el || el.innerHTML === html) {
         return;
     }
+    cleanupTooltips();
     el.innerHTML = html;
+    bindDashboardTooltips(el);
     loadTranslations().then(translations => {
         const languageSelect = document.getElementById('languageSelect');
         const lang = languageSelect ? languageSelect.value : 'en';
         translateElements(translations, lang);
+        cleanupTooltips();
+        bindDashboardTooltips(el);
     });
 }
 
@@ -256,11 +292,15 @@ function updateDashboardPane(container, message) {
 
     container.innerHTML = message;
 
+    bindDashboardTooltips(container);
+
     loadTranslations().then(translations => {
         const languageSelect = document.getElementById('languageSelect');
         const lang = languageSelect ? languageSelect.value : 'en';
         translateElements(translations, lang);
         bindLanguageListener();
+        cleanupTooltips();
+        bindDashboardTooltips(container);
     });
 
     requestAnimationFrame(function () {
