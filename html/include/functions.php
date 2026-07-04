@@ -108,7 +108,7 @@ function redirectToSelf() {
  * contains only allowed characters and keys.
  * 
  * @param string $options Raw options string
- * @return string Sanitized options string or empty string if invalid
+ * @return string|false Sanitized options string, empty string when no selfcare override, or false if invalid
  */
 function sanitizeOptions($options) {
     // Remove any HTML tags
@@ -116,11 +116,14 @@ function sanitizeOptions($options) {
     
     // Remove any null bytes
     $options = str_replace("\0", "", $options);
-    
-    // Validate format: KEY=value;KEY=value
-    // Keys must be uppercase letters/numbers, values can be alphanumeric with commas and underscores
-    if (!preg_match('/^([A-Z0-9]+=[A-Za-z0-9_,]+;?)+$/', $options)) {
+
+    // Empty form = no selfcare override (no TS keys and no function keys changed)
+    if ($options === '') {
         return '';
+    }
+
+    if (!preg_match('/^([A-Z0-9]+=[A-Za-z0-9_,]*;?)+$/', $options)) {
+        return false;
     }
     
     // Parse and validate individual keys
@@ -131,14 +134,25 @@ function sanitizeOptions($options) {
         if (empty($pair)) continue;
         
         if (strpos($pair, '=') === false) {
-            return ''; // Invalid format
+            return false; // Invalid format
         }
         
         list($key, $value) = explode('=', $pair, 2);
         
         // Verify key is in allowed list
         if (!in_array($key, $allowedKeys, true)) {
-            return ''; // Unauthorized key
+            return false; // Unauthorized key
+        }
+
+        // TS1=/TS2= clears statics on the server; other keys must have a value
+        if ($value === '' && !in_array($key, ['TS1', 'TS2'], true)) {
+            return false;
+        }
+
+        if ($key === 'TS1' || $key === 'TS2') {
+            if ($value !== '' && !preg_match('/^[0-9,]+$/', $value)) {
+                return false;
+            }
         }
     }
     
@@ -149,15 +163,20 @@ function sanitizeOptions($options) {
  * Sanitize IPSC repeater options (TS1 and TS2 only).
  *
  * @param string $options Raw options string
- * @return string Sanitized options string or empty string if invalid
+ * @return string|false Sanitized options string, empty string when no selfcare override, or false if invalid
  */
 function sanitizeIpscOptions($options)
 {
     $options = strip_tags($options);
     $options = str_replace("\0", "", $options);
 
-    if (!preg_match('/^(TS[12]=[0-9,]+;?)+$/', $options)) {
+    // Empty form = no selfcare override (no TS keys present)
+    if ($options === '') {
         return '';
+    }
+
+    if (!preg_match('/^(TS[12]=[0-9,]*;?)+$/', $options)) {
+        return false;
     }
 
     $allowedKeys = ['TS1', 'TS2'];
@@ -169,16 +188,16 @@ function sanitizeIpscOptions($options)
         }
 
         if (strpos($pair, '=') === false) {
-            return '';
+            return false;
         }
 
         list($key, $value) = explode('=', $pair, 2);
         if (!in_array($key, $allowedKeys, true)) {
-            return '';
+            return false;
         }
 
-        if (!preg_match('/^[0-9,]+$/', $value)) {
-            return '';
+        if (!preg_match('/^[0-9,]*$/', $value)) {
+            return false;
         }
     }
 

@@ -168,6 +168,19 @@ class SelfcareManager {
     }
 
     /**
+     * Build TS1=/TS2= fragment; empty slot sends TSx=; so RYSEN clears statics.
+     */
+    formatTimeslotOption(slot, values, applicable) {
+        if (!applicable) {
+            return '';
+        }
+        if (values.length > 0) {
+            return 'TS' + slot + '=' + values.join(',') + ';';
+        }
+        return 'TS' + slot + '=;';
+    }
+
+    /**
      * Update the generated options text
      */
     updateGeneratedText() {
@@ -185,12 +198,8 @@ class SelfcareManager {
 
         if (this.isIpsc) {
             let genText = '';
-            if (timeslots1.length > 0) {
-                genText += 'TS1=' + timeslots1.join(',') + ';';
-            }
-            if (timeslots2.length > 0) {
-                genText += 'TS2=' + timeslots2.join(',') + ';';
-            }
+            genText += this.formatTimeslotOption(1, timeslots1, true);
+            genText += this.formatTimeslotOption(2, timeslots2, true);
             const genTextElement = document.getElementById('genText');
             if (genTextElement) {
                 genTextElement.value = genText;
@@ -209,15 +218,15 @@ class SelfcareManager {
 
         let genText = '';
 
-        if (timeslots1.length > 0 && this.deviceMode !== 4) {
-            genText += 'TS1=' + timeslots1.join(',') + ';';
+        // Always send both TS1 and TS2 when static talkgroups apply (incl. simplex)
+        const staticTgsApplicable = parseInt(dialTGValue, 10) <= 0;
+
+        if (staticTgsApplicable) {
+            genText += this.formatTimeslotOption(1, timeslots1, true);
+            genText += this.formatTimeslotOption(2, timeslots2, true);
         }
 
-        if (timeslots2.length > 0 && parseInt(dialTGValue) <= 0) {
-            genText += 'TS2=' + timeslots2.join(',') + ';';
-        }
-
-        if (parseInt(dialTGValue) > 0) {
+        if (parseInt(dialTGValue, 10) > 0) {
             genText += 'DIAL=' + dialTGValue + ';';
         }
 
@@ -237,7 +246,7 @@ class SelfcareManager {
             genText += 'STICKY=' + stickyValue + ';';
         }
 
-        if (parseInt(timeoutValue) > 0) {
+        if (parseInt(timeoutValue, 10) > 0) {
             genText += 'TIMER=' + timeoutValue + ';';
         }
 

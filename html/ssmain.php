@@ -53,18 +53,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['genText'])) {
         $options = sanitizeOptions($_POST['genText']);
     }
     
-    if (!empty($options)) {
+    if ($options === false) {
+        $errorMsg = "Invalid options format.";
+        error_log("Invalid options format submitted: " . substr($_POST['genText'], 0, 50));
+    } elseif ($options === '') {
+        // No selfcare override — preserve server defaults (RYSEN skips empty options)
+        $result = clearDevOptions($selint_id);
+
+        if ($result) {
+            redirectToSelf();
+        } else {
+            $errorMsg = "Failed to update options. Please check database connection.";
+            error_log("Failed to clear device options for int_id: $selint_id");
+        }
+    } else {
         $result = updateDevOptions($selint_id, $options);
-        
+
         if ($result) {
             redirectToSelf();
         } else {
             $errorMsg = "Failed to update options. Please check database connection.";
             error_log("Failed to update device options for int_id: $selint_id");
         }
-    } else {
-        $errorMsg = "Invalid options format.";
-        error_log("Invalid options format submitted: " . substr($_POST['genText'], 0, 50));
     }
 }
 

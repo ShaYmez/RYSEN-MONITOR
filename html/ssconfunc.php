@@ -853,6 +853,33 @@ function updateDevOptions($intId, $options)
 }
 
 /**
+ * Remove selfcare options override for a device.
+ *
+ * Clears stored options and leaves modified=0 so RYSEN keeps running server
+ * defaults rather than receiving an empty options push.
+ *
+ * @param int $intId Device int_id
+ * @return bool True if update successful, false otherwise
+ */
+function clearDevOptions($intId)
+{
+    $conn = connectDatabase();
+
+    $stmt = $conn->prepare("UPDATE Clients SET options = NULL, modified = 0 WHERE int_id = ?");
+    if (!$stmt) {
+        $conn->close();
+        return false;
+    }
+
+    $stmt->bind_param("i", $intId);
+    $result = $stmt->execute();
+    $stmt->close();
+    $conn->close();
+
+    return $result;
+}
+
+/**
  * Verify user owns the specified device
  * 
  * Checks if the device int_id is in the user's authorized list.
