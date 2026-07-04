@@ -3,20 +3,29 @@
  * Dashboard Marquee Configuration
  * PROTECTED FILE - Customizations preserved during upgrades
  *
- * Site-specific marquee text. New languages from upgrades are merged automatically
- * from include/marquee-defaults.php (matching keys here override defaults).
+ * Write your scrolling text once in $marquee_lines (normal spaces, no &nbsp;).
+ * Set $marquee_language to the language you wrote it in (en, el, es, …).
+ * When users change the dashboard language, the marquee is auto-translated
+ * and cached under html/cache/marquee/ — no manual copies per language.
  *
- * Use either:
- *   $marquee_overrides - partial overrides per language
- *   $marquee_content   - legacy full per-language blocks (still supported)
+ * Optional $marquee_translate_email — your email for a higher MyMemory API quota.
+ * Set $marquee_auto_translate = false to show the same text in every language.
+ *
+ * Legacy $marquee_overrides / $marquee_content remain supported for manual HTML.
  */
 
-$marquee_overrides = array(
-    // Example override:
-    // 'en' => array(
-    //     'line1' => 'My&nbsp;Network&nbsp;Master...',
-    //     'line2' => 'Hosted&nbsp;in&nbsp;My&nbsp;City.',
-    // ),
+$marquee_language = 'en';
+
+$marquee_lines = array(
+    // 'Welcome to My Network System X Master. Connect using "MyNetwork" in DMR Master.',
+    // 'This server is maintained by our team. Hosted in London, UK.',
 );
+
+// $marquee_translate_email = 'sysop@example.com';
+// $marquee_auto_translate = true;
+
+$marquee_lines_by_lang = array();
+
+$marquee_overrides = array();
 
 ?>

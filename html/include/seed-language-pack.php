@@ -16,36 +16,42 @@ if ($dashboard === '' || !is_dir($dashboard)) {
 }
 
 require_once $dashboard . '/include/languages.php';
-require_once $dashboard . '/include/marquee-defaults.php';
+require_once $dashboard . '/include/marquee-loader.php';
 
-$custom_lang_keys = array();
-$marquee_overrides = array();
-$marquee_content = null;
+$supported = array_keys($default_languages);
+$merged = $marquee_content;
+$missing_defaults = array();
+$missing_marquee = array();
+
 $config_file = $dashboard . '/config/marquee.php';
+$custom_lang_keys = array();
+$config_marquee_lines = array();
+$config_marquee_lines_by_lang = array();
+$config_marquee_overrides = array();
+$config_marquee_content = null;
 
 if (is_readable($config_file)) {
     include $config_file;
-    if (is_array($marquee_content) && count($marquee_content) > 0) {
-        $custom_lang_keys = array_keys($marquee_content);
-    } elseif (count($marquee_overrides) > 0) {
-        $custom_lang_keys = array_keys($marquee_overrides);
+    $config_marquee_lines = isset($marquee_lines) ? $marquee_lines : array();
+    $config_marquee_lines_by_lang = isset($marquee_lines_by_lang) ? $marquee_lines_by_lang : array();
+    $config_marquee_overrides = isset($marquee_overrides) ? $marquee_overrides : array();
+    $config_marquee_content = isset($marquee_content) ? $marquee_content : null;
+
+    if (is_array($config_marquee_lines) && count($config_marquee_lines) > 0) {
+        $custom_lang_keys = $supported;
+    } elseif (is_array($config_marquee_lines_by_lang) && count($config_marquee_lines_by_lang) > 0) {
+        $custom_lang_keys = array_keys($config_marquee_lines_by_lang);
+    } elseif (is_array($config_marquee_content) && count($config_marquee_content) > 0) {
+        $custom_lang_keys = array_keys($config_marquee_content);
+    } elseif (count($config_marquee_overrides) > 0) {
+        $custom_lang_keys = array_keys($config_marquee_overrides);
     }
 }
-
-$supported = array_keys($default_languages);
-$missing_defaults = array();
-$missing_marquee = array();
 
 foreach ($supported as $code) {
     if (!isset($default_marquee_content[$code])) {
         $missing_defaults[] = $code;
     }
-}
-
-if (is_array($marquee_content) && count($marquee_content) > 0) {
-    $merged = array_merge($default_marquee_content, $marquee_content);
-} else {
-    $merged = array_merge($default_marquee_content, $marquee_overrides);
 }
 
 foreach ($supported as $code) {

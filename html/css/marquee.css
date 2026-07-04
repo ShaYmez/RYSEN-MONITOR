@@ -15,6 +15,7 @@
 .MyMarquee div {
    display: inline-block;
    vertical-align: middle;
+   white-space: pre;
 }
 .MyMarquee a, .MyMarquee img {
    display: inline-block;
