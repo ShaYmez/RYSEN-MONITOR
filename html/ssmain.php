@@ -156,6 +156,7 @@ $csrfToken = generateCSRFToken();
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
     <link rel="stylesheet" href="plugins/adminlte/css/adminlte.min.css">
+    <link rel="stylesheet" href="css/custom.css">
 </head>
 
 <body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm">
@@ -394,8 +395,19 @@ $csrfToken = generateCSRFToken();
                                                     </form>
                                                     
                                                 </div>
-                                                <div class="row justify-content-center mt-4 mb-4">
-                                                    <button class="btn btn-primary" onclick="window.selfcare.saveChanges()" id="calc_save"></button>
+                                                <div class="row justify-content-center align-items-center mt-4 mb-4 selfcare-action-row">
+                                                    <button type="button" class="btn btn-primary" onclick="window.selfcare.saveChanges()" id="calc_save"></button>
+                                                    <button type="button"
+                                                        class="btn btn-outline-secondary btn-sm selfcare-disconnect-btn"
+                                                        id="calchlpdisconnect"
+                                                        onclick="window.selfcare.disconnectDynamicLink()"
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="top"
+                                                        data-bs-html="true"
+                                                        data-bs-title=""
+                                                        title="">
+                                                        <i class="fas fa-unlink fa-sm me-1" aria-hidden="true"></i><span id="calc_disconnect"></span>
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -403,6 +415,8 @@ $csrfToken = generateCSRFToken();
                                     <div class="spinner text-center mb-5" style="display: <?php echo $devDetails['modified'] === '1' ? 'block' : 'none'; ?>">
                                         <i class="fas fa-2x fa-sync-alt fa-spin"></i><br><br>
                                         <span class="mt-2" id="calc_wait"></span>
+                                        <span id="calc_disconnect_wait" class="d-none" aria-hidden="true"></span>
+                                        <span id="calc_disconnect_restore" class="d-none" aria-hidden="true"></span>
                                     </div>
                                 </div>
                             </div>

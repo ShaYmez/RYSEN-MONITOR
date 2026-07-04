@@ -9,6 +9,7 @@ class SelfcareManager {
         this.deviceId = config.deviceId;
         this.isModified = config.isModified;
         this.checkInterval = null;
+        this.disconnectInProgress = false;
         this.init();
     }
 
@@ -24,6 +25,8 @@ class SelfcareManager {
         if (this.isModified) {
             this.startStatusPolling();
         }
+
+        this.setActionButtonsDisabled(this.isModified);
     }
 
     /**
@@ -329,6 +332,121 @@ class SelfcareManager {
             genTextHidden.value = genText.value;
             document.getElementById('saveChangesForm').submit();
         }
+    }
+
+    /**
+     * Update spinner status text by translation element id.
+     */
+    setWaitMessage(elementId) {
+        const waitEl = document.getElementById('calc_wait');
+        const sourceEl = document.getElementById(elementId);
+        if (waitEl && sourceEl && sourceEl.textContent.trim() !== '') {
+            waitEl.textContent = sourceEl.textContent;
+        }
+    }
+
+    /**
+     * Enable or disable save / disconnect controls during server apply.
+     */
+    setActionButtonsDisabled(disabled) {
+        const saveBtn = document.getElementById('calc_save');
+        const disconnectBtn = document.getElementById('calchlpdisconnect');
+        if (saveBtn) {
+            saveBtn.disabled = disabled;
+        }
+        if (disconnectBtn) {
+            disconnectBtn.disabled = disabled;
+        }
+    }
+
+    /**
+     * POST pulse or restore phase to ssdisconnect.php.
+     */
+    postDisconnectPhase(action) {
+        const csrfInput = document.querySelector('input[name="csrf_token"]');
+        if (!csrfInput) {
+            return Promise.reject(new Error('Missing CSRF token'));
+        }
+
+        return fetch('ssdisconnect.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                csrf_token: csrfInput.value,
+                action: action
+            })
+        }).then(response => response.json().then(body => {
+            if (!response.ok || !body.success) {
+                throw new Error(body.error || 'Disconnect request failed');
+            }
+            return body;
+        }));
+    }
+
+    /**
+     * Poll sscheck.php until modified matches desired state.
+     */
+    pollUntilModified(expectedModified, timeoutMs = 120000) {
+        const wantModified = expectedModified ? '1' : '0';
+        const started = Date.now();
+
+        return new Promise((resolve, reject) => {
+            const interval = setInterval(() => {
+                if (Date.now() - started > timeoutMs) {
+                    clearInterval(interval);
+                    reject(new Error('Timed out waiting for the server to apply changes'));
+                    return;
+                }
+
+                fetch('sscheck.php')
+                    .then(response => response.text())
+                    .then(data => {
+                        if (data === wantModified) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    })
+                    .catch(error => {
+                        clearInterval(interval);
+                        reject(error);
+                    });
+            }, 500);
+        });
+    }
+
+    /**
+     * Pulse TG 4000 via saved options, wait for RYSEN apply, restore backup.
+     */
+    disconnectDynamicLink() {
+        if (this.disconnectInProgress || this.isModified) {
+            return;
+        }
+
+        this.disconnectInProgress = true;
+        this.setActionButtonsDisabled(true);
+        this.toggleSpinner(true);
+        this.setWaitMessage('calc_disconnect_wait');
+
+        this.postDisconnectPhase('pulse')
+            .then(() => this.pollUntilModified(false))
+            .then(() => {
+                this.setWaitMessage('calc_disconnect_restore');
+                return this.postDisconnectPhase('restore');
+            })
+            .then(() => this.pollUntilModified(false))
+            .then(() => {
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Disconnect failed:', error);
+                this.toggleSpinner(false);
+                this.setActionButtonsDisabled(false);
+                this.setWaitMessage('calc_wait');
+                alert(error.message || 'Disconnect failed. Please try again.');
+            })
+            .finally(() => {
+                this.disconnectInProgress = false;
+            });
     }
 }
 

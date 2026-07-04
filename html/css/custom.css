@@ -199,3 +199,27 @@ a.badge-ipsc:focus {
 .login-logo a {
     white-space: nowrap;
 }
+
+.selfcare-action-row {
+    gap: 0.75rem;
+}
+
+.selfcare-disconnect-btn {
+    font-weight: 400;
+    opacity: 0.85;
+    border-color: rgba(108, 117, 125, 0.55);
+}
+
+.selfcare-disconnect-btn:hover:not(:disabled) {
+    opacity: 1;
+}
+
+.dark-mode .selfcare-disconnect-btn {
+    color: #adb5bd;
+    border-color: rgba(173, 181, 189, 0.35);
+}
+
+.dark-mode .selfcare-disconnect-btn:hover:not(:disabled) {
+    color: #dee2e6;
+    background-color: rgba(255, 255, 255, 0.05);
+}

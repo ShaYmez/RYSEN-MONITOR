@@ -204,6 +204,143 @@ function sanitizeIpscOptions($options)
     return $options;
 }
 
+/** Talkgroup used to pulse-disconnect dynamic links via selfcare options. */
+define('SELFCARE_DISCONNECT_TG', '4000');
+
+/**
+ * Normalize TS1/TS2 values from parseDeviceOptions into a unique TG list.
+ *
+ * @param mixed $value Parsed option value
+ * @return array
+ */
+function normalizeTimeslotTgs($value) {
+    if ($value === null || $value === '') {
+        return [];
+    }
+
+    $tgs = is_array($value) ? $value : explode(',', (string) $value);
+    $out = [];
+
+    foreach ($tgs as $tg) {
+        $tg = trim((string) $tg);
+        if ($tg === '') {
+            continue;
+        }
+        if (!in_array($tg, $out, true)) {
+            $out[] = $tg;
+        }
+    }
+
+    return $out;
+}
+
+/**
+ * Prepend disconnect TG if not already present.
+ *
+ * @param array $tgs
+ * @return array
+ */
+function injectDisconnectTg(array $tgs) {
+    if (in_array(SELFCARE_DISCONNECT_TG, $tgs, true)) {
+        return $tgs;
+    }
+
+    array_unshift($tgs, SELFCARE_DISCONNECT_TG);
+    return $tgs;
+}
+
+/**
+ * Build an options string from a parsed options array (hotspot function keys).
+ *
+ * @param array $parsed
+ * @param bool $isIpsc
+ * @param bool $dialActive
+ * @return string
+ */
+function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = false) {
+    $genText = '';
+    $staticApplicable = $isIpsc || !$dialActive;
+
+    if ($staticApplicable) {
+        foreach (['TS1', 'TS2'] as $tsKey) {
+            if (!isset($parsed[$tsKey])) {
+                continue;
+            }
+            $value = is_array($parsed[$tsKey]) ? implode(',', $parsed[$tsKey]) : (string) $parsed[$tsKey];
+            $genText .= $tsKey . '=' . $value . ';';
+        }
+    } elseif (isset($parsed['TS2'])) {
+        $value = is_array($parsed['TS2']) ? implode(',', $parsed['TS2']) : (string) $parsed['TS2'];
+        $genText .= 'TS2=' . $value . ';';
+    }
+
+    if ($isIpsc) {
+        return $genText;
+    }
+
+    if (!empty($parsed['DIAL']) && (int) $parsed['DIAL'] > 0) {
+        $genText .= 'DIAL=' . $parsed['DIAL'] . ';';
+    }
+
+    if (isset($parsed['VOICE']) && (string) $parsed['VOICE'] !== '-1' && $parsed['VOICE'] !== '') {
+        $genText .= 'VOICE=' . $parsed['VOICE'] . ';';
+    }
+
+    if (isset($parsed['VOICE']) && (string) $parsed['VOICE'] === '1' && !empty($parsed['LANG'])) {
+        $genText .= 'LANG=' . $parsed['LANG'] . ';';
+    }
+
+    if (isset($parsed['SINGLE']) && (string) $parsed['SINGLE'] !== '-1' && $parsed['SINGLE'] !== '') {
+        $genText .= 'SINGLE=' . $parsed['SINGLE'] . ';';
+    }
+
+    if (isset($parsed['STICKY']) && (string) $parsed['STICKY'] !== '-1' && $parsed['STICKY'] !== '') {
+        $genText .= 'STICKY=' . $parsed['STICKY'] . ';';
+    }
+
+    if (!empty($parsed['TIMER']) && (int) $parsed['TIMER'] > 0) {
+        $genText .= 'TIMER=' . $parsed['TIMER'] . ';';
+    }
+
+    if (!empty($parsed['PASS'])) {
+        $genText .= 'PASS=' . $parsed['PASS'] . ';';
+    }
+
+    return $genText;
+}
+
+/**
+ * Inject TG 4000 into TS slots for a one-shot disconnect pulse.
+ *
+ * Uses the saved DB options as the base so function keys are preserved.
+ *
+ * @param string|null $optionsString Current Clients.options value
+ * @param bool $isIpsc
+ * @param bool $dialActive Hotspot dial-a-tg active (TS UI hidden)
+ * @return string
+ */
+function injectDisconnectPulse($optionsString, $isIpsc, $dialActive = false) {
+    $parsed = parseDeviceOptions($optionsString ?? '');
+    $slotKeys = ($isIpsc || !$dialActive) ? ['TS1', 'TS2'] : ['TS2'];
+
+    foreach ($slotKeys as $tsKey) {
+        $tgs = injectDisconnectTg(normalizeTimeslotTgs($parsed[$tsKey] ?? null));
+        $parsed[$tsKey] = implode(',', $tgs);
+    }
+
+    return buildOptionsStringFromParsed($parsed, $isIpsc, $dialActive);
+}
+
+/**
+ * Whether stored options are empty / unset (no selfcare override).
+ *
+ * @param string|null $optionsString
+ * @return bool
+ */
+function isEmptyDeviceOptions($optionsString) {
+    return $optionsString === null || $optionsString === '';
+}
+
 /**
  * Label for selfcare device picker.
  *
