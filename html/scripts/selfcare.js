@@ -385,14 +385,16 @@ class SelfcareManager {
 
     /**
      * Poll sscheck.php until modified matches desired state.
+     *
+     * @param {boolean} expectedModified Wait for modified=1 (true) or 0 (false)
+     * @param {number} deadlineMs Absolute timestamp (Date.now()) when polling must stop
      */
-    pollUntilModified(expectedModified, timeoutMs = 120000) {
+    pollUntilModified(expectedModified, deadlineMs) {
         const wantModified = expectedModified ? '1' : '0';
-        const started = Date.now();
 
         return new Promise((resolve, reject) => {
             const interval = setInterval(() => {
-                if (Date.now() - started > timeoutMs) {
+                if (Date.now() > deadlineMs) {
                     clearInterval(interval);
                     reject(new Error('Timed out waiting for the server to apply changes'));
                     return;
@@ -422,18 +424,20 @@ class SelfcareManager {
             return;
         }
 
+        const deadline = Date.now() + 20000;
+
         this.disconnectInProgress = true;
         this.setActionButtonsDisabled(true);
         this.toggleSpinner(true);
         this.setWaitMessage('calc_disconnect_wait');
 
         this.postDisconnectPhase('pulse')
-            .then(() => this.pollUntilModified(false))
+            .then(() => this.pollUntilModified(false, deadline))
             .then(() => {
                 this.setWaitMessage('calc_disconnect_restore');
                 return this.postDisconnectPhase('restore');
             })
-            .then(() => this.pollUntilModified(false))
+            .then(() => this.pollUntilModified(false, deadline))
             .then(() => {
                 window.location.reload();
             })
