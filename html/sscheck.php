@@ -22,9 +22,24 @@ if (!verifyDeviceOwnership($_SESSION['selected_int_id'])) {
 // Check modified status
 $devDetails = getDevDetails($_SESSION['selected_int_id']);
 if ($devDetails) {
+    if (isset($_GET['full']) && $_GET['full'] === '1') {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'modified' => (string) (int) $devDetails['modified'],
+            'logged_in' => (string) (int) $devDetails['logged_in'],
+        ]);
+        exit();
+    }
+
     // Return only the modified status (0 or 1)
     echo escapeHtml($devDetails['modified']);
 } else {
+    if (isset($_GET['full']) && $_GET['full'] === '1') {
+        header('Content-Type: application/json');
+        echo json_encode(['modified' => '0', 'logged_in' => '0']);
+        exit();
+    }
+
     echo '0'; // Device not found, return 0 to stop polling
 }
 ?>

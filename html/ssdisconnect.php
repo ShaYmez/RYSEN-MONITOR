@@ -140,5 +140,27 @@ if ($action === 'restore') {
     exit();
 }
 
+if ($action === 'abort') {
+    if (isset($_SESSION[$sessionKey][$intId])) {
+        $stored = $_SESSION[$sessionKey][$intId];
+        unset($_SESSION[$sessionKey][$intId]);
+
+        if (!empty($stored['empty'])) {
+            $result = clearDevOptions($intId);
+        } else {
+            $result = restoreDevOptionsQuiet($intId, $stored['options']);
+        }
+
+        if (!$result) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Failed to roll back disconnect']);
+            exit();
+        }
+    }
+
+    echo json_encode(['success' => true, 'phase' => 'abort']);
+    exit();
+}
+
 http_response_code(400);
 echo json_encode(['success' => false, 'error' => 'Unknown action']);

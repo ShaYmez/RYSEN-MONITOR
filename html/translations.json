@@ -1805,6 +1805,20 @@
         "zh": "Restoring your settings ...",
         "el": "Επαναφορά ρυθμίσεων..."
     },
+    "calc_disconnect_offline": {
+        "en": "Device went offline before disconnect could finish. Reconnect and try again.",
+        "pt": "O dispositivo ficou offline antes de concluir. Volte a ligar e tente novamente.",
+        "es": "El dispositivo se desconectó antes de terminar. Reconecte e inténtelo de nuevo.",
+        "fr": "L'appareil s'est déconnecté avant la fin. Reconnectez-le et réessayez.",
+        "it": "Dispositivo offline prima del completamento. Riconnetti e riprova.",
+        "nl": "Apparaat ging offline voordat het klaar was. Opnieuw verbinden en opnieuw proberen.",
+        "de": "Gerät ging offline, bevor die Trennung abgeschlossen war. Erneut verbinden und wiederholen.",
+        "ru": "Device went offline before disconnect could finish. Reconnect and try again.",
+        "ja": "Device went offline before disconnect could finish. Reconnect and try again.",
+        "ar": "Device went offline before disconnect could finish. Reconnect and try again.",
+        "zh": "Device went offline before disconnect could finish. Reconnect and try again.",
+        "el": "Η συσκευή αποσυνδέθηκε πριν ολοκληρωθεί. Επανασυνδεθείτε και δοκιμάστε ξανά."
+    },
     "calchlptype": {
         "en": "Duplex Hotspots and Repeaters can use TS1 and/or TS2<br>Simplex Hotspots can only use TS2",
         "pt": "HotSpots com duplex ou repetidores devem utilizar TS1 e/ou TS2<br>HotSpots Simplex só devem utilizar TS2",

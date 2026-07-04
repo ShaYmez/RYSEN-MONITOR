@@ -880,6 +880,35 @@ function clearDevOptions($intId)
 }
 
 /**
+ * Restore device options without setting modified (device offline / rollback).
+ *
+ * @param int $intId Device int_id
+ * @param string|null $options Options string or null to clear
+ * @return bool
+ */
+function restoreDevOptionsQuiet($intId, $options)
+{
+    if ($options === null || $options === '') {
+        return clearDevOptions($intId);
+    }
+
+    $conn = connectDatabase();
+
+    $stmt = $conn->prepare("UPDATE Clients SET options = ?, modified = 0 WHERE int_id = ?");
+    if (!$stmt) {
+        $conn->close();
+        return false;
+    }
+
+    $stmt->bind_param("si", $options, $intId);
+    $result = $stmt->execute();
+    $stmt->close();
+    $conn->close();
+
+    return $result;
+}
+
+/**
  * Verify user owns the specified device
  * 
  * Checks if the device int_id is in the user's authorized list.

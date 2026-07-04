@@ -384,6 +384,57 @@ class SelfcareManager {
     }
 
     /**
+     * Poll until RYSEN applied a disconnect phase (modified=0 while device online).
+     *
+     * @param {number} deadlineMs Absolute timestamp when polling must stop
+     */
+    pollUntilDisconnectApplied(deadlineMs) {
+        return new Promise((resolve, reject) => {
+            const interval = setInterval(() => {
+                if (Date.now() > deadlineMs) {
+                    clearInterval(interval);
+                    reject(new Error('Timed out waiting for the server to apply changes'));
+                    return;
+                }
+
+                fetch('sscheck.php?full=1')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.logged_in !== '1') {
+                            clearInterval(interval);
+                            this.postDisconnectPhase('abort')
+                                .catch(() => {})
+                                .finally(() => {
+                                    reject(new Error(this.getDisconnectOfflineMessage()));
+                                });
+                            return;
+                        }
+
+                        if (data.modified === '0') {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    })
+                    .catch(error => {
+                        clearInterval(interval);
+                        reject(error);
+                    });
+            }, 500);
+        });
+    }
+
+    /**
+     * User-facing message when the device drops off during disconnect.
+     */
+    getDisconnectOfflineMessage() {
+        const sourceEl = document.getElementById('calc_disconnect_offline');
+        if (sourceEl && sourceEl.textContent.trim() !== '') {
+            return sourceEl.textContent.trim();
+        }
+        return 'Device went offline before disconnect could complete. Reconnect and try again.';
+    }
+
+    /**
      * Poll sscheck.php until modified matches desired state.
      *
      * @param {boolean} expectedModified Wait for modified=1 (true) or 0 (false)
@@ -432,12 +483,12 @@ class SelfcareManager {
         this.setWaitMessage('calc_disconnect_wait');
 
         this.postDisconnectPhase('pulse')
-            .then(() => this.pollUntilModified(false, deadline))
+            .then(() => this.pollUntilDisconnectApplied(deadline))
             .then(() => {
                 this.setWaitMessage('calc_disconnect_restore');
                 return this.postDisconnectPhase('restore');
             })
-            .then(() => this.pollUntilModified(false, deadline))
+            .then(() => this.pollUntilDisconnectApplied(deadline))
             .then(() => {
                 window.location.reload();
             })
