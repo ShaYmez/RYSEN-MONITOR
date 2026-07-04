@@ -46,12 +46,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['genText'])) {
         die("Security error: Invalid or missing CSRF token. Please refresh the page and try again.");
     }
     
-    $devForSave = getDevDetails($selint_id);
-    if ($devForSave && isIpscDeviceMode($devForSave['mode'])) {
-        $options = sanitizeIpscOptions($_POST['genText']);
-    } else {
-        $options = sanitizeOptions($_POST['genText']);
-    }
+    $options = sanitizeOptions($_POST['genText']);
     
     if ($options === false) {
         $errorMsg = "Invalid options format.";
@@ -299,7 +294,6 @@ $csrfToken = generateCSRFToken();
                                                 </div>
                                             </div>
                                         </div>
-                                        <?php if (!$isIpscDevice): ?>
                                         <div class="row justify-content-center">
                                             <div class="col-8">
                                                 <table class="table table-sm border align-middle mt-4">
@@ -381,20 +375,12 @@ $csrfToken = generateCSRFToken();
                                                 </table>
                                             </div>
                                         </div>
-                                        <?php endif; ?>
                                         <div class="row justify-content-center mb-3">
                                             <div class="col-6">
-                                                <div class="row justify-content-center">
-                                                    <p class="mb-1"><b>RAW Options:</b></p>
-                                                </div>
-                                                <div class="row justify-content-center">
-                                                    <textarea class="form-control text-sm form-control-sm" id="genText" rows="2" readonly></textarea>
-                                                    <form method="post" id="saveChangesForm" style="display: none;">
-                                                        <input type="hidden" name="csrf_token" value="<?php echo escapeHtml($csrfToken); ?>">
-                                                        <textarea name="genText" id="genTextHidden"></textarea>
-                                                    </form>
-                                                    
-                                                </div>
+                                                <form method="post" id="saveChangesForm" style="display: none;">
+                                                    <input type="hidden" name="csrf_token" value="<?php echo escapeHtml($csrfToken); ?>">
+                                                    <textarea name="genText" id="genTextHidden"></textarea>
+                                                </form>
                                                 <div class="row justify-content-center align-items-center mt-4 mb-4 selfcare-action-row">
                                                     <button type="button" class="btn btn-primary" onclick="window.selfcare.saveChanges()" id="calc_save"></button>
                                                     <button type="button"

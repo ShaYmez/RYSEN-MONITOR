@@ -160,48 +160,14 @@ function sanitizeOptions($options) {
 }
 
 /**
- * Sanitize IPSC repeater options (TS1 and TS2 only).
+ * Sanitize IPSC repeater options (same allowlist as hotspot selfcare).
  *
  * @param string $options Raw options string
  * @return string|false Sanitized options string, empty string when no selfcare override, or false if invalid
  */
 function sanitizeIpscOptions($options)
 {
-    $options = strip_tags($options);
-    $options = str_replace("\0", "", $options);
-
-    // Empty form = no selfcare override (no TS keys present)
-    if ($options === '') {
-        return '';
-    }
-
-    if (!preg_match('/^(TS[12]=[0-9,]*;?)+$/', $options)) {
-        return false;
-    }
-
-    $allowedKeys = ['TS1', 'TS2'];
-    $pairs = explode(';', trim($options, ';'));
-
-    foreach ($pairs as $pair) {
-        if (empty($pair)) {
-            continue;
-        }
-
-        if (strpos($pair, '=') === false) {
-            return false;
-        }
-
-        list($key, $value) = explode('=', $pair, 2);
-        if (!in_array($key, $allowedKeys, true)) {
-            return false;
-        }
-
-        if (!preg_match('/^[0-9,]*$/', $value)) {
-            return false;
-        }
-    }
-
-    return $options;
+    return sanitizeOptions($options);
 }
 
 /** Talkgroup used to pulse-disconnect dynamic links via selfcare options. */
@@ -272,10 +238,6 @@ function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = fals
     } elseif (isset($parsed['TS2'])) {
         $value = is_array($parsed['TS2']) ? implode(',', $parsed['TS2']) : (string) $parsed['TS2'];
         $genText .= 'TS2=' . $value . ';';
-    }
-
-    if ($isIpsc) {
-        return $genText;
     }
 
     if (!empty($parsed['DIAL']) && (int) $parsed['DIAL'] > 0) {

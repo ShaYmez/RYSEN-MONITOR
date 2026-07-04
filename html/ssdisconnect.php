@@ -61,7 +61,7 @@ if ($action === 'pulse') {
     ];
 
     $pulse = injectDisconnectPulse($original, $isIpsc, $dialActive);
-    $sanitized = $isIpsc ? sanitizeIpscOptions($pulse) : sanitizeOptions($pulse);
+    $sanitized = sanitizeOptions($pulse);
 
     if ($sanitized === false) {
         unset($_SESSION[$sessionKey][$intId]);
@@ -104,7 +104,7 @@ if ($action === 'restore') {
         // Pulse from NULL/empty used TS1=4000;TS2=4000; — restore must re-apply clear
         // slots so RYSEN removes 4000 (clearDevOptions alone does not push to the bridge).
         $clearSlots = 'TS1=;TS2=;';
-        $sanitized = $isIpsc ? sanitizeIpscOptions($clearSlots) : sanitizeOptions($clearSlots);
+        $sanitized = sanitizeOptions($clearSlots);
 
         if ($sanitized === false) {
             http_response_code(500);
@@ -115,7 +115,7 @@ if ($action === 'restore') {
         $result = updateDevOptions($intId, $sanitized);
     } else {
         $backup = (string) $stored['options'];
-        $sanitized = $isIpsc ? sanitizeIpscOptions($backup) : sanitizeOptions($backup);
+        $sanitized = sanitizeOptions($backup);
 
         if ($sanitized === false) {
             http_response_code(500);

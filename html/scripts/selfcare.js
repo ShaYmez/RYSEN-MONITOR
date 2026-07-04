@@ -19,6 +19,10 @@ class SelfcareManager {
     init() {
         this.attachEventListeners();
         this.toggleTimeslotTable();
+        const dialTGInput = document.getElementById('dialTGInput');
+        if (dialTGInput) {
+            this.toggleTimeslot2(dialTGInput.value);
+        }
         this.toggleLanguageDropdown();
         this.updateGeneratedText();
         
@@ -184,6 +188,16 @@ class SelfcareManager {
     }
 
     /**
+     * Persist generated options string for form POST (not shown in UI).
+     */
+    setGeneratedOptions(genText) {
+        const genTextHidden = document.getElementById('genTextHidden');
+        if (genTextHidden) {
+            genTextHidden.value = genText;
+        }
+    }
+
+    /**
      * Update the generated options text
      */
     updateGeneratedText() {
@@ -199,18 +213,9 @@ class SelfcareManager {
         const timeslots1 = this.getTimeslotValues(timeslotTable);
         const timeslots2 = this.getTimeslotValues(timeslotTable2);
 
-        if (this.isIpsc) {
-            let genText = '';
-            genText += this.formatTimeslotOption(1, timeslots1, true);
-            genText += this.formatTimeslotOption(2, timeslots2, true);
-            const genTextElement = document.getElementById('genText');
-            if (genTextElement) {
-                genTextElement.value = genText;
-            }
+        if (!dialTGInput || !voiceSelect) {
             return;
         }
-
-        if (!dialTGInput || !voiceSelect) return;
 
         const dialTGValue = dialTGInput.value;
         const voiceValue = voiceSelect.value;
@@ -253,10 +258,7 @@ class SelfcareManager {
             genText += 'TIMER=' + timeoutValue + ';';
         }
 
-        const genTextElement = document.getElementById('genText');
-        if (genTextElement) {
-            genTextElement.value = genText;
-        }
+        this.setGeneratedOptions(genText);
     }
 
     /**
@@ -325,12 +327,10 @@ class SelfcareManager {
      * Save configuration changes
      */
     saveChanges() {
-        const genText = document.getElementById('genText');
-        const genTextHidden = document.getElementById('genTextHidden');
-        
-        if (genText && genTextHidden) {
-            genTextHidden.value = genText.value;
-            document.getElementById('saveChangesForm').submit();
+        this.updateGeneratedText();
+        const form = document.getElementById('saveChangesForm');
+        if (form) {
+            form.submit();
         }
     }
 
