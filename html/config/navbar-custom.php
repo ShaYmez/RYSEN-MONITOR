@@ -7,7 +7,25 @@
  * This file is included by elements/navbar.php
  */
 
-// Define custom navbar items (added after core items)
+// Network / organisation link in the Info dropdown (item 7 — enabled by default)
+$info_network_link = array(
+    'url' => 'https://freestar.network/systemx-dmr',
+    'id' => 'nav_freestar',  // label from translations.json; use 'label' for fixed text
+    'target' => '_self',
+);
+
+// Extra Info dropdown links (only shown when at least one entry has label + url)
+$info_dropdown_items = array(
+    // Example:
+    // array(
+    //     'label' => 'Network Wiki',
+    //     'url' => 'https://wiki.example.com',
+    //     'target' => '_blank',
+    //     'id' => 'nav_wiki',  // optional — add matching key in translations.json for i18n
+    // ),
+);
+
+// Define custom top-level navbar items (added after the Info dropdown)
 $custom_navbar_items = array(
     // Example: Add a custom link
     // array(

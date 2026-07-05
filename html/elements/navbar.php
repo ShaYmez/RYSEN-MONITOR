@@ -14,6 +14,43 @@ include_once __DIR__ . '/../config/branding.php';
 $custom_languages = isset($available_languages) ? $available_languages : array();
 $available_languages = array_merge($default_languages, $custom_languages);
 $selfcareUrl = (isset($_SESSION['user_id']) && !empty($_SESSION['int_ids'])) ? 'ssmain.php' : 'sslogin.php';
+
+$infoNetworkUrl = '';
+$infoNetworkId = 'nav_freestar';
+$infoNetworkTarget = '_self';
+$infoNetworkLabel = null;
+
+if (isset($info_network_link) && is_array($info_network_link) && !empty($info_network_link['url'])) {
+    $infoNetworkUrl = trim((string) $info_network_link['url']);
+    $infoNetworkId = isset($info_network_link['id']) ? (string) $info_network_link['id'] : 'nav_freestar';
+    $infoNetworkTarget = isset($info_network_link['target']) ? (string) $info_network_link['target'] : '_self';
+    if (isset($info_network_link['label']) && trim((string) $info_network_link['label']) !== '') {
+        $infoNetworkLabel = trim((string) $info_network_link['label']);
+    }
+}
+
+/**
+ * @param array|null $items
+ * @return array
+ */
+function navbar_valid_menu_items($items) {
+    if (!is_array($items)) {
+        return array();
+    }
+
+    $valid = array();
+    foreach ($items as $item) {
+        if (!is_array($item) || empty($item['label']) || empty($item['url'])) {
+            continue;
+        }
+        $valid[] = $item;
+    }
+
+    return $valid;
+}
+
+$infoDropdownItems = navbar_valid_menu_items(isset($info_dropdown_items) ? $info_dropdown_items : array());
+$customNavbarItems = navbar_valid_menu_items(isset($custom_navbar_items) ? $custom_navbar_items : array());
 ?>
 <nav class="main-header navbar navbar-expand-lg navbar-light navbar-dark text-sm">
     <div class="container text-nowrap">
@@ -57,7 +94,7 @@ $selfcareUrl = (isset($_SESSION['user_id']) && !empty($_SESSION['int_ids'])) ? '
                             id="nav_info"></span></a>
                     <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
                         <li>
-                            <a href="index.php?p=calc" class="dropdown-item" id="nav_calc"></a>
+                            <a href="https://hosepipe.freestar.network" class="dropdown-item" target="_blank" rel="noopener noreferrer">HosePipe.</a>
                         </li>
                         <li>
                             <a href="index.php?p=wwtg" class="dropdown-item" id="nav_tglst"></a>
@@ -72,21 +109,44 @@ $selfcareUrl = (isset($_SESSION['user_id']) && !empty($_SESSION['int_ids'])) ? '
                             <a href="../status/index.php" class="dropdown-item" id="nav_srvstat"></a>
                         </li>
                         <li>
-                            <a href="<?php echo ORG_URL; ?>" class="dropdown-item" id="nav_freestar"></a>
+                            <a href="index.php?p=calc" class="dropdown-item" id="nav_calc"></a>
                         </li>
+                        <?php if ($infoNetworkUrl !== ''): ?>
+                        <li>
+                            <a href="<?php echo htmlspecialchars($infoNetworkUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                               class="dropdown-item"
+                               <?php if ($infoNetworkLabel === null): ?>id="<?php echo htmlspecialchars($infoNetworkId, ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>
+                               target="<?php echo htmlspecialchars($infoNetworkTarget, ENT_QUOTES, 'UTF-8'); ?>">
+                                <?php if ($infoNetworkLabel !== null): ?>
+                                    <?php echo htmlspecialchars($infoNetworkLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                <?php endif; ?>
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                        <?php
+                        foreach ($infoDropdownItems as $infoItem) {
+                            $infoTarget = isset($infoItem['target']) ? $infoItem['target'] : '_self';
+                            $infoId = isset($infoItem['id']) ? $infoItem['id'] : '';
+                            echo '<li>';
+                            echo '<a href="' . htmlspecialchars($infoItem['url'], ENT_QUOTES, 'UTF-8') . '" class="dropdown-item"';
+                            if ($infoId !== '') {
+                                echo ' id="' . htmlspecialchars($infoId, ENT_QUOTES, 'UTF-8') . '"';
+                            }
+                            echo ' target="' . htmlspecialchars($infoTarget, ENT_QUOTES, 'UTF-8') . '">';
+                            echo htmlspecialchars($infoItem['label'], ENT_QUOTES, 'UTF-8');
+                            echo '</a></li>';
+                        }
+                        ?>
                     </ul>
                 </li>
                 <?php
-                // Add custom menu items if defined
-                if (isset($custom_navbar_items) && !empty($custom_navbar_items)) {
-                    foreach ($custom_navbar_items as $item) {
-                        $target = isset($item['target']) ? $item['target'] : '_self';
-                        $icon = isset($item['icon']) ? '<i class="' . htmlspecialchars($item['icon']) . '"></i> ' : '';
-                        echo '<li class="nav-item">';
-                        echo '<a href="' . htmlspecialchars($item['url']) . '" class="nav-link" target="' . $target . '">';
-                        echo $icon . htmlspecialchars($item['label']);
-                        echo '</a></li>';
-                    }
+                foreach ($customNavbarItems as $item) {
+                    $target = isset($item['target']) ? $item['target'] : '_self';
+                    $icon = isset($item['icon']) ? '<i class="' . htmlspecialchars($item['icon']) . '"></i> ' : '';
+                    echo '<li class="nav-item">';
+                    echo '<a href="' . htmlspecialchars($item['url']) . '" class="nav-link" target="' . $target . '">';
+                    echo $icon . htmlspecialchars($item['label']);
+                    echo '</a></li>';
                 }
                 ?>
             </ul>
