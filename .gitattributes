@@ -1,4 +1,9 @@
 # Linux deployment target — LF in repo and on checkout (even on Windows dev machines)
+#
+# Windows devs: Git for Windows ships with system core.autocrlf=true, which fights
+# eol=lf. After clone, run once in this repo:
+#   git config core.autocrlf false
+#
 * text=auto eol=lf
 
 # Binary assets (skip line-ending conversion)
