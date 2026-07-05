@@ -29,8 +29,6 @@ jobs:
       - name: Run pytest
         run: python -m pytest -q
 
-  # Requires repo secret INSTALLER_REPO_TOKEN (fine-grained PAT, read on System-X-Installer).
-  # Skipped when the secret is unset. Sync is also checked on System-X-Installer CI.
   dashboard-sync:
     runs-on: ubuntu-latest
     if: >-
