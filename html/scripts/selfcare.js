@@ -311,7 +311,9 @@ class SelfcareManager {
             .then(response => response.text())
             .then(data => {
                 if (data === '0') {
+                    this.isModified = false;
                     this.toggleSpinner(false);
+                    this.setActionButtonsDisabled(false);
                     if (this.checkInterval) {
                         clearInterval(this.checkInterval);
                         this.checkInterval = null;
