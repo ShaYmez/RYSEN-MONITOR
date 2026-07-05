@@ -5,11 +5,6 @@
 
 /** Proxy send_opts loop interval (hotspot_proxy_v2_sc.py). */
 const PROXY_OPTS_INTERVAL_MS = 10000;
-/**
- * Hold after proxy send — covers RYSEN options_config (~26s) and simplex busy-channel delay.
- * User-tested minimum for reliable disconnect without radio PTT.
- */
-const DISCONNECT_HOLD_MS = 60000;
 
 class SelfcareManager {
     constructor(config) {
@@ -371,7 +366,7 @@ class SelfcareManager {
     }
 
     /**
-     * POST pulse or restore phase to ssdisconnect.php.
+     * POST disconnect request or cleanup to ssdisconnect.php.
      */
     postDisconnectPhase(action) {
         const csrfInput = document.querySelector('input[name="csrf_token"]');
@@ -487,7 +482,7 @@ class SelfcareManager {
     }
 
     /**
-     * Apply TG 4000-only options (like manual clear + Save), hold, then restore backup.
+     * Send DISC=1, wait for proxy delivery, then remove the one-shot flag from the DB.
      */
     disconnectDynamicLink() {
         if (this.disconnectInProgress || this.isModified) {
@@ -501,17 +496,9 @@ class SelfcareManager {
         this.toggleSpinner(true);
         this.setWaitMessage('calc_disconnect_wait');
 
-        this.postDisconnectPhase('pulse')
+        this.postDisconnectPhase('request')
             .then(() => this.pollUntilDisconnectApplied(Date.now() + applyTimeoutMs))
-            .then(() => {
-                this.setWaitMessage('calc_disconnect_hold');
-                return this.sleep(DISCONNECT_HOLD_MS);
-            })
-            .then(() => {
-                this.setWaitMessage('calc_disconnect_restore');
-                return this.postDisconnectPhase('restore');
-            })
-            .then(() => this.pollUntilDisconnectApplied(Date.now() + applyTimeoutMs))
+            .then(() => this.postDisconnectPhase('cleanup'))
             .then(() => {
                 window.location.reload();
             })

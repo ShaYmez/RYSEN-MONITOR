@@ -1,9 +1,6 @@
 <?php
 /**
- * Selfcare dynamic-link disconnect — TG 4000-only options pulse, timed hold, restore.
- *
- * Mirrors manual selfcare: clear static TGs, set TG 4000 only, wait for the options
- * parser on the master, then restore saved settings. No RYSEN code changes required.
+ * Selfcare dynamic-link disconnect — send DISC=1 for immediate RYSEN bridge drop.
  */
 require_once 'ssconfunc.php';
 require_once 'include/functions.php';
@@ -46,7 +43,7 @@ if (!isset($_SESSION[$sessionKey]) || !is_array($_SESSION[$sessionKey])) {
     $_SESSION[$sessionKey] = [];
 }
 
-if ($action === 'pulse') {
+if ($action === 'request') {
     $devDetails = getDevDetails($intId);
     if (!$devDetails) {
         http_response_code(404);
@@ -63,83 +60,50 @@ if ($action === 'pulse') {
         'empty' => isEmptyDeviceOptions($original),
     ];
 
-    $pulse = injectDisconnectPulse($original, $isIpsc, $dialActive);
-    $sanitized = sanitizeOptions($pulse);
+    $request = buildDisconnectRequest($original, $isIpsc, $dialActive);
+    $sanitized = sanitizeOptions($request);
 
     if ($sanitized === false) {
         unset($_SESSION[$sessionKey][$intId]);
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Invalid pulse options']);
+        echo json_encode(['success' => false, 'error' => 'Invalid disconnect request']);
         exit();
     }
 
     if (!updateDevOptions($intId, $sanitized)) {
         unset($_SESSION[$sessionKey][$intId]);
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Failed to save disconnect pulse']);
+        echo json_encode(['success' => false, 'error' => 'Failed to save disconnect request']);
         exit();
     }
 
-    echo json_encode(['success' => true, 'phase' => 'pulse']);
+    echo json_encode(['success' => true, 'phase' => 'request']);
     exit();
 }
 
-if ($action === 'restore') {
+if ($action === 'cleanup') {
     if (!isset($_SESSION[$sessionKey][$intId])) {
         http_response_code(409);
-        echo json_encode(['success' => false, 'error' => 'No disconnect session to restore']);
+        echo json_encode(['success' => false, 'error' => 'No disconnect session to clean up']);
         exit();
     }
 
     $stored = $_SESSION[$sessionKey][$intId];
     unset($_SESSION[$sessionKey][$intId]);
 
-    $devDetails = getDevDetails($intId);
-    if (!$devDetails) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Device not found']);
-        exit();
-    }
-
-    $isIpsc = isIpscDeviceMode($devDetails['mode']);
-
     if (!empty($stored['empty'])) {
-        // Pulse from NULL/empty used TS1=4000;TS2=4000; — restore must re-apply clear
-        // slots so RYSEN removes 4000 (clearDevOptions alone does not push to the bridge).
-        $clearSlots = 'TS1=;TS2=;';
-        $sanitized = sanitizeOptions($clearSlots);
-
-        if ($sanitized === false) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'error' => 'Failed to build restore options']);
-            exit();
-        }
-
-        $result = updateDevOptions($intId, $sanitized);
+        $result = clearDevOptions($intId);
     } else {
-        $backup = (string) $stored['options'];
-        $sanitized = sanitizeOptions($backup);
-
-        if ($sanitized === false) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'error' => 'Stored options invalid on restore']);
-            exit();
-        }
-
-        if ($sanitized === '') {
-            $result = clearDevOptions($intId);
-        } else {
-            $result = updateDevOptions($intId, $sanitized);
-        }
+        $result = restoreDevOptionsQuiet($intId, $stored['options']);
     }
 
     if (!$result) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Failed to restore options']);
+        echo json_encode(['success' => false, 'error' => 'Failed to remove disconnect flag']);
         exit();
     }
 
-    echo json_encode(['success' => true, 'phase' => 'restore']);
+    echo json_encode(['success' => true, 'phase' => 'cleanup']);
     exit();
 }
 

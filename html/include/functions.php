@@ -127,7 +127,7 @@ function sanitizeOptions($options) {
     }
     
     // Parse and validate individual keys
-    $allowedKeys = ['TS1', 'TS2', 'DIAL', 'VOICE', 'LANG', 'SINGLE', 'TIMER', 'STICKY', 'PASS'];
+    $allowedKeys = ['TS1', 'TS2', 'DIAL', 'VOICE', 'LANG', 'SINGLE', 'TIMER', 'STICKY', 'PASS', 'DISC'];
     $pairs = explode(';', trim($options, ';'));
     
     foreach ($pairs as $pair) {
@@ -146,6 +146,10 @@ function sanitizeOptions($options) {
 
         // TS1=/TS2= clears statics on the server; other keys must have a value
         if ($value === '' && !in_array($key, ['TS1', 'TS2'], true)) {
+            return false;
+        }
+
+        if ($key === 'DISC' && !in_array($value, ['0', '1'], true)) {
             return false;
         }
 
@@ -168,51 +172,6 @@ function sanitizeOptions($options) {
 function sanitizeIpscOptions($options)
 {
     return sanitizeOptions($options);
-}
-
-/** Talkgroup used to pulse-disconnect dynamic links via selfcare options. */
-define('SELFCARE_DISCONNECT_TG', '4000');
-
-/**
- * Normalize TS1/TS2 values from parseDeviceOptions into a unique TG list.
- *
- * @param mixed $value Parsed option value
- * @return array
- */
-function normalizeTimeslotTgs($value) {
-    if ($value === null || $value === '') {
-        return [];
-    }
-
-    $tgs = is_array($value) ? $value : explode(',', (string) $value);
-    $out = [];
-
-    foreach ($tgs as $tg) {
-        $tg = trim((string) $tg);
-        if ($tg === '') {
-            continue;
-        }
-        if (!in_array($tg, $out, true)) {
-            $out[] = $tg;
-        }
-    }
-
-    return $out;
-}
-
-/**
- * Prepend disconnect TG if not already present.
- *
- * @param array $tgs
- * @return array
- */
-function injectDisconnectTg(array $tgs) {
-    if (in_array(SELFCARE_DISCONNECT_TG, $tgs, true)) {
-        return $tgs;
-    }
-
-    array_unshift($tgs, SELFCARE_DISCONNECT_TG);
-    return $tgs;
 }
 
 /**
@@ -268,30 +227,24 @@ function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = fals
         $genText .= 'PASS=' . $parsed['PASS'] . ';';
     }
 
+    if (isset($parsed['DISC']) && (string) $parsed['DISC'] === '1') {
+        $genText .= 'DISC=1;';
+    }
+
     return $genText;
 }
 
 /**
- * Build disconnect pulse options — same as manually clearing static TGs and setting TG 4000 only.
- *
- * RYSEN options_config reset_static_tg() / make_static_tg() handles the rest; no RYSEN changes needed.
- * Other function keys (VOICE, SINGLE, TIMER, DIAL, etc.) are preserved from saved options.
+ * Build selfcare disconnect request — append DISC=1 without changing static talkgroups.
  *
  * @param string|null $optionsString Current Clients.options value
  * @param bool $isIpsc
  * @param bool $dialActive Hotspot dial-a-tg active (TS UI hidden)
  * @return string
  */
-function injectDisconnectPulse($optionsString, $isIpsc, $dialActive = false) {
+function buildDisconnectRequest($optionsString, $isIpsc, $dialActive = false) {
     $parsed = parseDeviceOptions($optionsString ?? '');
-    $staticApplicable = $isIpsc || !$dialActive;
-
-    if ($staticApplicable) {
-        $parsed['TS1'] = SELFCARE_DISCONNECT_TG;
-        $parsed['TS2'] = SELFCARE_DISCONNECT_TG;
-    } else {
-        $parsed['TS2'] = SELFCARE_DISCONNECT_TG;
-    }
+    $parsed['DISC'] = '1';
 
     return buildOptionsStringFromParsed($parsed, $isIpsc, $dialActive);
 }

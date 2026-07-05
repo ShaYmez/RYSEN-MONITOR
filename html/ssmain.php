@@ -402,8 +402,6 @@ $csrfToken = generateCSRFToken();
                                         <i class="fas fa-2x fa-sync-alt fa-spin"></i><br><br>
                                         <span class="mt-2" id="calc_wait"></span>
                                         <span id="calc_disconnect_wait" class="d-none" aria-hidden="true"></span>
-                                        <span id="calc_disconnect_hold" class="d-none" aria-hidden="true"></span>
-                                        <span id="calc_disconnect_restore" class="d-none" aria-hidden="true"></span>
                                         <span id="calc_disconnect_offline" class="d-none" aria-hidden="true"></span>
                                     </div>
                                 </div>
