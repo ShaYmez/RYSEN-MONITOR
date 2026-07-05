@@ -1,0 +1,11 @@
+# Linux deployment target — LF in repo and on checkout (even on Windows dev machines)
+* text=auto eol=lf
+
+# Binary assets (skip line-ending conversion)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.db binary
