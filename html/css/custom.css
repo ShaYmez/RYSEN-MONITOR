@@ -200,6 +200,11 @@ a.badge-ipsc:focus {
     white-space: nowrap;
 }
 
+.selfcare-login-instructions {
+    white-space: pre-line;
+    margin-bottom: 0;
+}
+
 .selfcare-action-row {
     gap: 0.75rem;
 }

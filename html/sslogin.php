@@ -257,7 +257,7 @@ $csrfToken = generateCSRFToken();
                 <div class="card">
                   <div class="card-body">
                     <b><p class="text-center" id="sslog_use"></p></b>
-                    <span id="sslog_instruc"></span><br><br>
+                    <p class="selfcare-login-instructions" id="sslog_instruc"></p>
                     
                     <span>Pi-star:</span>
                     <img src="img/pi-star_pass.png" alt="" width="100%" class="mt-1"><br><br>
