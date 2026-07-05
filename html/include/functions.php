@@ -272,9 +272,10 @@ function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = fals
 }
 
 /**
- * Inject TG 4000 into TS slots for a one-shot disconnect pulse.
+ * Build disconnect pulse options — same as manually clearing static TGs and setting TG 4000 only.
  *
- * Uses the saved DB options as the base so function keys are preserved.
+ * RYSEN options_config reset_static_tg() / make_static_tg() handles the rest; no RYSEN changes needed.
+ * Other function keys (VOICE, SINGLE, TIMER, DIAL, etc.) are preserved from saved options.
  *
  * @param string|null $optionsString Current Clients.options value
  * @param bool $isIpsc
@@ -283,11 +284,13 @@ function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = fals
  */
 function injectDisconnectPulse($optionsString, $isIpsc, $dialActive = false) {
     $parsed = parseDeviceOptions($optionsString ?? '');
-    $slotKeys = ($isIpsc || !$dialActive) ? ['TS1', 'TS2'] : ['TS2'];
+    $staticApplicable = $isIpsc || !$dialActive;
 
-    foreach ($slotKeys as $tsKey) {
-        $tgs = injectDisconnectTg(normalizeTimeslotTgs($parsed[$tsKey] ?? null));
-        $parsed[$tsKey] = implode(',', $tgs);
+    if ($staticApplicable) {
+        $parsed['TS1'] = SELFCARE_DISCONNECT_TG;
+        $parsed['TS2'] = SELFCARE_DISCONNECT_TG;
+    } else {
+        $parsed['TS2'] = SELFCARE_DISCONNECT_TG;
     }
 
     return buildOptionsStringFromParsed($parsed, $isIpsc, $dialActive);

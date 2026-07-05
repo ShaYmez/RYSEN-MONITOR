@@ -1,6 +1,9 @@
 <?php
 /**
- * Selfcare dynamic-link disconnect — inject TG 4000 pulse, then restore saved options.
+ * Selfcare dynamic-link disconnect — TG 4000-only options pulse, timed hold, restore.
+ *
+ * Mirrors manual selfcare: clear static TGs, set TG 4000 only, wait for the options
+ * parser on the master, then restore saved settings. No RYSEN code changes required.
  */
 require_once 'ssconfunc.php';
 require_once 'include/functions.php';

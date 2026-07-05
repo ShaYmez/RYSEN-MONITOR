@@ -2,6 +2,15 @@
  * Selfcare Device Configuration Manager
  * Manages device settings, timeslots, and configuration options
  */
+
+/** Proxy send_opts loop interval (hotspot_proxy_v2_sc.py). */
+const PROXY_OPTS_INTERVAL_MS = 10000;
+/**
+ * Hold after proxy send — covers RYSEN options_config (~26s) and simplex busy-channel delay.
+ * User-tested minimum for reliable disconnect without radio PTT.
+ */
+const DISCONNECT_HOLD_MS = 60000;
+
 class SelfcareManager {
     constructor(config) {
         this.deviceMode = config.deviceMode;
@@ -470,14 +479,22 @@ class SelfcareManager {
     }
 
     /**
-     * Pulse TG 4000 via saved options, wait for RYSEN apply, restore backup.
+     * @param {number} ms
+     * @returns {Promise<void>}
+     */
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Apply TG 4000-only options (like manual clear + Save), hold, then restore backup.
      */
     disconnectDynamicLink() {
         if (this.disconnectInProgress || this.isModified) {
             return;
         }
 
-        const deadline = Date.now() + 20000;
+        const applyTimeoutMs = PROXY_OPTS_INTERVAL_MS + 5000;
 
         this.disconnectInProgress = true;
         this.setActionButtonsDisabled(true);
@@ -485,12 +502,16 @@ class SelfcareManager {
         this.setWaitMessage('calc_disconnect_wait');
 
         this.postDisconnectPhase('pulse')
-            .then(() => this.pollUntilDisconnectApplied(deadline))
+            .then(() => this.pollUntilDisconnectApplied(Date.now() + applyTimeoutMs))
+            .then(() => {
+                this.setWaitMessage('calc_disconnect_hold');
+                return this.sleep(DISCONNECT_HOLD_MS);
+            })
             .then(() => {
                 this.setWaitMessage('calc_disconnect_restore');
                 return this.postDisconnectPhase('restore');
             })
-            .then(() => this.pollUntilDisconnectApplied(deadline))
+            .then(() => this.pollUntilDisconnectApplied(Date.now() + applyTimeoutMs))
             .then(() => {
                 window.location.reload();
             })
