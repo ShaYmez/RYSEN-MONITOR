@@ -375,34 +375,34 @@ $csrfToken = generateCSRFToken();
                                                 </table>
                                             </div>
                                         </div>
-                                        <div class="row justify-content-center mb-3">
-                                            <div class="col-6">
-                                                <form method="post" id="saveChangesForm" style="display: none;">
-                                                    <input type="hidden" name="csrf_token" value="<?php echo escapeHtml($csrfToken); ?>">
-                                                    <textarea name="genText" id="genTextHidden"></textarea>
-                                                </form>
-                                                <div class="row justify-content-center align-items-center mt-4 mb-4 selfcare-action-row">
-                                                    <button type="button" class="btn btn-primary" onclick="window.selfcare.saveChanges()" id="calc_save"></button>
-                                                    <button type="button"
-                                                        class="btn btn-outline-secondary btn-sm selfcare-disconnect-btn"
-                                                        id="calchlpdisconnect"
-                                                        onclick="window.selfcare.disconnectDynamicLink()"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        data-bs-html="true"
-                                                        data-bs-title=""
-                                                        title="">
-                                                        <i class="fas fa-unlink fa-sm me-1" aria-hidden="true"></i><span id="calc_disconnect"></span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
                                     <div class="spinner text-center mb-5" style="display: <?php echo $devDetails['modified'] === '1' ? 'block' : 'none'; ?>">
                                         <i class="fas fa-2x fa-sync-alt fa-spin"></i><br><br>
                                         <span class="mt-2" id="calc_wait"></span>
                                         <span id="calc_disconnect_wait" class="d-none" aria-hidden="true"></span>
                                         <span id="calc_disconnect_offline" class="d-none" aria-hidden="true"></span>
+                                    </div>
+                                    <form method="post" id="saveChangesForm" style="display: none;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo escapeHtml($csrfToken); ?>">
+                                        <textarea name="genText" id="genTextHidden"></textarea>
+                                    </form>
+                                    <div class="row justify-content-center mb-3 selfcare-action-row-wrapper">
+                                        <div class="col-6">
+                                            <div class="row justify-content-center align-items-center mt-2 mb-4 selfcare-action-row">
+                                                <button type="button" class="btn btn-primary" onclick="window.selfcare && window.selfcare.saveChanges()" id="calc_save"></button>
+                                                <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm selfcare-disconnect-btn"
+                                                    id="calchlpdisconnect"
+                                                    onclick="window.selfcare && window.selfcare.disconnectDynamicLink()"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-placement="top"
+                                                    data-bs-html="true"
+                                                    data-bs-title=""
+                                                    title="">
+                                                    <i class="fas fa-unlink fa-sm me-1" aria-hidden="true"></i><span id="calc_disconnect"></span>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

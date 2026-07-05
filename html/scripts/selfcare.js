@@ -5,6 +5,8 @@
 
 /** Proxy send_opts loop interval (hotspot_proxy_v2_sc.py). */
 const PROXY_OPTS_INTERVAL_MS = 10000;
+/** IPSC / hotspot selfcare DISC poll interval in RYSEN (selfcare_db). */
+const SELFCARE_DISC_POLL_MS = 2000;
 
 class SelfcareManager {
     constructor(config) {
@@ -34,7 +36,7 @@ class SelfcareManager {
             this.startStatusPolling();
         }
 
-        this.setActionButtonsDisabled(this.isModified);
+        this.setSaveButtonDisabled(this.isModified);
     }
 
     /**
@@ -317,7 +319,7 @@ class SelfcareManager {
                 if (data === '0') {
                     this.isModified = false;
                     this.toggleSpinner(false);
-                    this.setActionButtonsDisabled(false);
+                    this.setSaveButtonDisabled(false);
                     if (this.checkInterval) {
                         clearInterval(this.checkInterval);
                         this.checkInterval = null;
@@ -352,24 +354,38 @@ class SelfcareManager {
     }
 
     /**
-     * Enable or disable save / disconnect controls during server apply.
+     * Enable or disable the save button during server apply.
      */
-    setActionButtonsDisabled(disabled) {
+    setSaveButtonDisabled(disabled) {
         const saveBtn = document.getElementById('calc_save');
-        const disconnectBtn = document.getElementById('calchlpdisconnect');
         if (saveBtn) {
             saveBtn.disabled = disabled;
         }
+    }
+
+    /**
+     * Enable or disable the disconnect button during an in-flight disconnect.
+     */
+    setDisconnectButtonDisabled(disabled) {
+        const disconnectBtn = document.getElementById('calchlpdisconnect');
         if (disconnectBtn) {
             disconnectBtn.disabled = disabled;
         }
     }
 
     /**
+     * @deprecated Use setSaveButtonDisabled / setDisconnectButtonDisabled.
+     */
+    setActionButtonsDisabled(disabled) {
+        this.setSaveButtonDisabled(disabled);
+        this.setDisconnectButtonDisabled(disabled);
+    }
+
+    /**
      * POST disconnect request or cleanup to ssdisconnect.php.
      */
     postDisconnectPhase(action) {
-        const csrfInput = document.querySelector('input[name="csrf_token"]');
+        const csrfInput = document.querySelector('#saveChangesForm input[name="csrf_token"]');
         if (!csrfInput) {
             return Promise.reject(new Error('Missing CSRF token'));
         }
@@ -485,14 +501,22 @@ class SelfcareManager {
      * Send DISC=1, wait for proxy delivery, then remove the one-shot flag from the DB.
      */
     disconnectDynamicLink() {
-        if (this.disconnectInProgress || this.isModified) {
+        if (this.disconnectInProgress) {
             return;
         }
 
-        const applyTimeoutMs = PROXY_OPTS_INTERVAL_MS + 5000;
+        if (this.checkInterval) {
+            clearInterval(this.checkInterval);
+            this.checkInterval = null;
+        }
+
+        const applyTimeoutMs = this.isIpsc
+            ? SELFCARE_DISC_POLL_MS + 8000
+            : SELFCARE_DISC_POLL_MS + 8000;
 
         this.disconnectInProgress = true;
-        this.setActionButtonsDisabled(true);
+        this.setSaveButtonDisabled(true);
+        this.setDisconnectButtonDisabled(true);
         this.toggleSpinner(true);
         this.setWaitMessage('calc_disconnect_wait');
 
@@ -504,8 +528,9 @@ class SelfcareManager {
             })
             .catch(error => {
                 console.error('Disconnect failed:', error);
-                this.toggleSpinner(false);
-                this.setActionButtonsDisabled(false);
+                this.toggleSpinner(this.isModified);
+                this.setSaveButtonDisabled(this.isModified);
+                this.setDisconnectButtonDisabled(false);
                 this.setWaitMessage('calc_wait');
                 alert(error.message || 'Disconnect failed. Please try again.');
             })
