@@ -1764,18 +1764,18 @@
         "el": "Αποσύνδεση"
     },
     "calchlpdisconnect": {
-        "en": "Clears a dynamic dial-a-tg link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
-        "pt": "Remove uma ligação dial-a-tg dinâmica (fora da lista estática).<br>Se um <b>talkgroup estático</b> na lista estiver ocupado, remova-o e grave primeiro.",
-        "es": "Cierra un enlace dial-a-tg dinámico (no está en su lista estática).<br>Si un <b>talkgroup estático</b> de la lista está ocupado, elimínelo y guarde primero.",
-        "fr": "Coupe une liaison dial-a-tg dynamique (absente de votre liste statique).<br>Si un <b>talkgroup statique</b> de la liste est occupé, retirez-le et enregistrez d'abord.",
-        "it": "Chiude un collegamento dial-a-tg dinamico (non nella lista statica).<br>Se un <b>talkgroup statico</b> in elenco è occupato, rimuoverlo e salvare prima.",
-        "nl": "Verbreekt een dynamische dial-a-tg-koppeling (niet in uw statische lijst).<br>Als een <b>statische talkgroup</b> in de lijst bezet is, verwijder die eerst en sla op.",
-        "de": "Trennt eine dynamische Dial-a-TG-Verbindung (nicht in der Statikliste).<br>Ist eine <b>statische Talkgroup</b> in der Liste belegt, zuerst entfernen und speichern.",
-        "ru": "Clears a dynamic dial-a-tg link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
-        "ja": "Clears a dynamic dial-a-tg link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
-        "ar": "Clears a dynamic dial-a-tg link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
-        "zh": "Clears a dynamic dial-a-tg link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
-        "el": "Κλείνει δυναμικό dial-a-tg (όχι στη στατική λίστα).<br>Αν μια <b>στατική ομάδα</b> στη λίστα είναι απασχολημένη, αφαιρέστε την και αποθηκεύστε πρώτα."
+        "en": "Disconnects a dynamic or user-activated talkgroup link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
+        "pt": "Desliga um talkgroup dinâmico ou ativado pelo utilizador (fora da lista estática).<br>Se um <b>talkgroup estático</b> na lista estiver ocupado, remova-o e grave primeiro.",
+        "es": "Desconecta un talkgroup dinámico o activado por el usuario (no está en su lista estática).<br>Si un <b>talkgroup estático</b> de la lista está ocupado, elimínelo y guarde primero.",
+        "fr": "Coupe un talkgroup dynamique ou activé par l'utilisateur (absent de votre liste statique).<br>Si un <b>talkgroup statique</b> de la liste est occupé, retirez-le et enregistrez d'abord.",
+        "it": "Disconnette un talkgroup dinamico o attivato dall'utente (non nella lista statica).<br>Se un <b>talkgroup statico</b> in elenco è occupato, rimuoverlo e salvare prima.",
+        "nl": "Verbreekt een dynamische of door de gebruiker geactiveerde talkgroup (niet in uw statische lijst).<br>Als een <b>statische talkgroup</b> in de lijst bezet is, verwijder die eerst en sla op.",
+        "de": "Trennt eine dynamische oder benutzeraktivierte Talkgroup (nicht in der Statikliste).<br>Ist eine <b>statische Talkgroup</b> in der Liste belegt, zuerst entfernen und speichern.",
+        "ru": "Disconnects a dynamic or user-activated talkgroup link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
+        "ja": "Disconnects a dynamic or user-activated talkgroup link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
+        "ar": "Disconnects a dynamic or user-activated talkgroup link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
+        "zh": "Disconnects a dynamic or user-activated talkgroup link (not in your static list).<br>If a <b>static talkgroup</b> in the list below is busy, remove it and Save first.",
+        "el": "Αποσυνδέει δυναμικό ή χρήστη-ενεργοποιημένο talkgroup (όχι στη στατική λίστα).<br>Αν μια <b>στατική ομάδα</b> στη λίστα είναι απασχολημένη, αφαιρέστε την και αποθηκεύστε πρώτα."
     },
     "calc_disconnect_wait": {
         "en": "Sending disconnect ...",
