@@ -5,6 +5,9 @@ on:
     branches: [main, master]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   python-tests:
     runs-on: ubuntu-latest
@@ -15,16 +18,26 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
-      - name: Install test dependencies
-        run: pip install pytest
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libmariadb-dev pkg-config gcc
+
+      - name: Install Python dependencies
+        run: pip install pytest -r requirements.txt
 
       - name: Run pytest
         run: python -m pytest -q
 
+  # Requires repo secret INSTALLER_REPO_TOKEN (fine-grained PAT, read on System-X-Installer).
+  # Skipped when the secret is unset. Sync is also checked on System-X-Installer CI.
   dashboard-sync:
     runs-on: ubuntu-latest
+    if: >-
+      secrets.INSTALLER_REPO_TOKEN != '' &&
+      github.repository == 'ShaYmez/RYSEN-MONITOR' &&
+      (github.event_name == 'push' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - name: Checkout RYSEN-MONITOR
         uses: actions/checkout@v4
@@ -36,6 +49,7 @@ jobs:
         with:
           repository: ShaYmez/System-X-Installer
           path: System-X-Installer
+          token: ${{ secrets.INSTALLER_REPO_TOKEN }}
 
       - name: Verify installer bundle is in sync
         run: |
