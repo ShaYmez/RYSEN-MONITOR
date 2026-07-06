@@ -97,7 +97,7 @@ function handleDeviceSelection() {
  * Redirect to current page (POST-redirect-GET pattern)
  */
 function redirectToSelf() {
-    header("Refresh: 0; url=" . $_SERVER['PHP_SELF']);
+    header('Location: ' . $_SERVER['PHP_SELF'], true, 303);
     exit();
 }
 

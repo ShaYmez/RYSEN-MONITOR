@@ -363,6 +363,13 @@ class SelfcareManager {
     }
 
     /**
+     * Navigate to selfcare main without resubmitting a prior POST (Firefox PRG).
+     */
+    navigateToSelfcareMain() {
+        window.location.replace(window.location.pathname);
+    }
+
+    /**
      * Apply did not complete — device likely offline or server not delivering options.
      */
     handleApplyTimeout() {
@@ -389,6 +396,13 @@ class SelfcareManager {
     checkModifiedStatus() {
         this.fetchSelfcareStatus()
             .then(data => {
+                if (data.error) {
+                    this.stopStatusPolling();
+                    this.toggleSpinner(false);
+                    this.setSaveButtonDisabled(false);
+                    alert(data.error + ' Please reload and log in again.');
+                    return;
+                }
                 if (data.modified === '0') {
                     this.isModified = false;
                     this.stopStatusPolling();
@@ -592,7 +606,7 @@ class SelfcareManager {
                 Date.now() + SELFCARE_DISCONNECT_TIMEOUT_MS))
             .then(() => this.postDisconnectPhase('cleanup'))
             .then(() => {
-                window.location.reload();
+                this.navigateToSelfcareMain();
             })
             .catch(error => {
                 console.error('Disconnect failed:', error);
