@@ -7,8 +7,8 @@
 const PROXY_OPTS_INTERVAL_MS = 10000;
 /** IPSC / hotspot selfcare DISC poll interval in RYSEN (selfcare_db). */
 const SELFCARE_DISC_POLL_MS = 2000;
-/** IPSC apply poll timeout — RYSEN polls every ~5s; allow headroom for reconnect. */
-const SELFCARE_IPSC_APPLY_TIMEOUT_MS = 45000;
+/** Apply poll timeout — IPSC poll ~5s, proxy RPTO ~10s; allow headroom for reconnect. */
+const SELFCARE_APPLY_TIMEOUT_MS = 45000;
 
 class SelfcareManager {
     constructor(config) {
@@ -310,12 +310,10 @@ class SelfcareManager {
     startStatusPolling() {
         this.toggleSpinner(true);
         this.checkInterval = setInterval(() => this.checkModifiedStatus(), 500);
-        if (this.isIpsc) {
-            this.applyTimeout = setTimeout(
-                () => this.handleApplyTimeout(),
-                SELFCARE_IPSC_APPLY_TIMEOUT_MS
-            );
-        }
+        this.applyTimeout = setTimeout(
+            () => this.handleApplyTimeout(),
+            SELFCARE_APPLY_TIMEOUT_MS
+        );
     }
 
     /**
@@ -333,7 +331,7 @@ class SelfcareManager {
     }
 
     /**
-     * IPSC apply did not complete — repeater likely offline or RYSEN not polling.
+     * Apply did not complete — device likely offline or server not delivering options.
      */
     handleApplyTimeout() {
         if (!this.isModified || this.disconnectInProgress) {
@@ -342,10 +340,14 @@ class SelfcareManager {
         this.stopStatusPolling();
         this.toggleSpinner(false);
         this.setSaveButtonDisabled(false);
-        const sourceEl = document.getElementById('calc_apply_pending');
+        const elementId = this.isIpsc ? 'calc_apply_pending' : 'calc_apply_pending_hotspot';
+        const sourceEl = document.getElementById(elementId);
+        const fallback = this.isIpsc
+            ? 'Settings could not be applied yet. Ensure the repeater is connected, then save again.'
+            : 'Settings could not be applied yet. Ensure your hotspot is connected, then save again.';
         const message = (sourceEl && sourceEl.textContent.trim())
             ? sourceEl.textContent.trim()
-            : 'Settings could not be applied yet. Ensure the repeater is connected, then save again.';
+            : fallback;
         alert(message);
     }
 
@@ -353,12 +355,10 @@ class SelfcareManager {
      * Check if device modification is complete
      */
     checkModifiedStatus() {
-        const url = this.isIpsc ? 'sscheck.php?full=1' : 'sscheck.php';
-        fetch(url)
-            .then(response => (this.isIpsc ? response.json() : response.text()))
+        fetch('sscheck.php?full=1')
+            .then(response => response.json())
             .then(data => {
-                const modified = this.isIpsc ? data.modified : data;
-                if (modified === '0') {
+                if (data.modified === '0') {
                     this.isModified = false;
                     this.stopStatusPolling();
                     this.toggleSpinner(false);

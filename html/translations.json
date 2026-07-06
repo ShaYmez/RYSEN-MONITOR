@@ -1763,6 +1763,20 @@
         "zh": "Settings could not be applied yet. Ensure the repeater is connected to the network, then save again.",
         "el": "Οι ρυθμίσεις δεν εφαρμόστηκαν ακόμα. Βεβαιωθείτε ότι ο επαναλήπτης είναι συνδεδεμένος στο δίκτυο και αποθηκεύστε ξανά."
     },
+    "calc_apply_pending_hotspot": {
+        "en": "Settings could not be applied yet. Ensure your hotspot is connected to the network, then save again.",
+        "pt": "As definições ainda não foram aplicadas. Confirme que o hotspot está ligado à rede e guarde novamente.",
+        "es": "Los ajustes aún no se han aplicado. Compruebe que el hotspot está conectado a la red y guarde de nuevo.",
+        "fr": "Les paramètres n'ont pas encore été appliqués. Vérifiez que le hotspot est connecté au réseau, puis enregistrez à nouveau.",
+        "it": "Impostazioni non ancora applicate. Verificare che l'hotspot sia connesso alla rete, poi salvare di nuovo.",
+        "nl": "Instellingen zijn nog niet toegepast. Controleer of de hotspot met het netwerk is verbonden en sla opnieuw op.",
+        "de": "Einstellungen konnten noch nicht angewendet werden. Prüfen Sie, ob der Hotspot mit dem Netzwerk verbunden ist, und speichern Sie erneut.",
+        "ru": "Settings could not be applied yet. Ensure your hotspot is connected to the network, then save again.",
+        "ja": "Settings could not be applied yet. Ensure your hotspot is connected to the network, then save again.",
+        "ar": "Settings could not be applied yet. Ensure your hotspot is connected to the network, then save again.",
+        "zh": "Settings could not be applied yet. Ensure your hotspot is connected to the network, then save again.",
+        "el": "Οι ρυθμίσεις δεν εφαρμόστηκαν ακόμα. Βεβαιωθείτε ότι το hotspot είναι συνδεδεμένο στο δίκτυο και αποθηκεύστε ξανά."
+    },
     "calc_disconnect": {
         "en": "Disconnect link",
         "pt": "Desligar ligação",
