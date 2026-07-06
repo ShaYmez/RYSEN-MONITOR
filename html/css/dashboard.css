@@ -267,52 +267,13 @@
     flex-shrink: 0;
 }
 
-/* Dashboard tooltips — classic grey style (consistent in light and dark mode) */
-:root,
-.dark-mode,
-[data-bs-theme="dark"] {
-    --bs-tooltip-bg: #6c757d;
-    --bs-tooltip-color: #fff;
-    --bs-tooltip-opacity: 1;
-    --bs-tooltip-max-width: 280px;
-    --bs-tooltip-padding-x: 0.75rem;
-    --bs-tooltip-padding-y: 0.5rem;
-}
-
-.tooltip {
-    opacity: 1 !important;
-}
-
+/* Bootstrap tooltips / popovers — left-aligned, readable line spacing */
 .tooltip .tooltip-inner {
-    background-color: #6c757d;
-    color: #fff;
     line-height: 1.6;
     max-width: 280px;
     padding: 0.5rem 0.75rem;
     text-align: left;
     white-space: pre-line;
-    font-size: 0.875rem;
-    border-radius: 0.25rem;
-}
-
-.bs-tooltip-top .tooltip-arrow::before,
-.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
-    border-top-color: #6c757d !important;
-}
-
-.bs-tooltip-bottom .tooltip-arrow::before,
-.bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
-    border-bottom-color: #6c757d !important;
-}
-
-.bs-tooltip-start .tooltip-arrow::before,
-.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
-    border-left-color: #6c757d !important;
-}
-
-.bs-tooltip-end .tooltip-arrow::before,
-.bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before {
-    border-right-color: #6c757d !important;
 }
 
 .popover .popover-header,

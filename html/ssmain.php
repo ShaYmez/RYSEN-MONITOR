@@ -258,7 +258,7 @@ $csrfToken = generateCSRFToken();
                                                 <table class="table table-sm border align-middle">
                                                     <thead class="bg-danger">
                                                         <tr>
-                                                            <th colspan="3" style="text-align: center;" class="align-middle">Time Slot 1&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlpts1"></i></th>
+                                                            <th colspan="3" style="text-align: center;" class="align-middle">Time Slot 1&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpts1"></i></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="timeslotTable">
@@ -279,7 +279,7 @@ $csrfToken = generateCSRFToken();
                                                 <table class="table table-sm border align-middle">
                                                     <thead class="bg-warning">
                                                         <tr>
-                                                            <th colspan="3" style="text-align: center;" class="align-middle">Time Slot 2&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlpts2"></i></th>
+                                                            <th colspan="3" style="text-align: center;" class="align-middle">Time Slot 2&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpts2"></i></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="timeslotTable2">
@@ -303,16 +303,16 @@ $csrfToken = generateCSRFToken();
                                                 <table class="table table-sm border align-middle mt-4">
                                                     <thead class="bg-success">
                                                         <tr>
-                                                            <th colspan="2" style="text-align: center;" class="align-middle">Functions&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlpfun"></i></th>
+                                                            <th colspan="2" style="text-align: center;" class="align-middle">Functions&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpfun"></i></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap"><span id="calc_dialtg"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlpdtg"></i></td>
+                                                            <td class="align-middle text-nowrap"><span id="calc_dialtg"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpdtg"></i></td>
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="dialTGInput" value="<?php echo $dialValue; ?>" oninput="window.selfcare.toggleTimeslot2(this.value)"></td>
                                                         </tr>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap"><span id="calc_voice"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlpvoice"></i></td>
+                                                            <td class="align-middle text-nowrap"><span id="calc_voice"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpvoice"></i></td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="voiceSelect">
                                                                     <option value="-1" <?php if ($voiceValue=='-1' ) { echo "selected" ; }; ?> id="calc_voicesrv"></option>
@@ -322,7 +322,7 @@ $csrfToken = generateCSRFToken();
                                                             </td>
                                                         </tr>
                                                         <tr id="languagerow">
-                                                            <td class="align-middle text-nowrap"><span id="calc_lang"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlplang"></i></td>
+                                                            <td class="align-middle text-nowrap"><span id="calc_lang"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlplang"></i></td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="languageselect">
                                                                     <option value="en_GB" <?php if ($langValue=='en_GB' ) { echo "selected" ; }; ?>>English (en_GB)</option>
@@ -344,7 +344,7 @@ $csrfToken = generateCSRFToken();
                                                         </tr>
                                                         <tr>
                                                             <td class="align-middle text-nowrap"><span 
-                                                                    id="calc_smode"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlpsmode"></i></td>
+                                                                    id="calc_smode"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpsmode"></i></td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="singleModeSelect">
                                                                     <option value="-1" <?php if ($singleValue=='-1' ) { echo "selected" ; }; ?> id="calc_smodesrv"></option>
@@ -360,7 +360,7 @@ $csrfToken = generateCSRFToken();
                                                                    data-bs-toggle="tooltip" 
                                                                    data-bs-placement="top" 
                                                                    data-bs-html="true"
-                                                                   data-bs-title="" 
+                                                                   title=""
                                                                    id="calchlpsticky"></i>
                                                             </td>
                                                             <td>
@@ -372,7 +372,7 @@ $csrfToken = generateCSRFToken();
                                                             </td>
                                                         </tr>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap"><span id="calc_tgto"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlpstgto"></i></td>
+                                                            <td class="align-middle text-nowrap"><span id="calc_tgto"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpstgto"></i></td>
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="timeoutInput" value="<?php echo $timerValue; ?>"></td>
                                                         </tr>
                                                     </tbody>
@@ -404,7 +404,6 @@ $csrfToken = generateCSRFToken();
                                                     data-bs-toggle="tooltip"
                                                     data-bs-placement="top"
                                                     data-bs-html="true"
-                                                    data-bs-title=""
                                                     title="">
                                                     <i class="fas fa-unlink fa-sm me-1" aria-hidden="true"></i><span id="calc_disconnect"></span>
                                                 </button>

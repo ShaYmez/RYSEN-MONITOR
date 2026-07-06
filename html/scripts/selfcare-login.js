@@ -46,15 +46,7 @@
         var labels = getToggleLabels();
         var title = visible ? labels.hide : labels.show;
         button.setAttribute('title', title);
-        button.setAttribute('data-bs-title', title);
         button.setAttribute('aria-label', title);
-
-        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-            var instance = bootstrap.Tooltip.getInstance(button);
-            if (instance) {
-                instance.setContent({ '.tooltip-inner': title });
-            }
-        }
     }
 
     function setPasswordVisible(button, visible) {
@@ -100,21 +92,10 @@
             loadTranslations().then(refreshToggleLabels);
         }
 
-        if (typeof window.bindDashboardTooltips === 'function') {
-            window.bindDashboardTooltips(document);
-        } else if (typeof bindDashboardTooltips === 'function') {
-            bindDashboardTooltips(document);
-        }
-
         var languageSelect = document.getElementById('languageSelect');
         if (languageSelect && !languageSelect.hasAttribute('data-ss-password-lang-bound')) {
             languageSelect.setAttribute('data-ss-password-lang-bound', '1');
-            languageSelect.addEventListener('change', function () {
-                refreshToggleLabels();
-                if (typeof bindDashboardTooltips === 'function') {
-                    bindDashboardTooltips(document);
-                }
-            });
+            languageSelect.addEventListener('change', refreshToggleLabels);
         }
     }
 

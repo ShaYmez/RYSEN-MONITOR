@@ -13,7 +13,7 @@
                             <div class="row justify-content-center">
                                 <p class="mb-1"><b><span id="calc_type"></span></b>&nbsp;&nbsp;&nbsp;<i
                                         class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top"
-                                        data-bs-html="true" data-bs-title="" id="calchlptype"></i></p>
+                                        data-bs-html="true" title="" id="calchlptype"></i></p>
                             </div>
                             <select class="form-control form-control-sm bg-warning" id="modeSelector" onchange="toggleTimeslotTable()">
                                 <option value="Simplex">Simplex</option>
@@ -30,7 +30,7 @@
                                         <th colspan="3" style="text-align: center;" class="align-middle">Time Slot
                                             1&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle"
                                                 data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
-                                                data-bs-title="" id="calchlpts1"></i>
+                                                title="" id="calchlpts1"></i>
                                         </th>
                                     </tr>
                                 </thead>
@@ -54,7 +54,7 @@
                                         <th colspan="3" style="text-align: center;" class="align-middle">Time Slot
                                             2&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle"
                                                 data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
-                                                data-bs-title="" id="calchlpts2"></i>
+                                                title="" id="calchlpts2"></i>
                                         </th>
                                     </tr>
                                 </thead>
@@ -77,7 +77,7 @@
                             <table class="table table-sm table-sm border mt-4">
                                 <thead class="bg-success">
                                     <tr>
-                                        <th colspan="2" style="text-align: center;" class="align-middle">Functions&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="" id="calchlpfun"></i></th>
+                                        <th colspan="2" style="text-align: center;" class="align-middle">Functions&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpfun"></i></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -85,7 +85,7 @@
                                         <td class="align-middle text-nowrap"><span
                                                 id="calc_dialtg"></span>&nbsp;&nbsp;&nbsp;<i
                                                 class="far fa-question-circle" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" data-bs-html="true" data-bs-title=""
+                                                data-bs-placement="top" data-bs-html="true" title=""
                                                 id="calchlpdtg"></i></td>
                                         <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="dialTGInput"
                                                 value="0" oninput="toggleTimeslot2(this.value)"></td>
@@ -94,7 +94,7 @@
                                         <td class="align-middle text-nowrap"><span
                                                 id="calc_voice"></span>&nbsp;&nbsp;&nbsp;<i
                                                 class="far fa-question-circle" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" data-bs-html="true" data-bs-title=""
+                                                data-bs-placement="top" data-bs-html="true" title=""
                                                 id="calchlpvoice"></i></td>
                                         <td>
                                             <select class="form-control form-control-sm" id="voiceSelect"
@@ -109,7 +109,7 @@
                                         <td class="align-middle text-nowrap"><span
                                                 id="calc_lang"></span>&nbsp;&nbsp;&nbsp;<i
                                                 class="far fa-question-circle" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" data-bs-html="true" data-bs-title=""
+                                                data-bs-placement="top" data-bs-html="true" title=""
                                                 id="calchlplang"></i></td>
                                         <td>
                                             <select class="form-control form-control-sm" id="languageselect">
@@ -137,7 +137,7 @@
                                                data-bs-toggle="tooltip" 
                                                data-bs-placement="top" 
                                                data-bs-html="true"
-                                               data-bs-title="" 
+                                               title="" 
                                                id="calchlpsticky"></i>
                                         </td>
                                         <td>
@@ -152,7 +152,7 @@
                                         <td class="align-middle text-nowrap"><span
                                                 id="calc_smode"></span>&nbsp;&nbsp;&nbsp;<i
                                                 class="far fa-question-circle" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" data-bs-html="true" data-bs-title=""
+                                                data-bs-placement="top" data-bs-html="true" title=""
                                                 id="calchlpsmode"></i></td>
                                         <td>
                                             <select class="form-control form-control-sm" id="singleModeSelect">
@@ -166,7 +166,7 @@
                                         <td class="align-middle text-nowrap"><span
                                                 id="calc_tgto"></span>&nbsp;&nbsp;&nbsp;<i
                                                 class="far fa-question-circle" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" data-bs-html="true" data-bs-title=""
+                                                data-bs-placement="top" data-bs-html="true" title=""
                                                 id="calchlpstgto"></i></td>
                                         <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="timeoutInput"
                                                 value="0"></td>

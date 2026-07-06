@@ -26,9 +26,6 @@
             || element.getAttribute('data-toggle') === 'tooltip';
         if (isTooltip) {
             element.setAttribute('title', label);
-            if (element.getAttribute('data-bs-toggle') === 'tooltip') {
-                element.setAttribute('data-bs-title', label);
-            }
         } else if (element.tagName === 'INPUT') {
             element.setAttribute('placeholder', label);
         } else {

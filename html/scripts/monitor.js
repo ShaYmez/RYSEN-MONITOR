@@ -10,6 +10,7 @@ var bulletin_tbl = null;
 let translationsCache = null;
 let translationsPromise = null;
 let languageListenerBound = false;
+let delegatedTooltipsReady = false;
 const TRANSLATIONS_STORAGE_KEY = 'rysen_translations';
 const TOOLTIP_SELECTOR = '[data-bs-toggle="tooltip"], [data-toggle="tooltip"]';
 
@@ -52,9 +53,6 @@ function applyTranslation(element, translation) {
         || element.getAttribute('data-toggle') === 'tooltip';
     if (isTooltip) {
         element.setAttribute('title', label);
-        if (element.getAttribute('data-bs-toggle') === 'tooltip') {
-            element.setAttribute('data-bs-title', label);
-        }
     } else if (element.tagName === 'INPUT') {
         element.setAttribute('placeholder', label);
     } else {
@@ -72,82 +70,32 @@ function translateElements(translations, selectedLanguage) {
 }
 
 function cleanupTooltips() {
+    if (typeof $ !== 'undefined' && $.fn && $.fn.tooltip) {
+        try {
+            $(TOOLTIP_SELECTOR).tooltip('hide');
+        } catch (err) {
+            // Ignore stale tooltip instances after DOM replacement.
+        }
+    }
+
     document.querySelectorAll('.tooltip, .bs-tooltip-auto').forEach(function (el) {
         el.remove();
     });
-
-    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-        document.querySelectorAll(TOOLTIP_SELECTOR).forEach(function (el) {
-            const instance = bootstrap.Tooltip.getInstance(el);
-            if (instance) {
-                instance.dispose();
-            }
-        });
-    }
-
-    if (typeof $ !== 'undefined' && $.fn && $.fn.tooltip) {
-        try {
-            $(TOOLTIP_SELECTOR).each(function () {
-                $(this).tooltip('dispose');
-            });
-        } catch (err) {
-            // Ignore stale jQuery tooltip instances after DOM replacement.
-        }
-    }
 }
-
-function normalizeTooltipElement(el) {
-    if (!el || !el.getAttribute) {
-        return;
-    }
-    if (el.getAttribute('data-toggle') === 'tooltip' && !el.getAttribute('data-bs-toggle')) {
-        el.setAttribute('data-bs-toggle', 'tooltip');
-    }
-    const placement = el.getAttribute('data-bs-placement') || el.getAttribute('data-placement');
-    if (placement && !el.getAttribute('data-bs-placement')) {
-        el.setAttribute('data-bs-placement', placement);
-    }
-    const html = el.getAttribute('data-bs-html') || el.getAttribute('data-html');
-    if (html && !el.getAttribute('data-bs-html')) {
-        el.setAttribute('data-bs-html', html);
-    }
-    const title = el.getAttribute('data-bs-title') || el.getAttribute('title');
-    if (title && !el.getAttribute('data-bs-title')) {
-        el.setAttribute('data-bs-title', title);
-    }
-}
-
-function bindDashboardTooltips(root) {
-    if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) {
-        return;
-    }
-
-    const scope = root || document;
-    scope.querySelectorAll(TOOLTIP_SELECTOR).forEach(function (el) {
-        if (bootstrap.Tooltip.getInstance(el)) {
-            return;
-        }
-
-        normalizeTooltipElement(el);
-
-        const html = el.getAttribute('data-bs-html') === 'true';
-        const placement = el.getAttribute('data-bs-placement') || 'top';
-
-        new bootstrap.Tooltip(el, {
-            container: 'body',
-            customClass: 'dashboard-tooltip',
-            html: html,
-            placement: placement,
-            trigger: 'hover focus',
-            sanitize: false
-        });
-    });
-}
-
-window.bindDashboardTooltips = bindDashboardTooltips;
 
 function initDelegatedTooltips() {
-    bindDashboardTooltips(document);
+    if (delegatedTooltipsReady || typeof $ === 'undefined' || !$.fn || !$.fn.tooltip) {
+        return;
+    }
+    delegatedTooltipsReady = true;
+    $('body').tooltip({
+        selector: TOOLTIP_SELECTOR,
+        trigger: 'hover',
+        html: true,
+        container: 'body',
+        boundary: 'window',
+        sanitize: false
+    });
 }
 
 function getPageLanguage() {
@@ -218,7 +166,6 @@ function bindLanguageListener() {
         }
         applyPageTranslations(languageSelect.value);
         cleanupTooltips();
-        bindDashboardTooltips(document);
     });
 }
 
@@ -268,13 +215,10 @@ function updateSection(sectionId, html) {
     }
     cleanupTooltips();
     el.innerHTML = html;
-    bindDashboardTooltips(el);
     loadTranslations().then(translations => {
         const languageSelect = document.getElementById('languageSelect');
         const lang = languageSelect ? languageSelect.value : 'en';
         translateElements(translations, lang);
-        cleanupTooltips();
-        bindDashboardTooltips(el);
     });
 }
 
@@ -315,15 +259,11 @@ function updateDashboardPane(container, message) {
 
     container.innerHTML = message;
 
-    bindDashboardTooltips(container);
-
     loadTranslations().then(translations => {
         const languageSelect = document.getElementById('languageSelect');
         const lang = languageSelect ? languageSelect.value : 'en';
         translateElements(translations, lang);
         bindLanguageListener();
-        cleanupTooltips();
-        bindDashboardTooltips(container);
     });
 
     requestAnimationFrame(function () {

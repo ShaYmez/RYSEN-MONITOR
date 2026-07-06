@@ -6,7 +6,7 @@
           <h3 class="card-title" id="tbl_bulletin">
             Bulletin Board 
             <a href="bulletin_rss.php" target="_blank" class="text-muted">
-              <i class="fas fa-rss" title="RSS Feed"></i>
+              <i class="fas fa-rss" data-bs-toggle="tooltip" title="RSS Feed"></i>
             </a>
           </h3>
           <div class="card-tools">

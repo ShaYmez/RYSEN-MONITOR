@@ -157,7 +157,7 @@ $customNavbarItems = navbar_valid_menu_items(isset($custom_navbar_items) ? $cust
             if (isset($social_links) && !empty($social_links)) {
                 foreach ($social_links as $social) {
                     echo '<li class="nav-item">';
-                    echo '<a class="nav-link" href="' . htmlspecialchars($social['url']) . '" title="' . htmlspecialchars($social['title']) . '" role="button">';
+                    echo '<a class="nav-link" href="' . htmlspecialchars($social['url']) . '" data-bs-toggle="tooltip" title="' . htmlspecialchars($social['title']) . '" role="button">';
                     echo '<i class="' . htmlspecialchars($social['icon']) . '"></i>';
                     echo '</a></li>';
                 }

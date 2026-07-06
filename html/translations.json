@@ -1946,7 +1946,7 @@
         "el": "Η φωνητική ταυτοποίηση 15 λεπτών μπορεί να ενεργοποιηθεί ή να απενεργοποιηθεί στη Θέση 2.<br>Οι ασύρματοι θα λαμβάνουν από το δίκτυο, 'This is CALL-SIGN SystemX.'"
     },
     "calchlplang": {
-        "en": "Set the Language VOICE comes back to you as.",
+        "en": "Set the language used for voice prompts.",
         "pt": "Defina o idioma em que a VOZ retorna para você.",
         "es": "Establece el idioma en el que la VOZ te responde.",
         "fr": "Définissez la langue dans laquelle la VOIX vous répond.",
@@ -1974,7 +1974,7 @@
         "el": "Επιτρέπει μόνο μία Ομάδα Συνομιλίας να δρομολογείται σε Θέση Χρόνου σε επαναλήπτη/hotspot κάθε φορά."
     },
     "calchlpstgto": {
-        "en": "Time a Talk Group is held active for. Pressing your PTT on a Talk Group reset this timer.<br>You select any number of minutes you like here. But the recommended time is 10 or 5 mins.<br>If setting more than two static to a slot, you might wish to set Timer to 1 or 2 min.",
+        "en": "Time a Talk Group is held active for. Pressing your PTT on a Talk Group resets this timer.<br>You can select any number of minutes here. The recommended time is 10 or 5 minutes.<br>If setting more than two static talkgroups on a slot, you may wish to set the timer to 1 or 2 minutes.",
         "pt": "Tempo em que um Grupo de Conversação permanece ativo. Pressionar o botão PTT em um Grupo de Conversação reinicia esse temporizador.<br>Você pode selecionar qualquer número de minutos aqui. Mas o tempo recomendado é de 10 ou 5 minutos.<br>Se estiver configurando mais de dois estáticos para um slot, talvez deseje definir o temporizador para 1 ou 2 minutos.",
         "es": "Tiempo en que un Grupo de Conversación se mantiene activo. Presionar el PTT en un Grupo de Conversación reinicia este temporizador.<br>Puedes seleccionar cualquier cantidad de minutos que desees aquí. Pero el tiempo recomendado es de 10 o 5 minutos.<br>Si configuras más de dos estáticos en una ranura, es posible que desees establecer el temporizador en 1 o 2 minutos.",
         "fr": "Durée pendant laquelle un groupe de discussion est maintenu actif. Appuyer sur le PTT d'un groupe de discussion réinitialise cette minuterie.<br>Vous pouvez sélectionner le nombre de minutes que vous souhaitez ici. Mais le temps recommandé est de 10 ou 5 minutes.<br>Si vous configurez plus de deux statiques sur une fente, vous voudrez peut-être régler la minuterie sur 1 ou 2 minutes.",
