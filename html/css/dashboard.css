@@ -287,13 +287,17 @@
     padding: 0.65rem 0.85rem;
 }
 
-/* Pinned tooltip — stays visible with snapshot content during live DOM refresh */
-.tooltip.dashboard-tooltip-pinned {
+/* Tooltip fade — consistent site-wide */
+.tooltip {
     opacity: 1;
-    pointer-events: auto;
     transition: opacity 0.15s ease;
 }
 
-.tooltip.dashboard-tooltip-pinned.dashboard-tooltip-fading {
+.tooltip.dashboard-tooltip-fading {
     opacity: 0;
+}
+
+/* Pinned tooltip — stays visible with snapshot content during live DOM refresh */
+.tooltip.dashboard-tooltip-pinned {
+    pointer-events: auto;
 }

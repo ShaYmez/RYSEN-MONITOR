@@ -155,6 +155,7 @@ $csrfToken = generateCSRFToken();
     <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
     <link rel="stylesheet" href="plugins/adminlte/css/adminlte.min.css">
     <link rel="stylesheet" href="css/custom.css">
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
 
 <body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm">

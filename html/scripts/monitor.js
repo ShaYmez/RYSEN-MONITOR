@@ -13,9 +13,10 @@ let languageListenerBound = false;
 let delegatedTooltipsReady = false;
 const TRANSLATIONS_STORAGE_KEY = 'rysen_translations';
 const TOOLTIP_SELECTOR = '[data-bs-toggle="tooltip"], [data-toggle="tooltip"]';
+const TOOLTIP_FADE_MS = 150;
 let pinnedTooltipEl = null;
-let pinnedTooltipFadeTimer = null;
 let pinnedTooltipDismissBound = false;
+let tooltipFadeOutBound = false;
 
 function readStoredTranslations() {
     try {
@@ -99,6 +100,23 @@ function pinVisibleTooltipBeforeDomSwap() {
     pinnedTooltipEl.classList.add('dashboard-tooltip-pinned');
 }
 
+function fadeOutTooltipElement(tip, callback) {
+    if (!tip || tip.classList.contains('dashboard-tooltip-fading')) {
+        if (callback) {
+            callback();
+        }
+        return;
+    }
+
+    tip.classList.add('dashboard-tooltip-fading');
+    window.setTimeout(function () {
+        tip.remove();
+        if (callback) {
+            callback();
+        }
+    }, TOOLTIP_FADE_MS);
+}
+
 function releasePinnedTooltip(immediate) {
     if (!pinnedTooltipEl) {
         return;
@@ -107,21 +125,12 @@ function releasePinnedTooltip(immediate) {
     const el = pinnedTooltipEl;
     pinnedTooltipEl = null;
 
-    if (pinnedTooltipFadeTimer) {
-        clearTimeout(pinnedTooltipFadeTimer);
-        pinnedTooltipFadeTimer = null;
-    }
-
     if (immediate) {
         el.remove();
         return;
     }
 
-    el.classList.add('dashboard-tooltip-fading');
-    pinnedTooltipFadeTimer = window.setTimeout(function () {
-        pinnedTooltipFadeTimer = null;
-        el.remove();
-    }, 150);
+    fadeOutTooltipElement(el);
 }
 
 function bindPinnedTooltipDismiss() {
@@ -161,6 +170,35 @@ function bindPinnedTooltipDismiss() {
         }
 
         releasePinnedTooltip(false);
+    });
+}
+
+function bindTooltipFadeOut() {
+    if (tooltipFadeOutBound || typeof $ === 'undefined' || !$.fn || !$.fn.tooltip) {
+        return;
+    }
+    tooltipFadeOutBound = true;
+
+    $('body').on('hide.bs.tooltip', TOOLTIP_SELECTOR, function (e) {
+        if (pinnedTooltipEl) {
+            return;
+        }
+
+        const tip = getVisibleTooltipElement();
+        if (!tip) {
+            return;
+        }
+
+        e.preventDefault();
+
+        const trigger = this;
+        fadeOutTooltipElement(tip, function () {
+            try {
+                $(trigger).tooltip('dispose');
+            } catch (err) {
+                // Ignore stale tooltip instances after DOM replacement.
+            }
+        });
     });
 }
 
@@ -231,6 +269,7 @@ function initDelegatedTooltips() {
         boundary: 'window',
         sanitize: false
     });
+    bindTooltipFadeOut();
 }
 
 function getPageLanguage() {
