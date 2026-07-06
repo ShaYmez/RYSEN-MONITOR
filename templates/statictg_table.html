@@ -41,9 +41,9 @@
                     {% set ctrynum = _peer_id|flag_code %}
                     <div class="peer-id-row">
                       <img class="peer-flag" src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                      <a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
+                      <a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-bs-toggle="tooltip"
                           class="peer-callsign{% if _cdata.get('PROTOCOL') == 'IPSC' %} peer-callsign-ipsc{% endif %}"
-                          data-html="true" title="
+                          data-bs-html="true" title="
 {{_master}}
 {% if _cdata.get('PROTOCOL') == 'IPSC' %}Type: IPSC Repeater ({{ _cdata['SLOTS'] }})
 Mode: {{ _cdata['DESCRIPTION'] }}
@@ -131,8 +131,8 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                 <td>
                   {% set ctrynum = _client|flag_code %}
                   <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                  <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
-                        data-html="true" title="
+                  <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-bs-toggle="tooltip"
+                        data-bs-html="true" title="
 {{_master}}
 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
 TX: {{_cdata['TX_FREQ'] }}
@@ -213,8 +213,8 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                 <td>
                   {% set ctrynum = _client|flag_code %}
                   <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                  <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-toggle="tooltip"
-                        data-html="true" title="
+                  <span><strong><a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}" data-bs-toggle="tooltip"
+                        data-bs-html="true" title="
 {{_master}}
 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
 TX: {{_cdata['TX_FREQ'] }}

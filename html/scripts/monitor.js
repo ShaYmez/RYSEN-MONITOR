@@ -96,6 +96,27 @@ function cleanupTooltips() {
     }
 }
 
+function normalizeTooltipElement(el) {
+    if (!el || !el.getAttribute) {
+        return;
+    }
+    if (el.getAttribute('data-toggle') === 'tooltip' && !el.getAttribute('data-bs-toggle')) {
+        el.setAttribute('data-bs-toggle', 'tooltip');
+    }
+    const placement = el.getAttribute('data-bs-placement') || el.getAttribute('data-placement');
+    if (placement && !el.getAttribute('data-bs-placement')) {
+        el.setAttribute('data-bs-placement', placement);
+    }
+    const html = el.getAttribute('data-bs-html') || el.getAttribute('data-html');
+    if (html && !el.getAttribute('data-bs-html')) {
+        el.setAttribute('data-bs-html', html);
+    }
+    const title = el.getAttribute('data-bs-title') || el.getAttribute('title');
+    if (title && !el.getAttribute('data-bs-title')) {
+        el.setAttribute('data-bs-title', title);
+    }
+}
+
 function bindDashboardTooltips(root) {
     if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) {
         return;
@@ -107,21 +128,23 @@ function bindDashboardTooltips(root) {
             return;
         }
 
-        const html = el.getAttribute('data-bs-html') === 'true'
-            || el.getAttribute('data-html') === 'true';
-        const placement = el.getAttribute('data-bs-placement')
-            || el.getAttribute('data-placement')
-            || 'top';
+        normalizeTooltipElement(el);
+
+        const html = el.getAttribute('data-bs-html') === 'true';
+        const placement = el.getAttribute('data-bs-placement') || 'top';
 
         new bootstrap.Tooltip(el, {
             container: 'body',
+            customClass: 'dashboard-tooltip',
             html: html,
             placement: placement,
-            trigger: 'hover',
+            trigger: 'hover focus',
             sanitize: false
         });
     });
 }
+
+window.bindDashboardTooltips = bindDashboardTooltips;
 
 function initDelegatedTooltips() {
     bindDashboardTooltips(document);

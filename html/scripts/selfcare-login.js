@@ -46,6 +46,7 @@
         var labels = getToggleLabels();
         var title = visible ? labels.hide : labels.show;
         button.setAttribute('title', title);
+        button.setAttribute('data-bs-title', title);
         button.setAttribute('aria-label', title);
 
         if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
@@ -53,8 +54,6 @@
             if (instance) {
                 instance.setContent({ '.tooltip-inner': title });
             }
-        } else if (typeof $ !== 'undefined' && $.fn && $.fn.tooltip) {
-            $(button).attr('data-original-title', title).tooltip('fixTitle');
         }
     }
 
@@ -101,7 +100,9 @@
             loadTranslations().then(refreshToggleLabels);
         }
 
-        if (typeof bindDashboardTooltips === 'function') {
+        if (typeof window.bindDashboardTooltips === 'function') {
+            window.bindDashboardTooltips(document);
+        } else if (typeof bindDashboardTooltips === 'function') {
             bindDashboardTooltips(document);
         }
 

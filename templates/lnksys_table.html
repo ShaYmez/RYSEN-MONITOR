@@ -108,7 +108,7 @@
                         <img class="peer-flag" src="./flags/{{ ctrynum }}.png" onerror="this.onerror=null;this.src='./flags/world.png'" alt="">
                         <a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}"
                           class="peer-callsign{% if _cdata.get('PROTOCOL') == 'IPSC' %} peer-callsign-ipsc{% endif %}"
-                          data-toggle="tooltip" data-html="true" title="
+                          data-bs-toggle="tooltip" data-bs-html="true" title="
 {{_master}}
 {% if _cdata.get('PROTOCOL') == 'IPSC' %}Type: IPSC Repeater ({{ _cdata['SLOTS'] }})
 Mode: {{ _cdata['DESCRIPTION'] }}
@@ -235,7 +235,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                     <div class="peer-id-row">
                       <img class="peer-flag" src="./flags/{{ ctrynum }}.png" onerror="this.onerror=null;this.src='./flags/world.png'" alt="">
                       <a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}"
-                        class="peer-callsign" data-toggle="tooltip" data-html="true" title="
+                        class="peer-callsign" data-bs-toggle="tooltip" data-bs-html="true" title="
 {{_master}}
 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
 TX: {{_cdata['TX_FREQ'] }}
@@ -360,7 +360,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                     <div class="peer-id-row">
                       <img class="peer-flag" src="./flags/{{ ctrynum }}.png" onerror="this.onerror=null;this.src='./flags/world.png'" alt="">
                       <a target="_blank" href="https://qrz.com/db/{{ _cdata['CALLSIGN']}}"
-                        class="peer-callsign" data-toggle="tooltip" data-html="true" title="
+                        class="peer-callsign" data-bs-toggle="tooltip" data-bs-html="true" title="
 {{_master}}
 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
 TX: {{_cdata['TX_FREQ'] }}
@@ -480,7 +480,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                 </tr>
                 <tr>
                   <td class="align-middle text-center">
-                    <span><strong><a target="_blank" href="#" data-toggle="tooltip" data-html="true"
+                    <span><strong><a target="_blank" href="#" data-bs-toggle="tooltip" data-bs-html="true"
                           title="Time Slot: {{ _table['PEERS'][_peer]['SLOTS'] }}">{{_table['PEERS'][_peer]['CALLSIGN']}}</a></strong></span>
                     <span class="badge badge-info">{{ _table['PEERS'][_peer]['RADIO_ID']}}</span>
                   </td>

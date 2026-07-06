@@ -14,7 +14,7 @@
           {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
           {% set _rptr_badge = 'badge-ipsc' if _cdata.get('PROTOCOL') == 'IPSC' else 'badge-success' %}
           <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}"
-            class="badge badge-pill {{ _rptr_badge }}" style="min-width: 3.5rem;" data-toggle="tooltip" data-placement="top"
+            class="badge badge-pill {{ _rptr_badge }}" style="min-width: 3.5rem;" data-bs-toggle="tooltip" data-bs-placement="top"
             title="
 ID DMR: {{ _peer_id }}
 {% if _cdata.get('PROTOCOL') == 'IPSC' %}Mode: IPSC Repeater ({{ _cdata['SLOTS'] }})
@@ -49,7 +49,7 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
           {% if _client|string|length >= 7 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
           <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}" class="badge badge-pill badge-success"
-            style="min-width: 3.5rem;" data-toggle="tooltip" data-placement="top" data-html="true" title="
+            style="min-width: 3.5rem;" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="
 ID DMR: {{ _client }}
 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
 TX: {{_cdata['TX_FREQ'] }}
@@ -80,8 +80,8 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
           {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
-          <a href="#" class="badge badge-pill badge-success" style="min-width: 3.5rem;" data-toggle="tooltip"
-            data-placement="top" data-html="true" title="
+          <a href="#" class="badge badge-pill badge-success" style="min-width: 3.5rem;" data-bs-toggle="tooltip"
+            data-bs-placement="top" data-bs-html="true" title="
 ID DMR: {{ _client }}
 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
 TX: {{_cdata['TX_FREQ'] }}

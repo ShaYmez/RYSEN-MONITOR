@@ -193,7 +193,7 @@ $csrfToken = generateCSRFToken();
                       <div class="input-group mb-3 mt-3">
                         <input type="password" class="form-control" name="password" placeholder="New password" minlength="6" maxlength="100" required autofocus>
                         <div class="input-group-append">
-                          <button type="button" class="input-group-text ss-password-toggle" data-toggle="tooltip" data-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
+                          <button type="button" class="input-group-text ss-password-toggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
                             <i class="fas fa-lock ss-password-toggle-icon" aria-hidden="true"></i>
                           </button>
                         </div>
@@ -202,7 +202,7 @@ $csrfToken = generateCSRFToken();
                       <div class="input-group mb-3">
                         <input type="password" class="form-control" name="password_confirm" placeholder="Confirm password" minlength="6" maxlength="100" required>
                         <div class="input-group-append">
-                          <button type="button" class="input-group-text ss-password-toggle" data-toggle="tooltip" data-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
+                          <button type="button" class="input-group-text ss-password-toggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
                             <i class="fas fa-lock ss-password-toggle-icon" aria-hidden="true"></i>
                           </button>
                         </div>
@@ -223,7 +223,7 @@ $csrfToken = generateCSRFToken();
                         <input type="text" class="form-control" name="callsign" placeholder="" id="sslog_call" required
                           autocapitalize="characters" spellcheck="false" autocomplete="username">
                         <div class="input-group-append">
-                          <div class="input-group-text" data-toggle="tooltip" data-placement="top"
+                          <div class="input-group-text" data-bs-toggle="tooltip" data-bs-placement="top"
                             title="Enter your callsign or DMR radio ID. Works for hotspots and IPSC repeaters.">
                             <i class="fas fa-broadcast-tower"></i>
                           </div>
@@ -233,7 +233,7 @@ $csrfToken = generateCSRFToken();
                       <div class="input-group mb-3">
                         <input type="password" class="form-control" name="password" placeholder="" id="sslog_pass" autocomplete="current-password">
                         <div class="input-group-append">
-                          <button type="button" class="input-group-text ss-password-toggle" id="sslog_pass_toggle" data-toggle="tooltip" data-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
+                          <button type="button" class="input-group-text ss-password-toggle" id="sslog_pass_toggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
                             <i class="fas fa-lock ss-password-toggle-icon" aria-hidden="true"></i>
                           </button>
                         </div>
