@@ -2015,6 +2015,34 @@
         "zh": "Password",
         "el": "Κωδικός"
     },
+    "sslog_pass_show": {
+        "en": "Show password",
+        "pt": "Mostrar palavra-passe",
+        "es": "Mostrar contraseña",
+        "fr": "Afficher le mot de passe",
+        "it": "Mostra password",
+        "nl": "Wachtwoord tonen",
+        "de": "Passwort anzeigen",
+        "ru": "Show password",
+        "ja": "Show password",
+        "ar": "Show password",
+        "zh": "Show password",
+        "el": "Εμφάνιση κωδικού"
+    },
+    "sslog_pass_hide": {
+        "en": "Hide password",
+        "pt": "Ocultar palavra-passe",
+        "es": "Ocultar contraseña",
+        "fr": "Masquer le mot de passe",
+        "it": "Nascondi password",
+        "nl": "Wachtwoord verbergen",
+        "de": "Passwort verbergen",
+        "ru": "Hide password",
+        "ja": "Hide password",
+        "ar": "Hide password",
+        "zh": "Hide password",
+        "el": "Απόκρυψη κωδικού"
+    },
     "sslog_login": {
         "en": "Login",
         "pt": "Entrar",

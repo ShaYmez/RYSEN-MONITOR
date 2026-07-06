@@ -11,9 +11,9 @@
 require_once __DIR__ . '/audit_logger.php';
 
 // Configuration constants for session and rate limiting
-// Session timeout: 4 hours for hotspot users (14400 seconds)
+// Session timeout: 30 days — keep selfcare signed in on trusted devices (2592000 seconds)
 if (!defined('SESSION_TIMEOUT_SECONDS')) {
-    define('SESSION_TIMEOUT_SECONDS', 14400);
+    define('SESSION_TIMEOUT_SECONDS', 2592000);
 }
 
 // Rate limiting configuration - adjust these constants as needed

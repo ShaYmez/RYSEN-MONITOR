@@ -205,6 +205,36 @@ a.badge-ipsc:focus {
     margin-bottom: 0;
 }
 
+.ss-password-toggle {
+    cursor: pointer;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.ss-password-toggle:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 1px rgba(0, 123, 255, 0.45);
+}
+
+.ss-password-toggle-icon {
+    position: relative;
+    display: inline-block;
+    width: 1em;
+}
+
+.ss-password-toggle--visible .ss-password-toggle-icon::after {
+    content: '';
+    position: absolute;
+    left: -0.1em;
+    right: -0.1em;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    background: currentColor;
+    transform: rotate(-35deg);
+    pointer-events: none;
+}
+
 .selfcare-action-row {
     gap: 0.75rem;
 }

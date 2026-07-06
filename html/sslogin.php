@@ -193,18 +193,18 @@ $csrfToken = generateCSRFToken();
                       <div class="input-group mb-3 mt-3">
                         <input type="password" class="form-control" name="password" placeholder="New password" minlength="6" maxlength="100" required autofocus>
                         <div class="input-group-append">
-                          <div class="input-group-text">
-                            <i class="fas fa-lock"></i>
-                          </div>
+                          <button type="button" class="input-group-text ss-password-toggle" data-toggle="tooltip" data-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
+                            <i class="fas fa-lock ss-password-toggle-icon" aria-hidden="true"></i>
+                          </button>
                         </div>
                       </div>
 
                       <div class="input-group mb-3">
                         <input type="password" class="form-control" name="password_confirm" placeholder="Confirm password" minlength="6" maxlength="100" required>
                         <div class="input-group-append">
-                          <div class="input-group-text">
-                            <i class="fas fa-lock"></i>
-                          </div>
+                          <button type="button" class="input-group-text ss-password-toggle" data-toggle="tooltip" data-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
+                            <i class="fas fa-lock ss-password-toggle-icon" aria-hidden="true"></i>
+                          </button>
                         </div>
                       </div>
 
@@ -233,9 +233,9 @@ $csrfToken = generateCSRFToken();
                       <div class="input-group mb-3">
                         <input type="password" class="form-control" name="password" placeholder="" id="sslog_pass" autocomplete="current-password">
                         <div class="input-group-append">
-                          <div class="input-group-text">
-                            <i class="fas fa-lock"></i>
-                          </div>
+                          <button type="button" class="input-group-text ss-password-toggle" id="sslog_pass_toggle" data-toggle="tooltip" data-placement="top" title="Show password" aria-label="Show password" aria-pressed="false">
+                            <i class="fas fa-lock ss-password-toggle-icon" aria-hidden="true"></i>
+                          </button>
                         </div>
                       </div>
                       
@@ -286,6 +286,7 @@ $csrfToken = generateCSRFToken();
     <script src="scripts/mode.js"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
     <script src="scripts/monitor.js"></script>
+    <script src="scripts/selfcare-login.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         var loginField = document.getElementById('sslog_call');
