@@ -13,6 +13,10 @@ let languageListenerBound = false;
 let delegatedTooltipsReady = false;
 const TRANSLATIONS_STORAGE_KEY = 'rysen_translations';
 const TOOLTIP_SELECTOR = '[data-bs-toggle="tooltip"], [data-toggle="tooltip"]';
+const pendingSectionUpdates = {};
+const pendingPaneUpdates = new Map();
+let tooltipDeferBound = false;
+let pendingUpdateFlushTimer = null;
 
 function readStoredTranslations() {
     try {
@@ -69,6 +73,12 @@ function translateElements(translations, selectedLanguage) {
     });
 }
 
+function removeOrphanTooltipNodes() {
+    document.querySelectorAll('.tooltip, .bs-tooltip-auto').forEach(function (el) {
+        el.remove();
+    });
+}
+
 function cleanupTooltips() {
     if (typeof $ !== 'undefined' && $.fn && $.fn.tooltip) {
         try {
@@ -78,8 +88,127 @@ function cleanupTooltips() {
         }
     }
 
-    document.querySelectorAll('.tooltip, .bs-tooltip-auto').forEach(function (el) {
-        el.remove();
+    removeOrphanTooltipNodes();
+}
+
+function isTooltipTriggerHovered(container) {
+    if (!container || !container.matches(':hover')) {
+        return false;
+    }
+
+    return !!container.querySelector('[data-bs-toggle="tooltip"]:hover, [data-toggle="tooltip"]:hover');
+}
+
+function isTooltipPopupVisible() {
+    return !!document.querySelector('.tooltip.show, .tooltip.in');
+}
+
+function bindTooltipDeferFlush() {
+    if (tooltipDeferBound) {
+        return;
+    }
+    tooltipDeferBound = true;
+
+    document.addEventListener('mouseout', function (e) {
+        const trigger = e.target && e.target.closest && e.target.closest(TOOLTIP_SELECTOR);
+        if (!trigger) {
+            return;
+        }
+
+        const related = e.relatedTarget;
+        if (related) {
+            if (trigger.contains(related)) {
+                return;
+            }
+            if (related.closest && (
+                related.closest('.tooltip') ||
+                related.closest(TOOLTIP_SELECTOR)
+            )) {
+                return;
+            }
+        }
+
+        schedulePendingDashboardUpdates();
+    });
+}
+
+function schedulePendingDashboardUpdates() {
+    if (pendingUpdateFlushTimer) {
+        clearTimeout(pendingUpdateFlushTimer);
+    }
+
+    pendingUpdateFlushTimer = window.setTimeout(function () {
+        pendingUpdateFlushTimer = null;
+
+        if (isTooltipPopupVisible() || document.querySelector(TOOLTIP_SELECTOR + ':hover')) {
+            return;
+        }
+
+        flushPendingDashboardUpdates();
+    }, 120);
+}
+
+function clearPendingDashboardUpdates() {
+    Object.keys(pendingSectionUpdates).forEach(function (sectionId) {
+        delete pendingSectionUpdates[sectionId];
+    });
+    pendingPaneUpdates.clear();
+    if (pendingUpdateFlushTimer) {
+        clearTimeout(pendingUpdateFlushTimer);
+        pendingUpdateFlushTimer = null;
+    }
+}
+
+function flushPendingDashboardUpdates() {
+    Object.keys(pendingSectionUpdates).forEach(function (sectionId) {
+        const html = pendingSectionUpdates[sectionId];
+        delete pendingSectionUpdates[sectionId];
+        const el = document.getElementById(sectionId);
+        if (el) {
+            applySectionUpdate(el, html);
+        }
+    });
+
+    pendingPaneUpdates.forEach(function (html, containerId) {
+        pendingPaneUpdates.delete(containerId);
+        const container = document.getElementById(containerId);
+        if (container) {
+            applyDashboardPaneUpdate(container, html);
+        }
+    });
+}
+
+function applySectionUpdate(el, html) {
+    removeOrphanTooltipNodes();
+    el.innerHTML = html;
+    loadTranslations().then(translations => {
+        const languageSelect = document.getElementById('languageSelect');
+        const lang = languageSelect ? languageSelect.value : 'en';
+        translateElements(translations, lang);
+    });
+}
+
+function applyDashboardPaneUpdate(container, message) {
+    const prevHeight = container.offsetHeight;
+
+    removeOrphanTooltipNodes();
+    container.classList.add('dashboard-updating');
+    if (prevHeight > 0) {
+        container.style.minHeight = prevHeight + 'px';
+    }
+
+    container.innerHTML = message;
+
+    loadTranslations().then(translations => {
+        const languageSelect = document.getElementById('languageSelect');
+        const lang = languageSelect ? languageSelect.value : 'en';
+        translateElements(translations, lang);
+        bindLanguageListener();
+    });
+
+    requestAnimationFrame(function () {
+        container.classList.remove('dashboard-updating');
+        container.style.minHeight = '';
     });
 }
 
@@ -213,13 +342,14 @@ function updateSection(sectionId, html) {
     if (!el || el.innerHTML === html) {
         return;
     }
-    cleanupTooltips();
-    el.innerHTML = html;
-    loadTranslations().then(translations => {
-        const languageSelect = document.getElementById('languageSelect');
-        const lang = languageSelect ? languageSelect.value : 'en';
-        translateElements(translations, lang);
-    });
+
+    if (isTooltipTriggerHovered(el)) {
+        pendingSectionUpdates[sectionId] = html;
+        bindTooltipDeferFlush();
+        return;
+    }
+
+    applySectionUpdate(el, html);
 }
 
 function updateTbody(tbodyId, html) {
@@ -249,27 +379,16 @@ function updateDashboardPane(container, message) {
     if (container.innerHTML === message) {
         return;
     }
-    const prevHeight = container.offsetHeight;
 
-    cleanupTooltips();
-    container.classList.add('dashboard-updating');
-    if (prevHeight > 0) {
-        container.style.minHeight = prevHeight + 'px';
+    if (isTooltipTriggerHovered(container)) {
+        if (container.id) {
+            pendingPaneUpdates.set(container.id, message);
+        }
+        bindTooltipDeferFlush();
+        return;
     }
 
-    container.innerHTML = message;
-
-    loadTranslations().then(translations => {
-        const languageSelect = document.getElementById('languageSelect');
-        const lang = languageSelect ? languageSelect.value : 'en';
-        translateElements(translations, lang);
-        bindLanguageListener();
-    });
-
-    requestAnimationFrame(function () {
-        container.classList.remove('dashboard-updating');
-        container.style.minHeight = '';
-    });
+    applyDashboardPaneUpdate(container, message);
 }
 
 function initPageTranslations() {
@@ -334,6 +453,7 @@ window.addEventListener('load', function () {
                 log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
             }
             sock = null;
+            clearPendingDashboardUpdates();
             cleanupTooltips();
             for (i = 0; i < conf_groups.length; i++) {
                 var group = conf_groups[i];
@@ -389,6 +509,7 @@ window.addEventListener('load', function () {
                 if (message.indexOf('Lost') === -1) {
                     return;
                 }
+                clearPendingDashboardUpdates();
                 cleanupTooltips();
                 for (i = 0; i < conf_groups.length; i++) {
                     var group = conf_groups[i];
