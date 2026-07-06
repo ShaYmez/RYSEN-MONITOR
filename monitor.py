@@ -1024,7 +1024,6 @@ def _warm_main_section_cache():
     _section_html_cache["main-connected"] = MTPL["connected"].render(**ctx)
 
 
-@inlineCallbacks
 def render_main_dashboard(client=None):
     """Initial connect: full dashboard in one message, then last-heard rows."""
     if not client and not GROUPS["main"]:
@@ -1561,7 +1560,7 @@ class dashboard(WebSocketServerProtocol):
                             ("o" + otemplate.render(
                                 _table=CTABLE,dbridges=CONF["GLOBAL"]["BRDG_INC"])).encode("utf-8"))
                     elif group == "main":
-                        ensureDeferred(render_main_dashboard(self))
+                        render_main_dashboard(self)
                     elif group == "statictg":
                         self.sendMessage(
                             ("s" + stemplate.render(
