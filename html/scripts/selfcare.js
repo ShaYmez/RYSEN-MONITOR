@@ -9,6 +9,8 @@ const PROXY_OPTS_INTERVAL_MS = 10000;
 const SELFCARE_DISC_POLL_MS = 2000;
 /** Apply poll timeout — IPSC poll ~5s, proxy RPTO ~10s; allow headroom for reconnect. */
 const SELFCARE_APPLY_TIMEOUT_MS = 45000;
+/** Disconnect wait — RYSEN DISC poll 2s; proxy cycle up to 10s; allow two passes. */
+const SELFCARE_DISCONNECT_TIMEOUT_MS = (Math.max(PROXY_OPTS_INTERVAL_MS, SELFCARE_DISC_POLL_MS) * 2) + 5000;
 
 class SelfcareManager {
     constructor(config) {
@@ -32,7 +34,9 @@ class SelfcareManager {
         if (dialTGInput) {
             this.toggleTimeslot2(dialTGInput.value);
         }
-        this.toggleLanguageDropdown();
+        if (document.getElementById('voiceSelect')) {
+            this.toggleLanguageDropdown();
+        }
         this.updateGeneratedText();
         
         if (this.isModified) {
@@ -222,6 +226,14 @@ class SelfcareManager {
         const timeslots1 = this.getTimeslotValues(timeslotTable);
         const timeslots2 = this.getTimeslotValues(timeslotTable2);
 
+        if (this.isIpsc) {
+            let genText = '';
+            genText += this.formatTimeslotOption(1, timeslots1, true);
+            genText += this.formatTimeslotOption(2, timeslots2, true);
+            this.setGeneratedOptions(genText);
+            return;
+        }
+
         if (!dialTGInput || !voiceSelect) {
             return;
         }
@@ -331,6 +343,26 @@ class SelfcareManager {
     }
 
     /**
+     * Fetch selfcare device status as JSON (apply/disconnect polling).
+     */
+    fetchSelfcareStatus() {
+        return fetch('sscheck.php?full=1', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        }).then(async (response) => {
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error('Session expired. Please reload the page and log in again.');
+            }
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Status check failed');
+            }
+            return data;
+        });
+    }
+
+    /**
      * Apply did not complete — device likely offline or server not delivering options.
      */
     handleApplyTimeout() {
@@ -355,8 +387,7 @@ class SelfcareManager {
      * Check if device modification is complete
      */
     checkModifiedStatus() {
-        fetch('sscheck.php?full=1')
-            .then(response => response.json())
+        this.fetchSelfcareStatus()
             .then(data => {
                 if (data.modified === '0') {
                     this.isModified = false;
@@ -436,12 +467,17 @@ class SelfcareManager {
                 csrf_token: csrfInput.value,
                 action: action
             })
-        }).then(response => response.json().then(body => {
+        }).then(async (response) => {
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error('Unexpected server response. Please reload and try again.');
+            }
+            const body = await response.json();
             if (!response.ok || !body.success) {
                 throw new Error(body.error || 'Disconnect request failed');
             }
             return body;
-        }));
+        });
     }
 
     /**
@@ -458,8 +494,7 @@ class SelfcareManager {
                     return;
                 }
 
-                fetch('sscheck.php?full=1')
-                    .then(response => response.json())
+                this.fetchSelfcareStatus()
                     .then(data => {
                         if (data.logged_in !== '1') {
                             clearInterval(interval);
@@ -544,14 +579,7 @@ class SelfcareManager {
             return;
         }
 
-        if (this.checkInterval) {
-            clearInterval(this.checkInterval);
-            this.checkInterval = null;
-        }
-
-        const applyTimeoutMs = this.isIpsc
-            ? SELFCARE_DISC_POLL_MS + 8000
-            : SELFCARE_DISC_POLL_MS + 8000;
+        this.stopStatusPolling();
 
         this.disconnectInProgress = true;
         this.setSaveButtonDisabled(true);
@@ -560,7 +588,8 @@ class SelfcareManager {
         this.setWaitMessage('calc_disconnect_wait');
 
         this.postDisconnectPhase('request')
-            .then(() => this.pollUntilDisconnectApplied(Date.now() + applyTimeoutMs))
+            .then(() => this.pollUntilDisconnectApplied(
+                Date.now() + SELFCARE_DISCONNECT_TIMEOUT_MS))
             .then(() => this.postDisconnectPhase('cleanup'))
             .then(() => {
                 window.location.reload();

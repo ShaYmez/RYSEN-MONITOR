@@ -46,7 +46,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['genText'])) {
         die("Security error: Invalid or missing CSRF token. Please refresh the page and try again.");
     }
     
-    $options = sanitizeOptions($_POST['genText']);
+    $postDev = getDevDetails($selint_id);
+    $options = ($postDev && isIpscDeviceMode($postDev['mode']))
+        ? sanitizeIpscOptions($_POST['genText'])
+        : sanitizeOptions($_POST['genText']);
     
     if ($options === false) {
         $errorMsg = "Invalid options format.";
@@ -294,6 +297,7 @@ $csrfToken = generateCSRFToken();
                                                 </div>
                                             </div>
                                         </div>
+                                        <?php if (!$isIpscDevice): ?>
                                         <div class="row justify-content-center">
                                             <div class="col-8">
                                                 <table class="table table-sm border align-middle mt-4">
@@ -375,6 +379,7 @@ $csrfToken = generateCSRFToken();
                                                 </table>
                                             </div>
                                         </div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="spinner text-center mb-5" style="display: <?php echo $devDetails['modified'] === '1' ? 'block' : 'none'; ?>">
                                         <i class="fas fa-2x fa-sync-alt fa-spin"></i><br><br>
