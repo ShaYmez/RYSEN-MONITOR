@@ -7,6 +7,8 @@
 const PROXY_OPTS_INTERVAL_MS = 10000;
 /** IPSC / hotspot selfcare DISC poll interval in RYSEN (selfcare_db). */
 const SELFCARE_DISC_POLL_MS = 2000;
+/** IPSC apply poll timeout — RYSEN polls every ~5s; allow headroom for reconnect. */
+const SELFCARE_IPSC_APPLY_TIMEOUT_MS = 45000;
 
 class SelfcareManager {
     constructor(config) {
@@ -15,6 +17,7 @@ class SelfcareManager {
         this.deviceId = config.deviceId;
         this.isModified = config.isModified;
         this.checkInterval = null;
+        this.applyTimeout = null;
         this.disconnectInProgress = false;
         this.init();
     }
@@ -307,23 +310,59 @@ class SelfcareManager {
     startStatusPolling() {
         this.toggleSpinner(true);
         this.checkInterval = setInterval(() => this.checkModifiedStatus(), 500);
+        if (this.isIpsc) {
+            this.applyTimeout = setTimeout(
+                () => this.handleApplyTimeout(),
+                SELFCARE_IPSC_APPLY_TIMEOUT_MS
+            );
+        }
+    }
+
+    /**
+     * Stop apply polling and optional timeout timer.
+     */
+    stopStatusPolling() {
+        if (this.checkInterval) {
+            clearInterval(this.checkInterval);
+            this.checkInterval = null;
+        }
+        if (this.applyTimeout) {
+            clearTimeout(this.applyTimeout);
+            this.applyTimeout = null;
+        }
+    }
+
+    /**
+     * IPSC apply did not complete — repeater likely offline or RYSEN not polling.
+     */
+    handleApplyTimeout() {
+        if (!this.isModified || this.disconnectInProgress) {
+            return;
+        }
+        this.stopStatusPolling();
+        this.toggleSpinner(false);
+        this.setSaveButtonDisabled(false);
+        const sourceEl = document.getElementById('calc_apply_pending');
+        const message = (sourceEl && sourceEl.textContent.trim())
+            ? sourceEl.textContent.trim()
+            : 'Settings could not be applied yet. Ensure the repeater is connected, then save again.';
+        alert(message);
     }
 
     /**
      * Check if device modification is complete
      */
     checkModifiedStatus() {
-        fetch('sscheck.php')
-            .then(response => response.text())
+        const url = this.isIpsc ? 'sscheck.php?full=1' : 'sscheck.php';
+        fetch(url)
+            .then(response => (this.isIpsc ? response.json() : response.text()))
             .then(data => {
-                if (data === '0') {
+                const modified = this.isIpsc ? data.modified : data;
+                if (modified === '0') {
                     this.isModified = false;
+                    this.stopStatusPolling();
                     this.toggleSpinner(false);
                     this.setSaveButtonDisabled(false);
-                    if (this.checkInterval) {
-                        clearInterval(this.checkInterval);
-                        this.checkInterval = null;
-                    }
                 }
             })
             .catch(error => {

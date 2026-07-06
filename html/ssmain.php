@@ -381,6 +381,7 @@ $csrfToken = generateCSRFToken();
                                         <span class="mt-2" id="calc_wait"></span>
                                         <span id="calc_disconnect_wait" class="d-none" aria-hidden="true"></span>
                                         <span id="calc_disconnect_offline" class="d-none" aria-hidden="true"></span>
+                                        <span id="calc_apply_pending" class="d-none" aria-hidden="true"></span>
                                     </div>
                                     <form method="post" id="saveChangesForm" style="display: none;">
                                         <input type="hidden" name="csrf_token" value="<?php echo escapeHtml($csrfToken); ?>">
