@@ -13,10 +13,9 @@ let languageListenerBound = false;
 let delegatedTooltipsReady = false;
 const TRANSLATIONS_STORAGE_KEY = 'rysen_translations';
 const TOOLTIP_SELECTOR = '[data-bs-toggle="tooltip"], [data-toggle="tooltip"]';
-const pendingSectionUpdates = {};
-const pendingPaneUpdates = new Map();
-let tooltipDeferBound = false;
-let pendingUpdateFlushTimer = null;
+let pinnedTooltipEl = null;
+let pinnedTooltipFadeTimer = null;
+let pinnedTooltipDismissBound = false;
 
 function readStoredTranslations() {
     try {
@@ -75,11 +74,99 @@ function translateElements(translations, selectedLanguage) {
 
 function removeOrphanTooltipNodes() {
     document.querySelectorAll('.tooltip, .bs-tooltip-auto').forEach(function (el) {
+        if (pinnedTooltipEl && el === pinnedTooltipEl) {
+            return;
+        }
         el.remove();
     });
 }
 
+function getVisibleTooltipElement() {
+    return document.querySelector('.tooltip.show, .tooltip.in');
+}
+
+function pinVisibleTooltipBeforeDomSwap() {
+    if (pinnedTooltipEl) {
+        return;
+    }
+
+    const visible = getVisibleTooltipElement();
+    if (!visible) {
+        return;
+    }
+
+    pinnedTooltipEl = visible;
+    pinnedTooltipEl.classList.add('dashboard-tooltip-pinned');
+}
+
+function releasePinnedTooltip(immediate) {
+    if (!pinnedTooltipEl) {
+        return;
+    }
+
+    const el = pinnedTooltipEl;
+    pinnedTooltipEl = null;
+
+    if (pinnedTooltipFadeTimer) {
+        clearTimeout(pinnedTooltipFadeTimer);
+        pinnedTooltipFadeTimer = null;
+    }
+
+    if (immediate) {
+        el.remove();
+        return;
+    }
+
+    el.classList.add('dashboard-tooltip-fading');
+    pinnedTooltipFadeTimer = window.setTimeout(function () {
+        pinnedTooltipFadeTimer = null;
+        el.remove();
+    }, 150);
+}
+
+function bindPinnedTooltipDismiss() {
+    if (pinnedTooltipDismissBound) {
+        return;
+    }
+    pinnedTooltipDismissBound = true;
+
+    document.addEventListener('mouseenter', function (e) {
+        const trigger = e.target && e.target.closest && e.target.closest(TOOLTIP_SELECTOR);
+        if (trigger && pinnedTooltipEl) {
+            releasePinnedTooltip(true);
+        }
+    }, true);
+
+    document.addEventListener('mouseout', function (e) {
+        if (!pinnedTooltipEl) {
+            return;
+        }
+
+        const related = e.relatedTarget;
+
+        if (pinnedTooltipEl.contains(e.target)) {
+            if (!related || (!pinnedTooltipEl.contains(related) && !related.closest(TOOLTIP_SELECTOR))) {
+                releasePinnedTooltip(false);
+            }
+            return;
+        }
+
+        const trigger = e.target && e.target.closest && e.target.closest(TOOLTIP_SELECTOR);
+        if (!trigger) {
+            return;
+        }
+
+        if (related && (trigger.contains(related) || related.closest('.tooltip') || related.closest(TOOLTIP_SELECTOR))) {
+            return;
+        }
+
+        releasePinnedTooltip(false);
+    });
+}
+
 function cleanupTooltips() {
+    releasePinnedTooltip(true);
+
     if (typeof $ !== 'undefined' && $.fn && $.fn.tooltip) {
         try {
             $(TOOLTIP_SELECTOR).tooltip('hide');
@@ -91,95 +178,13 @@ function cleanupTooltips() {
     removeOrphanTooltipNodes();
 }
 
-function isTooltipTriggerHovered(container) {
-    if (!container || !container.matches(':hover')) {
-        return false;
-    }
-
-    return !!container.querySelector('[data-bs-toggle="tooltip"]:hover, [data-toggle="tooltip"]:hover');
-}
-
-function isTooltipPopupVisible() {
-    return !!document.querySelector('.tooltip.show, .tooltip.in');
-}
-
-function bindTooltipDeferFlush() {
-    if (tooltipDeferBound) {
-        return;
-    }
-    tooltipDeferBound = true;
-
-    document.addEventListener('mouseout', function (e) {
-        const trigger = e.target && e.target.closest && e.target.closest(TOOLTIP_SELECTOR);
-        if (!trigger) {
-            return;
-        }
-
-        const related = e.relatedTarget;
-        if (related) {
-            if (trigger.contains(related)) {
-                return;
-            }
-            if (related.closest && (
-                related.closest('.tooltip') ||
-                related.closest(TOOLTIP_SELECTOR)
-            )) {
-                return;
-            }
-        }
-
-        schedulePendingDashboardUpdates();
-    });
-}
-
-function schedulePendingDashboardUpdates() {
-    if (pendingUpdateFlushTimer) {
-        clearTimeout(pendingUpdateFlushTimer);
-    }
-
-    pendingUpdateFlushTimer = window.setTimeout(function () {
-        pendingUpdateFlushTimer = null;
-
-        if (isTooltipPopupVisible() || document.querySelector(TOOLTIP_SELECTOR + ':hover')) {
-            return;
-        }
-
-        flushPendingDashboardUpdates();
-    }, 120);
-}
-
-function clearPendingDashboardUpdates() {
-    Object.keys(pendingSectionUpdates).forEach(function (sectionId) {
-        delete pendingSectionUpdates[sectionId];
-    });
-    pendingPaneUpdates.clear();
-    if (pendingUpdateFlushTimer) {
-        clearTimeout(pendingUpdateFlushTimer);
-        pendingUpdateFlushTimer = null;
-    }
-}
-
-function flushPendingDashboardUpdates() {
-    Object.keys(pendingSectionUpdates).forEach(function (sectionId) {
-        const html = pendingSectionUpdates[sectionId];
-        delete pendingSectionUpdates[sectionId];
-        const el = document.getElementById(sectionId);
-        if (el) {
-            applySectionUpdate(el, html);
-        }
-    });
-
-    pendingPaneUpdates.forEach(function (html, containerId) {
-        pendingPaneUpdates.delete(containerId);
-        const container = document.getElementById(containerId);
-        if (container) {
-            applyDashboardPaneUpdate(container, html);
-        }
-    });
+function prepareDomSwapCleanup() {
+    pinVisibleTooltipBeforeDomSwap();
+    removeOrphanTooltipNodes();
 }
 
 function applySectionUpdate(el, html) {
-    removeOrphanTooltipNodes();
+    prepareDomSwapCleanup();
     el.innerHTML = html;
     loadTranslations().then(translations => {
         const languageSelect = document.getElementById('languageSelect');
@@ -191,7 +196,7 @@ function applySectionUpdate(el, html) {
 function applyDashboardPaneUpdate(container, message) {
     const prevHeight = container.offsetHeight;
 
-    removeOrphanTooltipNodes();
+    prepareDomSwapCleanup();
     container.classList.add('dashboard-updating');
     if (prevHeight > 0) {
         container.style.minHeight = prevHeight + 'px';
@@ -217,6 +222,7 @@ function initDelegatedTooltips() {
         return;
     }
     delegatedTooltipsReady = true;
+    bindPinnedTooltipDismiss();
     $('body').tooltip({
         selector: TOOLTIP_SELECTOR,
         trigger: 'hover',
@@ -343,12 +349,6 @@ function updateSection(sectionId, html) {
         return;
     }
 
-    if (isTooltipTriggerHovered(el)) {
-        pendingSectionUpdates[sectionId] = html;
-        bindTooltipDeferFlush();
-        return;
-    }
-
     applySectionUpdate(el, html);
 }
 
@@ -377,14 +377,6 @@ function updateDashboardPane(container, message) {
         return;
     }
     if (container.innerHTML === message) {
-        return;
-    }
-
-    if (isTooltipTriggerHovered(container)) {
-        if (container.id) {
-            pendingPaneUpdates.set(container.id, message);
-        }
-        bindTooltipDeferFlush();
         return;
     }
 
@@ -453,7 +445,6 @@ window.addEventListener('load', function () {
                 log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
             }
             sock = null;
-            clearPendingDashboardUpdates();
             cleanupTooltips();
             for (i = 0; i < conf_groups.length; i++) {
                 var group = conf_groups[i];
@@ -509,7 +500,6 @@ window.addEventListener('load', function () {
                 if (message.indexOf('Lost') === -1) {
                     return;
                 }
-                clearPendingDashboardUpdates();
                 cleanupTooltips();
                 for (i = 0; i < conf_groups.length; i++) {
                     var group = conf_groups[i];
