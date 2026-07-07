@@ -2,7 +2,7 @@
 
 ![Dashboard](./screenshot.png)
 
-Forked from [FDMR Monitor with Selfcare](https://github.com/CS8ABG/FDMR-Monitor) by Bruno **CS8ABG** (initial PHP dashboard design). Maintained as **RYSEN-MONITOR / System X** v1.5.0 by Shane Daley **M0VUB** <shane@freestar.network>.
+Forked from [FDMR Monitor with Selfcare](https://github.com/CS8ABG/FDMR-Monitor) by Bruno **CS8ABG** (initial PHP dashboard design). Maintained as **RYSEN-MONITOR / System X** v1.5.1 by Shane Daley **M0VUB** <shane@freestar.network>.
 
 ---
 
