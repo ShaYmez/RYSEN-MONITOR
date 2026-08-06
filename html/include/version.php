@@ -1,3 +1,3 @@
 <?php
-define("DASH", "IPSC05.08.26");
+define("DASH", "IPSC06.08.26");
 ?>
