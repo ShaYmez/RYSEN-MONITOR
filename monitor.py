@@ -928,10 +928,10 @@ build_deferred = None
 
 def push_rysen_version(client=None):
   """Push live RYSEN version to dashboard clients (opcode v)."""
-  version = RYSEN_VERSION or "—"
+  version = ('Ver {}'.format(RYSEN_VERSION) if RYSEN_VERSION else '—')
   payload = "v" + version
   if client:
-      client.sendMessage(payload.encode("utf-8"))
+      client.sendMessage(payload)
   else:
       for group, clients in GROUPS.items():
           if clients:
@@ -1555,6 +1555,7 @@ class dashboard(WebSocketServerProtocol):
     def onOpen(self):
         try:
             logger.info(f"WebSocket connection opened for {client_peer(self)}")
+            push_rysen_version(self)
         except Exception:
             logger.exception("Unhandled websocket open error")
 

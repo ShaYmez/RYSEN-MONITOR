@@ -508,8 +508,14 @@ window.addEventListener('load', function () {
         }
 
         sock.onmessage = function (e) {
-            var opcode = e.data.slice(0, 1);
-            var message = e.data.slice(1);
+            var raw = e.data;
+            if (raw instanceof ArrayBuffer) {
+                raw = new TextDecoder('utf-8').decode(raw);
+            } else if (typeof raw !== 'string') {
+                raw = String(raw);
+            }
+            var opcode = raw.slice(0, 1);
+            var message = raw.slice(1);
             if (opcode == "b") {
                 Bmsg(message);
             } else if (opcode == "t") {
