@@ -14,6 +14,6 @@ include_once __DIR__ . '/../include/version.php';
      <?php foreach ($marquee as $line): ?>
      <div><?php echo $line; ?></div>
      <?php endforeach; ?>
-     <div>DMR Server Software RYSEN Master+ <?php echo VERSION; ?>. System X Server &copy; <?php echo FOOTER_COPYRIGHT_YEAR; ?>. All Rights Reserved.</div>
+     <div>DMR Server Software RYSEN Master+ <span class="rysen-version">—</span>. System X Server &copy; <?php echo FOOTER_COPYRIGHT_YEAR; ?>. All Rights Reserved.</div>
 </marquee>
 <!-- <?php echo SYSTEMX_COPYRIGHT_LINE; ?> -->

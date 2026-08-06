@@ -83,6 +83,7 @@ OPCODE = {
     "BRIDGE_UPD": "\x05",
     "LINK_EVENT": "\x06",
     "BRDG_EVENT": "\x07",
+    "SERVER_INFO_SND": "\x08",
     "SERVER_MSG": "b"
     }
 
@@ -111,6 +112,7 @@ BTABLE = {
 BRIDGES = {}
 BRIDGES_RX = ""
 CONFIG_RX = ""
+RYSEN_VERSION = ""
 LOGBUF = deque(100*[""], 100)
 
 GROUPS = {
@@ -924,6 +926,18 @@ build_time = 0
 build_deferred = None
 
 
+def push_rysen_version(client=None):
+  """Push live RYSEN version to dashboard clients (opcode v)."""
+  version = RYSEN_VERSION or "—"
+  payload = "v" + version
+  if client:
+      client.sendMessage(payload.encode("utf-8"))
+  else:
+      for group, clients in GROUPS.items():
+          if clients:
+              dashboard_server.broadcast(payload, group)
+
+
 def push_main_live(client=None):
     """Push stats + activity + connected — last-heard tbody updated separately."""
     if not client and not GROUPS["main"]:
@@ -1345,12 +1359,23 @@ def rts_update(p):
 #    THE OPCODE
 #
 def process_message(_bmessage):
-    global CTABLE, CONFIG, BRIDGES, CONFIG_RX, BRIDGES_RX
+    global CTABLE, CONFIG, BRIDGES, CONFIG_RX, BRIDGES_RX, RYSEN_VERSION
     _message = _bmessage.decode("utf-8", "ignore")
     opcode = _message[:1]
     _now = strftime("%Y-%m-%d %H:%M:%S %Z", localtime(time()))
 
-    if opcode == OPCODE["CONFIG_SND"]:
+    if opcode == OPCODE["SERVER_INFO_SND"]:
+        logger.debug("got SERVER_INFO_SND opcode")
+        try:
+            import json
+            info = json.loads(_bmessage[1:].decode("utf-8"))
+            RYSEN_VERSION = info.get("rysen_version", "") or ""
+            logger.info("RYSEN version from server: %s", RYSEN_VERSION)
+            push_rysen_version()
+        except Exception as exc:
+            logger.debug("SERVER_INFO_SND parse failed: %s", exc)
+
+    elif opcode == OPCODE["CONFIG_SND"]:
         logger.debug("got CONFIG_SND opcode")
         CONFIG = load_dictionary(_bmessage)
         CONFIG_RX = strftime("%Y-%m-%d %H:%M:%S", localtime(time()))
@@ -1610,6 +1635,7 @@ class dashboardFactory(WebSocketServerFactory):
             logger.info(f"registered client {client_peer(client)} to group {group}")
         if client not in self.clients["all_clients"]:
             self.clients["all_clients"][client] = time()
+        push_rysen_version(client)
 
     def unregister(self, client):
         try:

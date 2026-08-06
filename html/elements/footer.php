@@ -14,7 +14,7 @@ include_once __DIR__ . '/../include/version.php';
    <div>
         &copy; <?php echo FOOTER_COPYRIGHT_YEAR; ?> <a target="_blank" href="<?php echo FOOTER_MAIN_LINK; ?>"><?php echo FOOTER_MAIN_TEXT; ?></a>
         <br>
-        &copy; 2016-<?php echo FOOTER_COPYRIGHT_YEAR; ?> | Pioneered by Cort <a data-bs-toggle="tooltip" title="HBlink Creator. First line of code!" href="https://github.com/n0mjs710">N0MJS</a> | Jonathan <a data-bs-toggle="tooltip" title="MMDVM Developer" href="https://github.com/G4KLX">G4KLX</a> | Bruno <a data-bs-toggle="tooltip" title="Initial dashboard design" href="https://github.com/CS8ABG/FDMR-Monitor">CS8ABG</a> | Simon <a data-bs-toggle="tooltip" title="Official FDMR Peer Server" href="https://github.com/hacknix">G7RZU</a> v1.3 | Shane <a data-bs-toggle="tooltip" title="RYSEN Master+ / System X" href="https://github.com/shaymez/RYSEN">M0VUB</a> <?php echo VERSION; ?></div>
+        &copy; 2016-<?php echo FOOTER_COPYRIGHT_YEAR; ?> | Pioneered by Cort <a data-bs-toggle="tooltip" title="HBlink Creator. First line of code!" href="https://github.com/n0mjs710">N0MJS</a> | Jonathan <a data-bs-toggle="tooltip" title="MMDVM Developer" href="https://github.com/G4KLX">G4KLX</a> | Bruno <a data-bs-toggle="tooltip" title="Initial dashboard design" href="https://github.com/CS8ABG/FDMR-Monitor">CS8ABG</a> | Simon <a data-bs-toggle="tooltip" title="Official FDMR Peer Server" href="https://github.com/hacknix">G7RZU</a> v1.3 | Shane <a data-bs-toggle="tooltip" title="RYSEN Master+ / System X" href="https://github.com/shaymez/RYSEN">M0VUB</a> <span class="rysen-version">—</span></div>
    </div>
 </div>
 <!-- Credits: N0MJS 2016-present -->

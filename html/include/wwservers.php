@@ -17,6 +17,7 @@
                     <th id="tsrvrs_pass">Password</th>
                     <th id="tsrvrs_port">Port</th>
                     <th id="tsrvrs_status">Status</th>
+                    <th id="tsrvrs_rysen">RYSEN</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -35,10 +36,11 @@
                       }
 
                       $fields = str_getcsv($line);
-                      $fields = array_pad($fields, 7, '');
-                      list($country, $id, $host, $password, $port, $tokenStatus, $lastUpdate) = $fields;
+                      $fields = array_pad($fields, 8, '');
+                      list($country, $id, $host, $password, $port, $tokenStatus, $lastUpdate, $rysenVersion) = $fields;
                       $tokenStatus = empty($tokenStatus) ? 'unknown' : $tokenStatus;
                       $lastUpdate = empty($lastUpdate) ? 0 : $lastUpdate;
+                      $rysenVersion = empty($rysenVersion) ? '—' : $rysenVersion;
                       echo '<tr>';
                       echo '<td>' . htmlspecialchars($country) . '</td>';
                       echo '<td>' . htmlspecialchars($id) . '</td>';
@@ -46,6 +48,7 @@
                       echo '<td>' . htmlspecialchars($password) . '</td>';
                       echo '<td>' . htmlspecialchars($port) . '</td>';
                       echo '<td><span class="status" data-host="' . htmlspecialchars($host) . '" data-status="' . htmlspecialchars($tokenStatus) . '" data-last-update="' . htmlspecialchars($lastUpdate) . '"><span class="badge badge-warning">Loading...</span></span></td>';
+                      echo '<td>' . htmlspecialchars($rysenVersion) . '</td>';
                       echo '</tr>';
                   }
                   ?>

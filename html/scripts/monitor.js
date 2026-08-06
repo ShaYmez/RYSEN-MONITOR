@@ -528,6 +528,10 @@ window.addEventListener('load', function () {
                 Hmsg(message);
             } else if (opcode == 'u') {
                 Umsg(message);
+            } else if (opcode == "v") {
+                document.querySelectorAll('.rysen-version').forEach(function (el) {
+                    el.textContent = message;
+                });
             } else if (opcode == "l") {
                 if (ellog != null) {
                     log(message);

@@ -28,7 +28,7 @@ $valid_languages = get_supported_language_codes();
  */
 function build_language_response($lang) {
     $lines = array_values(get_marquee_for_language($lang));
-    $footer = 'DMR Server Software RYSEN Master+ ' . VERSION . '. System X Server &copy; ' . FOOTER_COPYRIGHT_YEAR . '. ' . SYSTEMX_COPYRIGHT_LINE . '. All Rights Reserved.';
+    $footer = 'DMR Server Software RYSEN Master+ <span class="rysen-version">—</span>. System X Server &copy; ' . FOOTER_COPYRIGHT_YEAR . '. ' . SYSTEMX_COPYRIGHT_LINE . '. All Rights Reserved.';
 
     return array(
         'status' => 'success',
