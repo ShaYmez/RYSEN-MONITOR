@@ -931,7 +931,7 @@ def push_rysen_version(client=None):
   version = ('Ver {}'.format(RYSEN_VERSION) if RYSEN_VERSION else '—')
   payload = "v" + version
   if client:
-      client.sendMessage(payload)
+      client.sendMessage(payload.encode("utf-8"))
   else:
       for group, clients in GROUPS.items():
           if clients:
