@@ -2154,5 +2154,141 @@
         "ar": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",
         "zh": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",
         "el": "Sticky Talkgroup: Όταν είναι ενεργό, το ραδιόφωνο μένει στο TG που εκπέμπετε μέχρι να αλλάξετε χειροκίνητα. Όταν είναι ανενεργό, το TG επιστρέφει στην προεπιλογή μετά το timeout."
+    },
+    "device_api_key_title": {
+        "en": "Device API Key", "pt": "Chave API do dispositivo", "es": "Clave API del dispositivo",
+        "fr": "Clé API de l’appareil", "it": "Chiave API dispositivo", "nl": "Apparaat-API-sleutel",
+        "de": "Geräte-API-Schlüssel", "ru": "Device API Key", "ja": "Device API Key",
+        "ar": "Device API Key", "zh": "Device API Key", "el": "Κλειδί API συσκευής"
+    },
+    "device_api_key_help": {
+        "en": "Use this key in WPSD for the FreeSTAR owner API. ESSID 01–99 share one key.",
+        "pt": "Use esta chave no WPSD para a API de proprietário FreeSTAR. Os ESSID 01–99 partilham uma chave.",
+        "es": "Use esta clave en WPSD para la API de propietario de FreeSTAR. Los ESSID 01–99 comparten una clave.",
+        "fr": "Utilisez cette clé dans WPSD pour l’API propriétaire FreeSTAR. Les ESSID 01–99 partagent une clé.",
+        "it": "Usa questa chiave in WPSD per l’API proprietario FreeSTAR. Gli ESSID 01–99 condividono una chiave.",
+        "nl": "Gebruik deze sleutel in WPSD voor de FreeSTAR-eigenaars-API. ESSID 01–99 delen één sleutel.",
+        "de": "Verwenden Sie diesen Schlüssel in WPSD für die FreeSTAR-Besitzer-API. ESSID 01–99 teilen einen Schlüssel.",
+        "ru": "Use this key in WPSD for the FreeSTAR owner API. ESSID 01–99 share one key.",
+        "ja": "Use this key in WPSD for the FreeSTAR owner API. ESSID 01–99 share one key.",
+        "ar": "Use this key in WPSD for the FreeSTAR owner API. ESSID 01–99 share one key.",
+        "zh": "Use this key in WPSD for the FreeSTAR owner API. ESSID 01–99 share one key.",
+        "el": "Χρησιμοποιήστε αυτό το κλειδί στο WPSD για το FreeSTAR owner API. Τα ESSID 01–99 μοιράζονται ένα κλειδί."
+    },
+    "device_api_key_routes": {
+        "en": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
+        "pt": "Rotas do proprietário: ver dispositivo e grupos; adicionar/remover grupos estáticos; terminar dinâmica ou chamada; desligar (remove grupos dinâmicos, não termina a sessão Homebrew).",
+        "es": "Rutas del propietario: ver dispositivo y grupos; añadir/quitar grupos estáticos; cortar dinámica o llamada; desconectar (desvincula grupos dinámicos, no cierra Homebrew).",
+        "fr": "Routes propriétaire : voir l’appareil et les groupes ; ajouter/retirer des groupes statiques ; couper un dynamique ou un appel ; déconnecter (retire les groupes dynamiques, pas la session Homebrew).",
+        "it": "Route proprietario: dispositivo e gruppi; aggiunta/rimozione statici; chiusura dinamico o chiamata; disconnessione (scollega i dinamici, non Homebrew).",
+        "nl": "Eigenaarsroutes: apparaat en praatgroepen bekijken; statische groepen toevoegen/verwijderen; dynamiek of gesprek stoppen; ontkoppelen (dynamische groepen, geen Homebrew-afmelding).",
+        "de": "Besitzer-Routen: Gerät und Gruppen anzeigen; statische Gruppen hinzufügen/entfernen; Dynamik oder Ruf beenden; trennen (dynamische Gruppen, keine Homebrew-Abmeldung).",
+        "ru": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
+        "ja": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
+        "ar": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
+        "zh": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
+        "el": "Διαδρομές κατόχου: προβολή συσκευής και TG, προσθήκη/αφαίρεση στατικών TG, διακοπή δυναμικού ή κλήσης και αποσύνδεση δυναμικών TG (όχι Homebrew logoff)."
+    },
+    "device_api_key_bound": {
+        "en": "Bound to core ID:", "pt": "Associada ao ID principal:", "es": "Vinculada al ID principal:",
+        "fr": "Liée à l’ID principal :", "it": "Associata all’ID principale:", "nl": "Gebonden aan kern-ID:",
+        "de": "Gebunden an Kern-ID:", "ru": "Bound to core ID:", "ja": "Bound to core ID:",
+        "ar": "Bound to core ID:", "zh": "Bound to core ID:", "el": "Συνδεδεμένο με το βασικό ID:"
+    },
+    "device_api_key_loading": {
+        "en": "Checking key status…", "pt": "A verificar o estado da chave…", "es": "Comprobando el estado de la clave…",
+        "fr": "Vérification de la clé…", "it": "Verifica dello stato della chiave…", "nl": "Sleutelstatus controleren…",
+        "de": "Schlüsselstatus wird geprüft…", "ru": "Checking key status…", "ja": "Checking key status…",
+        "ar": "Checking key status…", "zh": "Checking key status…", "el": "Έλεγχος κατάστασης κλειδιού…"
+    },
+    "device_api_key_once": {
+        "en": "Your new key (shown once)", "pt": "A sua nova chave (mostrada uma vez)", "es": "Su nueva clave (se muestra una vez)",
+        "fr": "Votre nouvelle clé (affichée une fois)", "it": "La nuova chiave (mostrata una volta)", "nl": "Uw nieuwe sleutel (eenmalig getoond)",
+        "de": "Ihr neuer Schlüssel (einmal angezeigt)", "ru": "Your new key (shown once)", "ja": "Your new key (shown once)",
+        "ar": "Your new key (shown once)", "zh": "Your new key (shown once)", "el": "Το νέο κλειδί σας (εμφανίζεται μία φορά)"
+    },
+    "device_api_key_copy": {
+        "en": "Copy", "pt": "Copiar", "es": "Copiar", "fr": "Copier", "it": "Copia", "nl": "Kopiëren",
+        "de": "Kopieren", "ru": "Copy", "ja": "Copy", "ar": "Copy", "zh": "Copy", "el": "Αντιγραφή"
+    },
+    "device_api_key_warning": {
+        "en": "Copy it now. This key cannot be recovered after leaving this page.",
+        "pt": "Copie-a agora. Esta chave não pode ser recuperada depois de sair desta página.",
+        "es": "Cópiela ahora. Esta clave no se puede recuperar después de salir de esta página.",
+        "fr": "Copiez-la maintenant. Cette clé ne pourra pas être récupérée après avoir quitté cette page.",
+        "it": "Copiala ora. La chiave non può essere recuperata dopo aver lasciato questa pagina.",
+        "nl": "Kopieer hem nu. Deze sleutel kan na het verlaten van deze pagina niet worden hersteld.",
+        "de": "Jetzt kopieren. Nach Verlassen dieser Seite kann der Schlüssel nicht wiederhergestellt werden.",
+        "ru": "Copy it now. This key cannot be recovered after leaving this page.",
+        "ja": "Copy it now. This key cannot be recovered after leaving this page.",
+        "ar": "Copy it now. This key cannot be recovered after leaving this page.",
+        "zh": "Copy it now. This key cannot be recovered after leaving this page.",
+        "el": "Αντιγράψτε το τώρα. Δεν μπορεί να ανακτηθεί αφού φύγετε από τη σελίδα."
+    },
+    "device_api_key_generate": {
+        "en": "Generate API Key", "pt": "Gerar chave API", "es": "Generar clave API", "fr": "Générer la clé API",
+        "it": "Genera chiave API", "nl": "API-sleutel genereren", "de": "API-Schlüssel erzeugen", "ru": "Generate API Key",
+        "ja": "Generate API Key", "ar": "Generate API Key", "zh": "Generate API Key", "el": "Δημιουργία κλειδιού API"
+    },
+    "device_api_key_rotate": {
+        "en": "Rotate API Key", "pt": "Rodar chave API", "es": "Rotar clave API", "fr": "Renouveler la clé API",
+        "it": "Ruota chiave API", "nl": "API-sleutel roteren", "de": "API-Schlüssel rotieren", "ru": "Rotate API Key",
+        "ja": "Rotate API Key", "ar": "Rotate API Key", "zh": "Rotate API Key", "el": "Ανανέωση κλειδιού API"
+    },
+    "device_api_key_revoke": {
+        "en": "Revoke", "pt": "Revogar", "es": "Revocar", "fr": "Révoquer", "it": "Revoca", "nl": "Intrekken",
+        "de": "Widerrufen", "ru": "Revoke", "ja": "Revoke", "ar": "Revoke", "zh": "Revoke", "el": "Ανάκληση"
+    },
+    "device_api_key_none": {
+        "en": "No Device API Key has been generated.", "pt": "Não foi gerada nenhuma chave API do dispositivo.",
+        "es": "No se ha generado ninguna clave API del dispositivo.", "fr": "Aucune clé API d’appareil n’a été générée.",
+        "it": "Non è stata generata alcuna chiave API dispositivo.", "nl": "Er is geen apparaat-API-sleutel gegenereerd.",
+        "de": "Es wurde kein Geräte-API-Schlüssel erzeugt.", "ru": "No Device API Key has been generated.",
+        "ja": "No Device API Key has been generated.", "ar": "No Device API Key has been generated.",
+        "zh": "No Device API Key has been generated.", "el": "Δεν έχει δημιουργηθεί κλειδί API συσκευής."
+    },
+    "device_api_key_exists": {
+        "en": "Key {key_id}, created {created_at}", "pt": "Chave {key_id}, criada em {created_at}",
+        "es": "Clave {key_id}, creada el {created_at}", "fr": "Clé {key_id}, créée le {created_at}",
+        "it": "Chiave {key_id}, creata il {created_at}", "nl": "Sleutel {key_id}, gemaakt op {created_at}",
+        "de": "Schlüssel {key_id}, erstellt am {created_at}", "ru": "Key {key_id}, created {created_at}",
+        "ja": "Key {key_id}, created {created_at}", "ar": "Key {key_id}, created {created_at}",
+        "zh": "Key {key_id}, created {created_at}", "el": "Κλειδί {key_id}, δημιουργήθηκε {created_at}"
+    },
+    "device_api_key_rotate_confirm": {
+        "en": "Rotate this key? The current key will stop working immediately.",
+        "pt": "Rodar esta chave? A chave atual deixará de funcionar imediatamente.",
+        "es": "¿Rotar esta clave? La clave actual dejará de funcionar inmediatamente.",
+        "fr": "Renouveler cette clé ? La clé actuelle cessera immédiatement de fonctionner.",
+        "it": "Ruotare questa chiave? La chiave attuale smetterà subito di funzionare.",
+        "nl": "Deze sleutel roteren? De huidige sleutel werkt dan onmiddellijk niet meer.",
+        "de": "Diesen Schlüssel rotieren? Der aktuelle Schlüssel funktioniert sofort nicht mehr.",
+        "ru": "Rotate this key? The current key will stop working immediately.",
+        "ja": "Rotate this key? The current key will stop working immediately.",
+        "ar": "Rotate this key? The current key will stop working immediately.",
+        "zh": "Rotate this key? The current key will stop working immediately.",
+        "el": "Ανανέωση κλειδιού; Το τρέχον κλειδί θα σταματήσει αμέσως να λειτουργεί."
+    },
+    "device_api_key_revoke_confirm": {
+        "en": "Revoke this key? It will stop working immediately.",
+        "pt": "Revogar esta chave? Deixará de funcionar imediatamente.",
+        "es": "¿Revocar esta clave? Dejará de funcionar inmediatamente.",
+        "fr": "Révoquer cette clé ? Elle cessera immédiatement de fonctionner.",
+        "it": "Revocare questa chiave? Smetterà subito di funzionare.",
+        "nl": "Deze sleutel intrekken? Hij werkt dan onmiddellijk niet meer.",
+        "de": "Diesen Schlüssel widerrufen? Er funktioniert sofort nicht mehr.",
+        "ru": "Revoke this key? It will stop working immediately.",
+        "ja": "Revoke this key? It will stop working immediately.",
+        "ar": "Revoke this key? It will stop working immediately.",
+        "zh": "Revoke this key? It will stop working immediately.",
+        "el": "Ανάκληση κλειδιού; Θα σταματήσει αμέσως να λειτουργεί."
+    },
+    "device_api_key_error": {
+        "en": "Device API key request failed.", "pt": "O pedido da chave API do dispositivo falhou.",
+        "es": "La solicitud de la clave API del dispositivo falló.", "fr": "La demande de clé API de l’appareil a échoué.",
+        "it": "La richiesta della chiave API dispositivo non è riuscita.", "nl": "Aanvraag voor apparaat-API-sleutel mislukt.",
+        "de": "Anfrage für Geräte-API-Schlüssel fehlgeschlagen.", "ru": "Device API key request failed.",
+        "ja": "Device API key request failed.", "ar": "Device API key request failed.",
+        "zh": "Device API key request failed.", "el": "Το αίτημα κλειδιού API συσκευής απέτυχε."
     }
 }

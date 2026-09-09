@@ -1070,6 +1070,7 @@ def build_stats():
             build_deferred.cancel()
 
     if CONFIG:
+        build_tgstats()
         if GROUPS["main"]:
             push_main_live()
         if GROUPS["lnksys"]:
@@ -1202,6 +1203,65 @@ def generate_rss_feed():
         returnValue("")
 
 
+def comma_tg_list(value):
+    """Return numeric talkgroups in source order without duplicates."""
+    if not value or value is False:
+        return []
+    parts = value if isinstance(value, (list, tuple)) else str(value).split(",")
+    out = []
+    seen = set()
+    for part in parts:
+        part = str(part).strip()
+        if part.isdigit() and part not in seen:
+            seen.add(part)
+            out.append(part)
+    return out
+
+
+def ts_lists_from_options(options_value):
+    """Parse this peer's selfcare, legacy, or DMR+ static TG OPTIONS."""
+    ts1, ts2 = [], []
+    numbered1, numbered2 = {}, {}
+    if not options_value:
+        return ts1, ts2
+    if isinstance(options_value, bytes):
+        text = options_value.decode("utf-8", errors="ignore")
+    else:
+        text = str(options_value)
+    for part in text.rstrip("\x00").split(";"):
+        part = part.strip().strip("\x00")
+        if not part or "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        key = key.strip().upper()
+        if key in ("TS1", "TS1_STATIC"):
+            ts1 = comma_tg_list(value)
+        elif key in ("TS2", "TS2_STATIC"):
+            ts2 = comma_tg_list(value)
+        elif len(key) == 5 and key[3] == "_" and key[4].isdigit():
+            if key.startswith("TS1"):
+                numbered1[int(key[4])] = comma_tg_list(value)
+            elif key.startswith("TS2"):
+                numbered2[int(key[4])] = comma_tg_list(value)
+    if numbered1:
+        ts1 = [tg for idx in range(1, 10) for tg in numbered1.get(idx, [])]
+    if numbered2:
+        ts2 = [tg for idx in range(1, 10) for tg in numbered2.get(idx, [])]
+    return comma_tg_list(ts1), comma_tg_list(ts2)
+
+
+def peer_own_options(syscfg, peer_id):
+    """Use per-peer OPTIONS on MASTER; preserve system fallback elsewhere."""
+    if peer_id is not None:
+        peer = (syscfg.get("PEERS") or {}).get(peer_id) or {}
+        options = peer.get("OPTIONS")
+        if options:
+            return options
+        if syscfg.get("MODE") == "MASTER":
+            return ""
+    return syscfg.get("OPTIONS") or ""
+
+
 def build_tgstats():
     tmp_dict = {}
     if CONFIG and CTABLE:
@@ -1234,18 +1294,10 @@ def build_tgstats():
             for peer in CTABLE["MASTERS"][system]["PEERS"]:
                 CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS1"] = {"TGID": "", "TO": ""}
                 CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS2"] = {"TGID": "", "TO": ""}
-                ts1_static = CONFIG[system].get("TS1_STATIC")
-                if isinstance(ts1_static, bool) or ts1_static is None:
-                    CTABLE["MASTERS"][system]["PEERS"][peer]["TS1_STATIC"] = []
-                else:
-                    CTABLE["MASTERS"][system]["PEERS"][peer]["TS1_STATIC"] = (
-                        ts1_static.split(","))
-                ts2_static = CONFIG[system].get("TS2_STATIC")
-                if isinstance(ts2_static, bool) or ts2_static is None:
-                    CTABLE["MASTERS"][system]["PEERS"][peer]["TS2_STATIC"] = []
-                else:
-                    CTABLE["MASTERS"][system]["PEERS"][peer]["TS2_STATIC"] = (
-                        ts2_static.split(","))
+                options = peer_own_options(CONFIG[system], bytes_4(peer))
+                ts1_static, ts2_static = ts_lists_from_options(options)
+                CTABLE["MASTERS"][system]["PEERS"][peer]["TS1_STATIC"] = ts1_static
+                CTABLE["MASTERS"][system]["PEERS"][peer]["TS2_STATIC"] = ts2_static
     # Find Single TG
     if CTABLE and BRIDGES and tmp_dict:
         for bridge in BRIDGES:

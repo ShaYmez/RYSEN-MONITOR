@@ -5,6 +5,7 @@ initSecureSession();
 session_start();
 
 include_once "include/functions.php";
+include_once "include/api-config.php";
 checkSessionTimeout();
 
 // ============================================
@@ -108,6 +109,8 @@ if (!is_array($ts2Values)) {
 }
 
 $isIpscDevice = isIpscDeviceMode($devDetails['mode']);
+$deviceKeyIssuer = dashboardDeviceKeyIssuerConfig();
+$showDeviceApiKey = !$isIpscDevice && !isIpscSession() && !empty($deviceKeyIssuer['enabled']);
 
 // Labels for multi-device picker
 $devicePicker = [];
@@ -411,6 +414,63 @@ $csrfToken = generateCSRFToken();
                                             </div>
                                         </div>
                                     </div>
+                                    <?php if ($showDeviceApiKey): ?>
+                                    <div class="row justify-content-center mb-4">
+                                        <div class="col-12 col-md-8 col-lg-6">
+                                            <div class="card card-outline card-info" id="device-api-key-panel">
+                                                <div class="card-header">
+                                                    <h3 class="card-title" id="device_api_key_title"></h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p id="device_api_key_help"></p>
+                                                    <p class="small text-muted" id="device_api_key_routes"></p>
+                                                    <p class="small text-muted mb-2">
+                                                        <span id="device_api_key_bound"></span>
+                                                        <strong><?php echo escapeHtml(dashboardDeviceCoreId($selint_id)); ?></strong>
+                                                    </p>
+                                                    <div id="device-api-key-status" class="mb-3" aria-live="polite">
+                                                        <span id="device_api_key_loading"></span>
+                                                    </div>
+                                                    <div id="device-api-key-secret" class="d-none mb-3">
+                                                        <label for="device-api-key-value" id="device_api_key_once"></label>
+                                                        <div class="input-group">
+                                                            <input type="password" class="form-control" id="device-api-key-value"
+                                                                readonly autocomplete="off" spellcheck="false">
+                                                            <div class="input-group-append">
+                                                                <button type="button" class="btn btn-outline-secondary"
+                                                                    onclick="window.selfcare && window.selfcare.copyDeviceApiKey()"
+                                                                    id="device_api_key_copy"></button>
+                                                            </div>
+                                                        </div>
+                                                        <small class="form-text text-warning" id="device_api_key_warning"></small>
+                                                    </div>
+                                                    <div class="d-flex flex-wrap">
+                                                        <button type="button" class="btn btn-info mr-2 mb-2 d-none"
+                                                            id="device-api-key-generate"
+                                                            onclick="window.selfcare && window.selfcare.changeDeviceApiKey('issue')">
+                                                            <span id="device_api_key_generate"></span>
+                                                        </button>
+                                                        <button type="button" class="btn btn-warning mr-2 mb-2 d-none"
+                                                            id="device-api-key-rotate"
+                                                            onclick="window.selfcare && window.selfcare.changeDeviceApiKey('rotate')">
+                                                            <span id="device_api_key_rotate"></span>
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-danger mb-2 d-none"
+                                                            id="device-api-key-revoke"
+                                                            onclick="window.selfcare && window.selfcare.changeDeviceApiKey('revoke')">
+                                                            <span id="device_api_key_revoke"></span>
+                                                        </button>
+                                                    </div>
+                                                    <span class="d-none" id="device_api_key_none"></span>
+                                                    <span class="d-none" id="device_api_key_exists"></span>
+                                                    <span class="d-none" id="device_api_key_rotate_confirm"></span>
+                                                    <span class="d-none" id="device_api_key_revoke_confirm"></span>
+                                                    <span class="d-none" id="device_api_key_error"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>

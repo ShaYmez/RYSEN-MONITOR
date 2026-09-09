@@ -9,13 +9,118 @@
  * This file lives under include/ so it is updated from the repo on upgrade.
  */
 
+function dashboardLoadNetworkIni($path = '/etc/rysen/systemx-network.ini')
+{
+    if (!is_file($path)) {
+        return null;
+    }
+    $ini = @parse_ini_file($path, true, INI_SCANNER_TYPED);
+    return is_array($ini) ? $ini : null;
+}
+
+/**
+ * Match System-X-Installer freestar_lastheard_wanted exactly.
+ */
+function dashboardIsFreestarApiHost($ini)
+{
+    if (!is_array($ini)) {
+        return false;
+    }
+    $network = isset($ini['network']) && is_array($ini['network']) ? $ini['network'] : [];
+    $api = isset($ini['api']) && is_array($ini['api']) ? $ini['api'] : [];
+    $lastheard = trim((string)($api['lastheard_api_url'] ?? ''));
+    if ($lastheard !== '') {
+        return preg_match('#://api\.freestar\.network/#', $lastheard) === 1;
+    }
+    return strpos((string)($network['org_url'] ?? ''), 'freestar.network') !== false
+        && strpos((string)($api['status_api_url'] ?? ''), 'api.freestar.network') !== false;
+}
+
+function dashboardDeviceKeyIssuerConfig($path = '/etc/rysen/systemx-network.ini')
+{
+    $ini = dashboardLoadNetworkIni($path);
+    $api = is_array($ini) && isset($ini['api']) && is_array($ini['api']) ? $ini['api'] : [];
+    $url = trim((string)($api['device_key_issuer_url'] ?? ''));
+    $token = trim((string)($api['device_key_issuer_token'] ?? ''));
+    $parts = $url !== '' ? @parse_url($url) : false;
+    $safeUrl = is_array($parts)
+        && strtolower((string)($parts['scheme'] ?? '')) === 'https'
+        && strtolower((string)($parts['host'] ?? '')) === 'api.freestar.network'
+        && !isset($parts['user'])
+        && !isset($parts['pass'])
+        && (!isset($parts['port']) || (int)$parts['port'] === 443)
+        && (string)($parts['path'] ?? '') === '/v2/internal/device-keys';
+
+    return [
+        'enabled' => dashboardIsFreestarApiHost($ini) && $safeUrl && $token !== '',
+        'url' => $safeUrl ? $url : '',
+        'token' => $token,
+    ];
+}
+
+function dashboardDeviceCoreId($intId)
+{
+    $digits = preg_replace('/\D+/', '', (string)$intId);
+    if (!is_string($digits) || $digits === '') {
+        return 0;
+    }
+    if (strlen($digits) === 9) {
+        $digits = substr($digits, 0, 7);
+    }
+    return (int)$digits;
+}
+
+function dashboardDeviceKeyIssuerRequest($config, $payload)
+{
+    if (empty($config['enabled']) || empty($config['url']) || empty($config['token'])) {
+        return ['error' => 'Device API key service is unavailable', 'code' => 503];
+    }
+    $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+    if (!is_string($json)) {
+        return ['error' => 'Invalid Device API key request', 'code' => 400];
+    }
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'timeout' => 5,
+            'ignore_errors' => true,
+            'header' => [
+                'Authorization: Bearer ' . $config['token'],
+                'Content-Type: application/json',
+                'Accept: application/json',
+                'Content-Length: ' . strlen($json),
+            ],
+            'content' => $json,
+        ],
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+        ],
+    ]);
+    $raw = @file_get_contents($config['url'], false, $context);
+    $status = 0;
+    foreach ($http_response_header ?? [] as $header) {
+        if (preg_match('#^HTTP/\S+\s+(\d{3})#', $header, $match)) {
+            $status = (int)$match[1];
+        }
+    }
+    $body = is_string($raw) ? json_decode($raw, true) : null;
+    if ($status < 200 || $status >= 300 || !is_array($body)) {
+        $message = is_array($body) && isset($body['error'])
+            ? (string)$body['error']
+            : 'Device API key service is unavailable';
+        return ['error' => $message, 'code' => $status >= 400 ? $status : 502];
+    }
+    return $body;
+}
+
 if (!defined('API_NETWORK_NAME')) {
     $networkIniFile = '/etc/rysen/systemx-network.ini';
     $legacyConfigFile = __DIR__ . '/../config/api-endpoints.php';
     $loaded = false;
 
     if (file_exists($networkIniFile)) {
-        $ini = @parse_ini_file($networkIniFile, true, INI_SCANNER_TYPED);
+        $ini = dashboardLoadNetworkIni($networkIniFile);
         if (is_array($ini)) {
             $network = $ini['network'] ?? [];
             $api = $ini['api'] ?? [];

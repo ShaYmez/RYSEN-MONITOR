@@ -44,6 +44,9 @@ class SelfcareManager {
         }
 
         this.setSaveButtonDisabled(this.isModified);
+        if (document.getElementById('device-api-key-panel')) {
+            this.loadDeviceApiKeyStatus();
+        }
     }
 
     /**
@@ -620,6 +623,163 @@ class SelfcareManager {
                 this.disconnectInProgress = false;
             });
     }
+
+    deviceApiText(id, fallback) {
+        const element = document.getElementById(id);
+        const text = element ? element.textContent.trim() : '';
+        return text || fallback;
+    }
+
+    setDeviceApiBusy(busy) {
+        ['device-api-key-generate', 'device-api-key-rotate', 'device-api-key-revoke']
+            .forEach(id => {
+                const button = document.getElementById(id);
+                if (button) {
+                    button.disabled = busy;
+                }
+            });
+    }
+
+    postDeviceApiKey(action, confirmed = false) {
+        const csrfInput = document.querySelector('#saveChangesForm input[name="csrf_token"]');
+        if (!csrfInput) {
+            return Promise.reject(new Error('Security token is unavailable. Reload and try again.'));
+        }
+        return fetch('ssdevicekey.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+            body: new URLSearchParams({
+                csrf_token: csrfInput.value,
+                action: action,
+                confirm: confirmed ? '1' : '0'
+            })
+        }).then(async response => {
+            const type = response.headers.get('content-type') || '';
+            if (!type.includes('application/json')) {
+                throw new Error('Unexpected server response. Reload and try again.');
+            }
+            const body = await response.json();
+            if (!response.ok || !body.success) {
+                throw new Error(body.error || this.deviceApiText(
+                    'device_api_key_error', 'Device API key request failed.'));
+            }
+            return body;
+        });
+    }
+
+    renderDeviceApiKeyStatus(data) {
+        const status = document.getElementById('device-api-key-status');
+        const generate = document.getElementById('device-api-key-generate');
+        const rotate = document.getElementById('device-api-key-rotate');
+        const revoke = document.getElementById('device-api-key-revoke');
+        if (!status || !generate || !rotate || !revoke) {
+            return;
+        }
+        if (data.has_key) {
+            const template = this.deviceApiText(
+                'device_api_key_exists', 'Key {key_id}, created {created_at}');
+            status.textContent = template
+                .replace('{key_id}', data.key_id || ('device-' + data.radio_id))
+                .replace('{created_at}', data.created_at || 'unknown');
+            generate.classList.add('d-none');
+            rotate.classList.remove('d-none');
+            revoke.classList.remove('d-none');
+        } else {
+            status.textContent = this.deviceApiText(
+                'device_api_key_none', 'No Device API Key has been generated.');
+            generate.classList.remove('d-none');
+            rotate.classList.add('d-none');
+            revoke.classList.add('d-none');
+        }
+    }
+
+    loadDeviceApiKeyStatus() {
+        this.setDeviceApiBusy(true);
+        this.postDeviceApiKey('status')
+            .then(data => this.renderDeviceApiKeyStatus(data))
+            .catch(error => {
+                const status = document.getElementById('device-api-key-status');
+                if (status) {
+                    status.textContent = error.message;
+                }
+            })
+            .finally(() => this.setDeviceApiBusy(false));
+    }
+
+    changeDeviceApiKey(action) {
+        let confirmed = false;
+        if (action === 'rotate') {
+            confirmed = window.confirm(this.deviceApiText(
+                'device_api_key_rotate_confirm',
+                'Rotate this key? The current key will stop working immediately.'));
+            if (!confirmed) {
+                return;
+            }
+        } else if (action === 'revoke') {
+            confirmed = window.confirm(this.deviceApiText(
+                'device_api_key_revoke_confirm',
+                'Revoke this key? It will stop working immediately.'));
+            if (!confirmed) {
+                return;
+            }
+        }
+
+        this.setDeviceApiBusy(true);
+        this.postDeviceApiKey(action, confirmed)
+            .then(data => {
+                this.renderDeviceApiKeyStatus(data);
+                const secret = document.getElementById('device-api-key-secret');
+                const input = document.getElementById('device-api-key-value');
+                if (data.token && secret && input) {
+                    input.value = data.token;
+                    secret.classList.remove('d-none');
+                } else if (action === 'revoke' && secret && input) {
+                    input.value = '';
+                    secret.classList.add('d-none');
+                }
+            })
+            .catch(error => {
+                const status = document.getElementById('device-api-key-status');
+                if (status) {
+                    status.textContent = error.message;
+                }
+            })
+            .finally(() => this.setDeviceApiBusy(false));
+    }
+
+    copyDeviceApiKey() {
+        const input = document.getElementById('device-api-key-value');
+        if (!input || !input.value) {
+            return;
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(input.value).catch(() => {
+                this.copyDeviceApiKeyFallback(input);
+            });
+            return;
+        }
+        this.copyDeviceApiKeyFallback(input);
+    }
+
+    copyDeviceApiKeyFallback(input) {
+        input.type = 'text';
+        input.select();
+        document.execCommand('copy');
+        input.type = 'password';
+        input.setSelectionRange(0, 0);
+    }
+
+    clearDeviceApiKeySecret() {
+        const input = document.getElementById('device-api-key-value');
+        const secret = document.getElementById('device-api-key-secret');
+        if (input) {
+            input.value = '';
+        }
+        if (secret) {
+            secret.classList.add('d-none');
+        }
+    }
 }
 
 // Initialize when DOM is ready
@@ -635,6 +795,13 @@ document.addEventListener('DOMContentLoaded', () => {
             isIpsc: ipscDevice ? ipscDevice.value === '1' : false,
             deviceId: parseInt(deviceId.value, 10),
             isModified: deviceModified ? deviceModified.value === '1' : false
+        });
+        window.addEventListener('pagehide', () => window.selfcare.clearDeviceApiKeySecret());
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) {
+                window.selfcare.clearDeviceApiKeySecret();
+                window.selfcare.loadDeviceApiKeyStatus();
+            }
         });
     }
 });
