@@ -21,6 +21,7 @@ class SelfcareManager {
         this.checkInterval = null;
         this.applyTimeout = null;
         this.disconnectInProgress = false;
+        this.deviceApiCopyTimer = null;
         this.init();
     }
 
@@ -732,6 +733,7 @@ class SelfcareManager {
                 const secret = document.getElementById('device-api-key-secret');
                 const input = document.getElementById('device-api-key-value');
                 if (data.token && secret && input) {
+                    this.resetDeviceApiCopyFeedback();
                     input.value = data.token;
                     secret.classList.remove('d-none');
                 } else if (action === 'revoke' && secret && input) {
@@ -748,29 +750,83 @@ class SelfcareManager {
             .finally(() => this.setDeviceApiBusy(false));
     }
 
-    copyDeviceApiKey() {
+    async copyDeviceApiKey() {
         const input = document.getElementById('device-api-key-value');
         if (!input || !input.value) {
             return;
         }
+        let copied = false;
         if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(input.value).catch(() => {
-                this.copyDeviceApiKeyFallback(input);
-            });
-            return;
+            try {
+                await navigator.clipboard.writeText(input.value);
+                copied = true;
+            } catch (error) {
+                copied = this.copyDeviceApiKeyFallback(input);
+            }
+        } else {
+            copied = this.copyDeviceApiKeyFallback(input);
         }
-        this.copyDeviceApiKeyFallback(input);
+        this.showDeviceApiCopyFeedback(copied, input);
     }
 
     copyDeviceApiKeyFallback(input) {
+        const originalType = input.type;
         input.type = 'text';
+        input.focus();
         input.select();
-        document.execCommand('copy');
-        input.type = 'password';
+        let copied = false;
+        try {
+            copied = document.execCommand('copy');
+        } catch (error) {
+            copied = false;
+        }
+        input.type = originalType;
         input.setSelectionRange(0, 0);
+        return copied;
+    }
+
+    showDeviceApiCopyFeedback(copied, input) {
+        const status = document.getElementById('device-api-key-copy-status');
+        const button = document.getElementById('device_api_key_copy');
+        if (!status || !button) {
+            return;
+        }
+        clearTimeout(this.deviceApiCopyTimer);
+        status.classList.toggle('text-success', copied);
+        status.classList.toggle('text-danger', !copied);
+        if (copied) {
+            const message = this.deviceApiText('device_api_key_copied', 'Copied!');
+            status.textContent = message;
+            button.textContent = message;
+        } else {
+            status.textContent = this.deviceApiText(
+                'device_api_key_copy_failed',
+                'Copy failed. Select the key and copy it manually.');
+            input.focus();
+            input.select();
+        }
+        this.deviceApiCopyTimer = setTimeout(() => {
+            status.textContent = '';
+            status.classList.remove('text-success', 'text-danger');
+            button.textContent = this.deviceApiText('device_api_key_copy', 'Copy');
+        }, 2500);
+    }
+
+    resetDeviceApiCopyFeedback() {
+        clearTimeout(this.deviceApiCopyTimer);
+        const status = document.getElementById('device-api-key-copy-status');
+        const button = document.getElementById('device_api_key_copy');
+        if (status) {
+            status.textContent = '';
+            status.classList.remove('text-success', 'text-danger');
+        }
+        if (button) {
+            button.textContent = this.deviceApiText('device_api_key_copy', 'Copy');
+        }
     }
 
     clearDeviceApiKeySecret() {
+        this.resetDeviceApiCopyFeedback();
         const input = document.getElementById('device-api-key-value');
         const secret = document.getElementById('device-api-key-secret');
         if (input) {

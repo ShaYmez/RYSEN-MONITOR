@@ -2176,18 +2176,18 @@
         "el": "Χρησιμοποιήστε αυτό το κλειδί στο WPSD για το FreeSTAR owner API. Τα ESSID 01–99 μοιράζονται ένα κλειδί."
     },
     "device_api_key_routes": {
-        "en": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
-        "pt": "Rotas do proprietário: ver dispositivo e grupos; adicionar/remover grupos estáticos; terminar dinâmica ou chamada; desligar (remove grupos dinâmicos, não termina a sessão Homebrew).",
-        "es": "Rutas del propietario: ver dispositivo y grupos; añadir/quitar grupos estáticos; cortar dinámica o llamada; desconectar (desvincula grupos dinámicos, no cierra Homebrew).",
-        "fr": "Routes propriétaire : voir l’appareil et les groupes ; ajouter/retirer des groupes statiques ; couper un dynamique ou un appel ; déconnecter (retire les groupes dynamiques, pas la session Homebrew).",
-        "it": "Route proprietario: dispositivo e gruppi; aggiunta/rimozione statici; chiusura dinamico o chiamata; disconnessione (scollega i dinamici, non Homebrew).",
-        "nl": "Eigenaarsroutes: apparaat en praatgroepen bekijken; statische groepen toevoegen/verwijderen; dynamiek of gesprek stoppen; ontkoppelen (dynamische groepen, geen Homebrew-afmelding).",
-        "de": "Besitzer-Routen: Gerät und Gruppen anzeigen; statische Gruppen hinzufügen/entfernen; Dynamik oder Ruf beenden; trennen (dynamische Gruppen, keine Homebrew-Abmeldung).",
-        "ru": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
-        "ja": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
-        "ar": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
-        "zh": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Homebrew logoff).",
-        "el": "Διαδρομές κατόχου: προβολή συσκευής και TG, προσθήκη/αφαίρεση στατικών TG, διακοπή δυναμικού ή κλήσης και αποσύνδεση δυναμικών TG (όχι Homebrew logoff)."
+        "en": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Hotspot logoff).",
+        "pt": "Rotas do proprietário: ver dispositivo e grupos; adicionar/remover grupos estáticos; terminar dinâmica ou chamada; desligar (remove grupos dinâmicos, não termina a sessão do hotspot).",
+        "es": "Rutas del propietario: ver dispositivo y grupos; añadir/quitar grupos estáticos; cortar dinámica o llamada; desconectar (desvincula grupos dinámicos, no cierra la sesión del hotspot).",
+        "fr": "Routes propriétaire : voir l’appareil et les groupes ; ajouter/retirer des groupes statiques ; couper un dynamique ou un appel ; déconnecter (retire les groupes dynamiques, pas la session du hotspot).",
+        "it": "Route proprietario: dispositivo e gruppi; aggiunta/rimozione statici; chiusura dinamico o chiamata; disconnessione (scollega i dinamici, non la sessione hotspot).",
+        "nl": "Eigenaarsroutes: apparaat en praatgroepen bekijken; statische groepen toevoegen/verwijderen; dynamiek of gesprek stoppen; ontkoppelen (dynamische groepen, geen hotspot-afmelding).",
+        "de": "Besitzer-Routen: Gerät und Gruppen anzeigen; statische Gruppen hinzufügen/entfernen; Dynamik oder Ruf beenden; trennen (dynamische Gruppen, keine Hotspot-Abmeldung).",
+        "ru": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Hotspot logoff).",
+        "ja": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Hotspot logoff).",
+        "ar": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Hotspot logoff).",
+        "zh": "Owner routes: view device and talkgroups; add/remove static talkgroups; drop a dynamic or active call; disconnect (unlinks dynamic talkgroups, not Hotspot logoff).",
+        "el": "Διαδρομές κατόχου: προβολή συσκευής και TG, προσθήκη/αφαίρεση στατικών TG, διακοπή δυναμικού ή κλήσης και αποσύνδεση δυναμικών TG (όχι hotspot logoff)."
     },
     "device_api_key_bound": {
         "en": "Bound to core ID:", "pt": "Associada ao ID principal:", "es": "Vinculada al ID principal:",
@@ -2210,6 +2210,25 @@
     "device_api_key_copy": {
         "en": "Copy", "pt": "Copiar", "es": "Copiar", "fr": "Copier", "it": "Copia", "nl": "Kopiëren",
         "de": "Kopieren", "ru": "Copy", "ja": "Copy", "ar": "Copy", "zh": "Copy", "el": "Αντιγραφή"
+    },
+    "device_api_key_copied": {
+        "en": "Copied!", "pt": "Copiado!", "es": "¡Copiado!", "fr": "Copié !", "it": "Copiato!",
+        "nl": "Gekopieerd!", "de": "Kopiert!", "ru": "Copied!", "ja": "Copied!", "ar": "Copied!",
+        "zh": "Copied!", "el": "Αντιγράφηκε!"
+    },
+    "device_api_key_copy_failed": {
+        "en": "Copy failed. Select the key and copy it manually.",
+        "pt": "A cópia falhou. Selecione a chave e copie-a manualmente.",
+        "es": "Error al copiar. Seleccione la clave y cópiela manualmente.",
+        "fr": "La copie a échoué. Sélectionnez la clé et copiez-la manuellement.",
+        "it": "Copia non riuscita. Seleziona la chiave e copiala manualmente.",
+        "nl": "Kopiëren mislukt. Selecteer de sleutel en kopieer hem handmatig.",
+        "de": "Kopieren fehlgeschlagen. Markieren Sie den Schlüssel und kopieren Sie ihn manuell.",
+        "ru": "Copy failed. Select the key and copy it manually.",
+        "ja": "Copy failed. Select the key and copy it manually.",
+        "ar": "Copy failed. Select the key and copy it manually.",
+        "zh": "Copy failed. Select the key and copy it manually.",
+        "el": "Η αντιγραφή απέτυχε. Επιλέξτε το κλειδί και αντιγράψτε το χειροκίνητα."
     },
     "device_api_key_warning": {
         "en": "Copy it now. This key cannot be recovered after leaving this page.",

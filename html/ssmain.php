@@ -442,6 +442,8 @@ $csrfToken = generateCSRFToken();
                                                                     id="device_api_key_copy"></button>
                                                             </div>
                                                         </div>
+                                                        <small id="device-api-key-copy-status" class="form-text"
+                                                            aria-live="polite"></small>
                                                         <small class="form-text text-warning" id="device_api_key_warning"></small>
                                                     </div>
                                                     <div class="d-flex flex-wrap">
@@ -466,6 +468,8 @@ $csrfToken = generateCSRFToken();
                                                     <span class="d-none" id="device_api_key_rotate_confirm"></span>
                                                     <span class="d-none" id="device_api_key_revoke_confirm"></span>
                                                     <span class="d-none" id="device_api_key_error"></span>
+                                                    <span class="d-none" id="device_api_key_copied"></span>
+                                                    <span class="d-none" id="device_api_key_copy_failed"></span>
                                                 </div>
                                             </div>
                                         </div>
