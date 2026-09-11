@@ -2155,6 +2155,64 @@
         "zh": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",
         "el": "Sticky Talkgroup: Όταν είναι ενεργό, το ραδιόφωνο μένει στο TG που εκπέμπετε μέχρι να αλλάξετε χειροκίνητα. Όταν είναι ανενεργό, το TG επιστρέφει στην προεπιλογή μετά το timeout."
     },
+    "runtime_drop_call": {
+        "en": "Drop QSO", "pt": "Terminar QSO", "es": "Finalizar QSO", "fr": "Couper le QSO",
+        "it": "Termina QSO", "nl": "QSO stoppen", "de": "QSO beenden", "ru": "Drop QSO",
+        "ja": "Drop QSO", "ar": "Drop QSO", "zh": "Drop QSO", "el": "Drop QSO"
+    },
+    "runtime_drop_dynamic": {
+        "en": "Drop Dynamic", "pt": "Terminar dinâmicos", "es": "Eliminar dinámicos", "fr": "Couper les dynamiques",
+        "it": "Termina dinamici", "nl": "Dynamische TG's stoppen", "de": "Dynamische TGs trennen", "ru": "Drop Dynamic",
+        "ja": "Drop Dynamic", "ar": "Drop Dynamic", "zh": "Drop Dynamic", "el": "Drop Dynamic"
+    },
+    "runtime_dynamic_title": {
+        "en": "Current dynamic talkgroups", "pt": "Grupos dinâmicos atuais", "es": "Grupos dinámicos actuales", "fr": "Groupes dynamiques actuels",
+        "it": "Talkgroup dinamici attuali", "nl": "Huidige dynamische TG's", "de": "Aktuelle dynamische TGs", "ru": "Current dynamic talkgroups",
+        "ja": "Current dynamic talkgroups", "ar": "Current dynamic talkgroups", "zh": "Current dynamic talkgroups", "el": "Current dynamic talkgroups"
+    },
+    "runtime_slot": {
+        "en": "Slot", "pt": "Slot", "es": "Slot", "fr": "Slot", "it": "Slot", "nl": "Slot",
+        "de": "Slot", "ru": "Slot", "ja": "Slot", "ar": "Slot", "zh": "Slot", "el": "Slot"
+    },
+    "runtime_talkgroup": {
+        "en": "Talkgroup", "pt": "Grupo", "es": "Grupo", "fr": "Talkgroup", "it": "Talkgroup", "nl": "Talkgroup",
+        "de": "Talkgroup", "ru": "Talkgroup", "ja": "Talkgroup", "ar": "Talkgroup", "zh": "Talkgroup", "el": "Talkgroup"
+    },
+    "runtime_status_loading": {
+        "en": "Loading runtime status…", "pt": "A carregar o estado…", "es": "Cargando estado…", "fr": "Chargement de l’état…",
+        "it": "Caricamento stato…", "nl": "Status laden…", "de": "Status wird geladen…", "ru": "Loading runtime status…",
+        "ja": "Loading runtime status…", "ar": "Loading runtime status…", "zh": "Loading runtime status…", "el": "Loading runtime status…"
+    },
+    "runtime_status_online": {
+        "en": "Active dynamic talkgroups", "pt": "Grupos dinâmicos ativos", "es": "Grupos dinámicos activos", "fr": "Groupes dynamiques actifs",
+        "it": "Talkgroup dinamici attivi", "nl": "Actieve dynamische TG's", "de": "Aktive dynamische TGs", "ru": "Active dynamic talkgroups",
+        "ja": "Active dynamic talkgroups", "ar": "Active dynamic talkgroups", "zh": "Active dynamic talkgroups", "el": "Active dynamic talkgroups"
+    },
+    "runtime_status_offline": {
+        "en": "The selected hotspot is offline.", "pt": "O hotspot selecionado está offline.", "es": "El hotspot seleccionado está desconectado.", "fr": "Le hotspot sélectionné est hors ligne.",
+        "it": "L’hotspot selezionato è offline.", "nl": "De geselecteerde hotspot is offline.", "de": "Der ausgewählte Hotspot ist offline.", "ru": "The selected hotspot is offline.",
+        "ja": "The selected hotspot is offline.", "ar": "The selected hotspot is offline.", "zh": "The selected hotspot is offline.", "el": "The selected hotspot is offline."
+    },
+    "runtime_status_ambiguous": {
+        "en": "Multiple connected hotspots match this ID.", "pt": "Vários hotspots ligados correspondem a este ID.", "es": "Varios hotspots conectados coinciden con este ID.", "fr": "Plusieurs hotspots connectés correspondent à cet ID.",
+        "it": "Più hotspot connessi corrispondono a questo ID.", "nl": "Meerdere verbonden hotspots passen bij deze ID.", "de": "Mehrere verbundene Hotspots entsprechen dieser ID.", "ru": "Multiple connected hotspots match this ID.",
+        "ja": "Multiple connected hotspots match this ID.", "ar": "Multiple connected hotspots match this ID.", "zh": "Multiple connected hotspots match this ID.", "el": "Multiple connected hotspots match this ID."
+    },
+    "runtime_status_unavailable": {
+        "en": "Runtime controls are unavailable.", "pt": "Os controlos em tempo real não estão disponíveis.", "es": "Los controles en tiempo real no están disponibles.", "fr": "Les contrôles en temps réel sont indisponibles.",
+        "it": "I controlli in tempo reale non sono disponibili.", "nl": "Runtimebediening is niet beschikbaar.", "de": "Laufzeitsteuerung ist nicht verfügbar.", "ru": "Runtime controls are unavailable.",
+        "ja": "Runtime controls are unavailable.", "ar": "Runtime controls are unavailable.", "zh": "Runtime controls are unavailable.", "el": "Runtime controls are unavailable."
+    },
+    "runtime_status_empty": {
+        "en": "No dynamic talkgroups are active.", "pt": "Não existem grupos dinâmicos ativos.", "es": "No hay grupos dinámicos activos.", "fr": "Aucun groupe dynamique n’est actif.",
+        "it": "Nessun talkgroup dinamico è attivo.", "nl": "Er zijn geen dynamische TG's actief.", "de": "Keine dynamischen TGs sind aktiv.", "ru": "No dynamic talkgroups are active.",
+        "ja": "No dynamic talkgroups are active.", "ar": "No dynamic talkgroups are active.", "zh": "No dynamic talkgroups are active.", "el": "No dynamic talkgroups are active."
+    },
+    "runtime_action_error": {
+        "en": "Runtime control request failed.", "pt": "O pedido de controlo falhou.", "es": "La solicitud de control falló.", "fr": "La demande de contrôle a échoué.",
+        "it": "La richiesta di controllo non è riuscita.", "nl": "De bedieningsaanvraag is mislukt.", "de": "Die Steuerungsanfrage ist fehlgeschlagen.", "ru": "Runtime control request failed.",
+        "ja": "Runtime control request failed.", "ar": "Runtime control request failed.", "zh": "Runtime control request failed.", "el": "Runtime control request failed."
+    },
     "device_api_key_title": {
         "en": "Device API Key", "pt": "Chave API do dispositivo", "es": "Clave API del dispositivo",
         "fr": "Clé API de l’appareil", "it": "Chiave API dispositivo", "nl": "Apparaat-API-sleutel",
