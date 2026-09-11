@@ -111,6 +111,7 @@ if (!is_array($ts2Values)) {
 $isIpscDevice = isIpscDeviceMode($devDetails['mode']);
 $deviceKeyIssuer = dashboardDeviceKeyIssuerConfig();
 $showDeviceApiKey = !$isIpscDevice && !isIpscSession() && !empty($deviceKeyIssuer['enabled']);
+$showRuntimeControls = $showDeviceApiKey;
 
 // Labels for multi-device picker
 $devicePicker = [];
@@ -411,9 +412,58 @@ $csrfToken = generateCSRFToken();
                                                     title="">
                                                     <i class="fas fa-unlink fa-sm me-1" aria-hidden="true"></i><span id="calc_disconnect"></span>
                                                 </button>
+                                                <?php if ($showRuntimeControls): ?>
+                                                <button type="button"
+                                                    class="btn btn-outline-warning btn-sm"
+                                                    id="device-runtime-drop-call"
+                                                    onclick="window.selfcare && window.selfcare.runDeviceControl('drop-call')"
+                                                    disabled>
+                                                    <i class="fas fa-stop-circle fa-sm me-1" aria-hidden="true"></i><span id="runtime_drop_call"></span>
+                                                </button>
+                                                <button type="button"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    id="device-runtime-drop-dynamic"
+                                                    onclick="window.selfcare && window.selfcare.runDeviceControl('drop-dynamic')"
+                                                    disabled>
+                                                    <i class="fas fa-times-circle fa-sm me-1" aria-hidden="true"></i><span id="runtime_drop_dynamic"></span>
+                                                </button>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
+                                    <?php if ($showRuntimeControls): ?>
+                                    <div class="row justify-content-center mb-4">
+                                        <div class="col-12 col-md-8 col-lg-6">
+                                            <div class="card card-outline card-secondary" id="device-runtime-panel">
+                                                <div class="card-header">
+                                                    <h3 class="card-title" id="runtime_dynamic_title"></h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="device-runtime-status" class="mb-2" aria-live="polite">
+                                                        <span id="runtime_status_loading"></span>
+                                                    </div>
+                                                    <div class="table-responsive d-none" id="device-runtime-table-wrap">
+                                                        <table class="table table-sm table-striped mb-0" id="device-runtime-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th scope="col" id="runtime_slot"></th>
+                                                                    <th scope="col" id="runtime_talkgroup"></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div>
+                                                    <span class="d-none" id="runtime_status_online"></span>
+                                                    <span class="d-none" id="runtime_status_offline"></span>
+                                                    <span class="d-none" id="runtime_status_ambiguous"></span>
+                                                    <span class="d-none" id="runtime_status_unavailable"></span>
+                                                    <span class="d-none" id="runtime_status_empty"></span>
+                                                    <span class="d-none" id="runtime_action_error"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
                                     <?php if ($showDeviceApiKey): ?>
                                     <div class="row justify-content-center mb-4">
                                         <div class="col-12 col-md-8 col-lg-6">

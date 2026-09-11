@@ -58,6 +58,28 @@ function dashboardDeviceKeyIssuerConfig($path = '/etc/rysen/systemx-network.ini'
     ];
 }
 
+function dashboardDeviceControlConfig($path = '/etc/rysen/systemx-network.ini')
+{
+    $issuer = dashboardDeviceKeyIssuerConfig($path);
+    $ini = dashboardLoadNetworkIni($path);
+    $api = is_array($ini) && isset($ini['api']) && is_array($ini['api']) ? $ini['api'] : [];
+    $url = trim((string)($api['device_control_url'] ?? ''));
+    $parts = $url !== '' ? @parse_url($url) : false;
+    $safeUrl = is_array($parts)
+        && strtolower((string)($parts['scheme'] ?? '')) === 'https'
+        && strtolower((string)($parts['host'] ?? '')) === 'api.freestar.network'
+        && !isset($parts['user'])
+        && !isset($parts['pass'])
+        && (!isset($parts['port']) || (int)$parts['port'] === 443)
+        && (string)($parts['path'] ?? '') === '/v2/internal/device-control';
+
+    return [
+        'enabled' => !empty($issuer['enabled']) && $safeUrl,
+        'url' => $safeUrl ? $url : '',
+        'token' => (string)($issuer['token'] ?? ''),
+    ];
+}
+
 function dashboardDeviceCoreId($intId)
 {
     $digits = preg_replace('/\D+/', '', (string)$intId);
@@ -110,6 +132,50 @@ function dashboardDeviceKeyIssuerRequest($config, $payload)
             ? (string)$body['error']
             : 'Device API key service is unavailable';
         return ['error' => $message, 'code' => $status >= 400 ? $status : 502];
+    }
+    return $body;
+}
+
+function dashboardDeviceControlRequest($config, $payload)
+{
+    if (empty($config['enabled']) || empty($config['url']) || empty($config['token'])) {
+        return ['error' => 'Runtime controls are unavailable', 'code' => 503];
+    }
+    $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+    if (!is_string($json)) {
+        return ['error' => 'Invalid runtime control request', 'code' => 400];
+    }
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'timeout' => 5,
+            'ignore_errors' => true,
+            'header' => [
+                'Authorization: Bearer ' . $config['token'],
+                'Content-Type: application/json',
+                'Accept: application/json',
+                'Content-Length: ' . strlen($json),
+            ],
+            'content' => $json,
+        ],
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+        ],
+    ]);
+    $raw = @file_get_contents($config['url'], false, $context);
+    $status = 0;
+    foreach ($http_response_header ?? [] as $header) {
+        if (preg_match('#^HTTP/\S+\s+(\d{3})#', $header, $match)) {
+            $status = (int)$match[1];
+        }
+    }
+    $body = is_string($raw) ? json_decode($raw, true) : null;
+    if ($status < 200 || $status >= 300 || !is_array($body)) {
+        return [
+            'error' => 'Runtime controls are unavailable',
+            'code' => $status >= 400 ? $status : 502,
+        ];
     }
     return $body;
 }

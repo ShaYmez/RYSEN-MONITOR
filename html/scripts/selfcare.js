@@ -11,6 +11,8 @@ const SELFCARE_DISC_POLL_MS = 2000;
 const SELFCARE_APPLY_TIMEOUT_MS = 45000;
 /** Disconnect wait — RYSEN DISC poll 2s; proxy cycle up to 10s; allow two passes. */
 const SELFCARE_DISCONNECT_TIMEOUT_MS = (Math.max(PROXY_OPTS_INTERVAL_MS, SELFCARE_DISC_POLL_MS) * 2) + 5000;
+/** FreeSTAR runtime status refresh while Selfcare is visible. */
+const DEVICE_RUNTIME_POLL_MS = 15000;
 
 class SelfcareManager {
     constructor(config) {
@@ -22,6 +24,9 @@ class SelfcareManager {
         this.applyTimeout = null;
         this.disconnectInProgress = false;
         this.deviceApiCopyTimer = null;
+        this.runtimePollTimer = null;
+        this.runtimeStatusInFlight = false;
+        this.runtimeActionBusy = false;
         this.init();
     }
 
@@ -47,6 +52,18 @@ class SelfcareManager {
         this.setSaveButtonDisabled(this.isModified);
         if (document.getElementById('device-api-key-panel')) {
             this.loadDeviceApiKeyStatus();
+        }
+        if (document.getElementById('device-runtime-panel')) {
+            this.refreshDeviceRuntime();
+            this.startDeviceRuntimePolling();
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    this.stopDeviceRuntimePolling();
+                } else {
+                    this.refreshDeviceRuntime();
+                    this.startDeviceRuntimePolling();
+                }
+            });
         }
     }
 
@@ -625,6 +642,166 @@ class SelfcareManager {
             });
     }
 
+    runtimeText(id, fallback) {
+        const element = document.getElementById(id);
+        const text = element ? element.textContent.trim() : '';
+        return text || fallback;
+    }
+
+    setRuntimeButtonsDisabled(disabled, hasDynamics = true) {
+        const dropCall = document.getElementById('device-runtime-drop-call');
+        const dropDynamic = document.getElementById('device-runtime-drop-dynamic');
+        if (dropCall) {
+            dropCall.disabled = disabled;
+        }
+        if (dropDynamic) {
+            dropDynamic.disabled = disabled || !hasDynamics;
+        }
+    }
+
+    postDeviceControl(action) {
+        const csrfInput = document.querySelector('#saveChangesForm input[name="csrf_token"]');
+        if (!csrfInput) {
+            return Promise.reject(new Error('Security token is unavailable. Reload and try again.'));
+        }
+        return fetch('ssdevicecontrol.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+            body: new URLSearchParams({
+                csrf_token: csrfInput.value,
+                action: action
+            })
+        }).then(async response => {
+            const type = response.headers.get('content-type') || '';
+            if (!type.includes('application/json')) {
+                const error = new Error(this.runtimeText(
+                    'runtime_status_unavailable', 'Runtime controls are unavailable.'));
+                error.status = response.status;
+                throw error;
+            }
+            const body = await response.json();
+            if (!response.ok || !body.success) {
+                const error = new Error(body.error || this.runtimeText(
+                    'runtime_action_error', 'Runtime control request failed.'));
+                error.status = response.status;
+                throw error;
+            }
+            return body;
+        });
+    }
+
+    renderDeviceRuntime(data) {
+        const status = document.getElementById('device-runtime-status');
+        const tableWrap = document.getElementById('device-runtime-table-wrap');
+        const tbody = document.querySelector('#device-runtime-table tbody');
+        if (!status || !tableWrap || !tbody) {
+            return;
+        }
+
+        tbody.replaceChildren();
+        const dynamics = Array.isArray(data.dynamics) ? data.dynamics : [];
+        if (!data.connected) {
+            status.textContent = this.runtimeText(
+                'runtime_status_offline', 'The selected hotspot is offline.');
+            tableWrap.classList.add('d-none');
+            this.setRuntimeButtonsDisabled(true);
+            return;
+        }
+
+        if (dynamics.length === 0) {
+            status.textContent = this.runtimeText(
+                'runtime_status_empty', 'No dynamic talkgroups are active.');
+            tableWrap.classList.add('d-none');
+            this.setRuntimeButtonsDisabled(false, false);
+            return;
+        }
+
+        dynamics.forEach(dynamic => {
+            const row = document.createElement('tr');
+            const slot = document.createElement('td');
+            const group = document.createElement('td');
+            slot.textContent = String(dynamic.slot);
+            group.textContent = String(dynamic.group);
+            row.append(slot, group);
+            tbody.appendChild(row);
+        });
+        status.textContent = this.runtimeText(
+            'runtime_status_online', 'Current dynamic talkgroups');
+        tableWrap.classList.remove('d-none');
+        this.setRuntimeButtonsDisabled(false, true);
+    }
+
+    renderDeviceRuntimeError(error) {
+        const status = document.getElementById('device-runtime-status');
+        const tableWrap = document.getElementById('device-runtime-table-wrap');
+        if (!status || !tableWrap) {
+            return;
+        }
+        let message = this.runtimeText(
+            'runtime_status_unavailable', 'Runtime controls are unavailable.');
+        if (error && error.status === 404) {
+            message = this.runtimeText(
+                'runtime_status_offline', 'The selected hotspot is offline.');
+        } else if (error && error.status === 409) {
+            message = this.runtimeText(
+                'runtime_status_ambiguous', 'Multiple connected hotspots match this ID.');
+        }
+        status.textContent = message;
+        tableWrap.classList.add('d-none');
+        this.setRuntimeButtonsDisabled(true);
+    }
+
+    refreshDeviceRuntime() {
+        if (this.runtimeStatusInFlight || this.runtimeActionBusy || document.hidden) {
+            return Promise.resolve();
+        }
+        this.runtimeStatusInFlight = true;
+        return this.postDeviceControl('status')
+            .then(data => this.renderDeviceRuntime(data))
+            .catch(error => this.renderDeviceRuntimeError(error))
+            .finally(() => {
+                this.runtimeStatusInFlight = false;
+            });
+    }
+
+    startDeviceRuntimePolling() {
+        if (this.runtimePollTimer || document.hidden) {
+            return;
+        }
+        this.runtimePollTimer = setInterval(
+            () => this.refreshDeviceRuntime(),
+            DEVICE_RUNTIME_POLL_MS
+        );
+    }
+
+    stopDeviceRuntimePolling() {
+        if (this.runtimePollTimer) {
+            clearInterval(this.runtimePollTimer);
+            this.runtimePollTimer = null;
+        }
+    }
+
+    runDeviceControl(action) {
+        if (this.runtimeActionBusy
+            || !['drop-call', 'drop-dynamic'].includes(action)) {
+            return;
+        }
+        this.runtimeActionBusy = true;
+        this.setRuntimeButtonsDisabled(true);
+        this.postDeviceControl(action)
+            .then(() => this.refreshDeviceRuntime())
+            .catch(error => {
+                this.renderDeviceRuntimeError(error);
+                alert(error.message || this.runtimeText(
+                    'runtime_action_error', 'Runtime control request failed.'));
+            })
+            .finally(() => {
+                this.runtimeActionBusy = false;
+                this.refreshDeviceRuntime();
+            });
+    }
+
     deviceApiText(id, fallback) {
         const element = document.getElementById(id);
         const text = element ? element.textContent.trim() : '';
@@ -852,11 +1029,16 @@ document.addEventListener('DOMContentLoaded', () => {
             deviceId: parseInt(deviceId.value, 10),
             isModified: deviceModified ? deviceModified.value === '1' : false
         });
-        window.addEventListener('pagehide', () => window.selfcare.clearDeviceApiKeySecret());
+        window.addEventListener('pagehide', () => {
+            window.selfcare.clearDeviceApiKeySecret();
+            window.selfcare.stopDeviceRuntimePolling();
+        });
         window.addEventListener('pageshow', event => {
             if (event.persisted) {
                 window.selfcare.clearDeviceApiKeySecret();
                 window.selfcare.loadDeviceApiKeyStatus();
+                window.selfcare.refreshDeviceRuntime();
+                window.selfcare.startDeviceRuntimePolling();
             }
         });
     }

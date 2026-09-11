@@ -32,6 +32,26 @@ IPSC repeater selfcare (static TS1/TS2) is included in this release; MMDVM hotsp
 
 **Admin (IPSC):** install once with `sudo ./scripts/install-selfcare-admin.sh`, then run `sudo selfcare-admin` (symlink in `/usr/local/sbin`; bash + docker + php-cli for hashes — no Python on host).
 
+## FreeSTAR Selfcare runtime controls
+
+FreeSTAR hotspot Selfcare can show live dynamic talkgroups and provide **Drop
+QSO** and **Drop Dynamic** beside the existing OPTIONS-based Disconnect button.
+The panel is not rendered for IPSC or third-party networks. Disconnect remains
+available independently and keeps its existing `DISC=1` request/cleanup flow.
+
+Configure the existing server-held issuer credential and the two exact HTTPS
+endpoints in `/etc/rysen/systemx-network.ini`:
+
+```ini
+[api]
+device_key_issuer_url = https://api.freestar.network/v2/internal/device-keys
+device_key_issuer_token = replace-with-this-master-issuer-token
+device_control_url = https://api.freestar.network/v2/internal/device-control
+```
+
+The issuer token is used only by PHP server-to-server requests. It must never
+be written into JavaScript, HTML, browser storage, or a third-party deployment.
+
 ---
 
 ## Copyright
