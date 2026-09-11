@@ -41,15 +41,23 @@ def test_browser_never_receives_issuer_configuration_or_token():
     assert "ssdevicecontrol.php" in browser
 
 
-def test_runtime_ui_uses_same_freestar_gate_and_disconnect_is_ungated():
+def test_runtime_ui_uses_control_config_and_disconnect_is_ungated():
     page = _read("html/ssmain.php")
-    assert "$showRuntimeControls = $showDeviceApiKey;" in page
+    assert "$showRuntimeControls = $showDeviceApiKey;" not in page
+    assert "dashboardDeviceControlConfig()" in page
+    assert "!empty($deviceControl['enabled'])" in page
     gate = page.index("<?php if ($showRuntimeControls): ?>")
     disconnect = page.index('id="calchlpdisconnect"')
     drop_call = page.index('id="device-runtime-drop-call"')
     assert disconnect < gate < drop_call
     assert 'id="device-runtime-drop-dynamic"' in page
     assert 'id="device-runtime-table"' in page
+
+
+def test_issuer_http_does_not_follow_redirects():
+    source = _read("html/include/api-config.php")
+    assert source.count("'follow_location' => false") >= 2
+    assert source.count("'max_redirects' => 0") >= 2
 
 
 def test_runtime_polling_is_visible_serialized_and_refreshes_after_actions():

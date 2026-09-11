@@ -101,3 +101,16 @@ def test_control_url_cannot_exfiltrate_issuer_credential(tmp_path):
     assert result["enabled"] is True
     assert result["control_enabled"] is False
     assert result["control_url"] == ""
+
+
+def test_blank_control_url_disables_runtime_controls(tmp_path):
+    result = _config(
+        tmp_path,
+        _ini(
+            "https://api.freestar.network/v2/ingest/activity",
+            control="",
+        ),
+    )
+    assert result["enabled"] is True
+    assert result["control_enabled"] is False
+    assert result["control_url"] == ""

@@ -106,6 +106,8 @@ function dashboardDeviceKeyIssuerRequest($config, $payload)
             'method' => 'POST',
             'timeout' => 5,
             'ignore_errors' => true,
+            'follow_location' => false,
+            'max_redirects' => 0,
             'header' => [
                 'Authorization: Bearer ' . $config['token'],
                 'Content-Type: application/json',
@@ -150,6 +152,8 @@ function dashboardDeviceControlRequest($config, $payload)
             'method' => 'POST',
             'timeout' => 5,
             'ignore_errors' => true,
+            'follow_location' => false,
+            'max_redirects' => 0,
             'header' => [
                 'Authorization: Bearer ' . $config['token'],
                 'Content-Type: application/json',

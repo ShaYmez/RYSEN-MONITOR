@@ -110,8 +110,9 @@ if (!is_array($ts2Values)) {
 
 $isIpscDevice = isIpscDeviceMode($devDetails['mode']);
 $deviceKeyIssuer = dashboardDeviceKeyIssuerConfig();
+$deviceControl = dashboardDeviceControlConfig();
 $showDeviceApiKey = !$isIpscDevice && !isIpscSession() && !empty($deviceKeyIssuer['enabled']);
-$showRuntimeControls = $showDeviceApiKey;
+$showRuntimeControls = !$isIpscDevice && !isIpscSession() && !empty($deviceControl['enabled']);
 
 // Labels for multi-device picker
 $devicePicker = [];
