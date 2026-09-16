@@ -245,3 +245,29 @@ function dashboardFetchApiContent($url)
 
     return @file_get_contents($url, false, $context);
 }
+
+/**
+ * True when any talkgroup row has a non-empty value for $field.
+ *
+ * Legacy APIs (QuadNet and others) omit country/mcc. Do not gate on
+ * network branding; inspect the payload so columns appear automatically
+ * once the API starts sending them.
+ *
+ * @param array $rows
+ * @param string $field
+ * @return bool
+ */
+function dashboardTalkgroupFieldPresent(array $rows, $field)
+{
+    foreach ($rows as $row) {
+        if (!is_array($row) || !array_key_exists($field, $row)) {
+            continue;
+        }
+        $value = $row[$field];
+        if (!is_scalar($value) || trim((string)$value) === '') {
+            continue;
+        }
+        return true;
+    }
+    return false;
+}

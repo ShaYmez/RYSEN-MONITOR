@@ -63,29 +63,49 @@ if (count($tgDataArray)) {
         echo "  </div>\n";
         echo "  <span class=\"data-table-count\" id=\"wwtg-visible-count\" aria-live=\"polite\">".$tgTotal."</span>\n";
         echo "</div>\n";
+        $showCountry = dashboardTalkgroupFieldPresent($tgDataArray, 'country');
+        $showMcc = dashboardTalkgroupFieldPresent($tgDataArray, 'mcc');
         echo "<table id=\"wwtg-table\" class=\"data-table\" cellspacing=\"0\">\n";
         echo "<thead><tr class=\"boxtop\">";
         echo "<th scope=\"col\" align=\"center\" class=\"sortable sort-asc\" data-sort-type=\"number\" tabindex=\"0\" aria-sort=\"ascending\" title=\"Click to sort\">" . $networkName . " TG Number</th>";
         echo "<th scope=\"col\" align=\"center\" class=\"sortable\" data-sort-type=\"text\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">" . $networkName . " TG Name</th>";
-        echo "<th scope=\"col\" align=\"center\" class=\"sortable\" data-sort-type=\"text\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">Country</th>";
-        echo "<th scope=\"col\" align=\"center\" class=\"sortable\" data-sort-type=\"number\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">MCC</th>";
+        if ($showCountry) {
+                echo "<th scope=\"col\" align=\"center\" class=\"sortable\" data-sort-type=\"text\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">Country</th>";
+        }
+        if ($showMcc) {
+                echo "<th scope=\"col\" align=\"center\" class=\"sortable\" data-sort-type=\"number\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">MCC</th>";
+        }
         echo "</tr></thead>\n<tbody>\n";
 
         sort($tgDataArray);
 
         foreach ( $tgDataArray as $tgData ) {
                 $tgNrRaw = (string) ($tgData['tgid'] ?? '');
-                $tgCountryRaw = (string) ($tgData['country'] ?? '');
-                $tgMccRaw = (string) ($tgData['mcc'] ?? '');
+                $tgCountryRaw = $showCountry ? (string) ($tgData['country'] ?? '') : '';
+                $tgMccRaw = $showMcc ? (string) ($tgData['mcc'] ?? '') : '';
                 $rawName = trim(preg_replace('/<img[^>]*>/i', '', (string) ($tgData['callsign'] ?? '')));
-                $searchHaystack = strtolower($tgNrRaw . ' ' . $rawName . ' ' . $tgCountryRaw . ' ' . $tgMccRaw);
+                $searchParts = array($tgNrRaw, $rawName);
+                if ($showCountry) {
+                        $searchParts[] = $tgCountryRaw;
+                }
+                if ($showMcc) {
+                        $searchParts[] = $tgMccRaw;
+                }
+                $searchHaystack = strtolower(implode(' ', $searchParts));
                 $tgNr   = htmlspecialchars($tgNrRaw, ENT_QUOTES, 'UTF-8');
                 $tgName = renderDashboardTalkgroupName($tgData['callsign'] ?? '');
-                $tgCountry = htmlspecialchars($tgCountryRaw, ENT_QUOTES, 'UTF-8');
-                $tgMcc = htmlspecialchars($tgMccRaw, ENT_QUOTES, 'UTF-8');
                 $sortName = htmlspecialchars($rawName, ENT_QUOTES, 'UTF-8');
                 $searchAttr = htmlspecialchars($searchHaystack, ENT_QUOTES, 'UTF-8');
-                echo "  <tr class=\"boxfull\" data-search=\"$searchAttr\"><td align=\"center\" data-sort=\"$tgNr\">$tgNr</td><td align=\"left\" data-sort=\"$sortName\">$tgName</td><td align=\"center\" data-sort=\"$tgCountry\">$tgCountry</td><td align=\"center\" data-sort=\"$tgMcc\">$tgMcc</td></tr>\n";
+                echo "  <tr class=\"boxfull\" data-search=\"$searchAttr\"><td align=\"center\" data-sort=\"$tgNr\">$tgNr</td><td align=\"left\" data-sort=\"$sortName\">$tgName</td>";
+                if ($showCountry) {
+                        $tgCountry = htmlspecialchars($tgCountryRaw, ENT_QUOTES, 'UTF-8');
+                        echo "<td align=\"center\" data-sort=\"$tgCountry\">$tgCountry</td>";
+                }
+                if ($showMcc) {
+                        $tgMcc = htmlspecialchars($tgMccRaw, ENT_QUOTES, 'UTF-8');
+                        echo "<td align=\"center\" data-sort=\"$tgMcc\">$tgMcc</td>";
+                }
+                echo "</tr>\n";
         }
 
         echo "</tbody>\n</table>\n";
