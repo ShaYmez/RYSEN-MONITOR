@@ -271,3 +271,55 @@ function dashboardTalkgroupFieldPresent(array $rows, $field)
     }
     return false;
 }
+
+/**
+ * Map a dashboard flag code onto the shipped PNG name.
+ * Keep aliases aligned with System-X-Installer flag_helpers.php.
+ *
+ * @param string $flagCode
+ * @return string
+ */
+function dashboardCanonicalFlagCode($flagCode)
+{
+    $code = preg_replace('/[^0-9A-Za-z_-]/', '', (string) $flagCode);
+    if ($code === '' || $code === '0' || $code === '000' || $code === '901') {
+        return 'world';
+    }
+    $aliases = [
+        '235' => '234',
+        '405' => '404',
+        '406' => '404',
+        '430' => '424',
+        '431' => '424',
+        '441' => '440',
+        '461' => '460',
+    ];
+    if (isset($aliases[$code])) {
+        return $aliases[$code];
+    }
+    $n = (int) $code;
+    if ($n >= 317 && $n <= 329 && $n !== 318) {
+        return '310';
+    }
+    return $code;
+}
+
+/**
+ * Flag file stem for a talkgroup row.
+ * Prefer MCC when the API sends it; otherwise keep legacy callsign flag HTML.
+ * Missing MCC (QuadNet) stays world.
+ *
+ * @param mixed $mcc
+ * @param mixed $rawCallsign
+ * @return string
+ */
+function dashboardTalkgroupFlagCode($mcc, $rawCallsign = '')
+{
+    if (is_int($mcc) || (is_string($mcc) && preg_match('/^[0-9]{1,3}$/', trim($mcc)))) {
+        return dashboardCanonicalFlagCode((string) (int) $mcc);
+    }
+    if (preg_match('/flags\/([0-9A-Za-z_-]+)\.png/i', (string) $rawCallsign, $matches)) {
+        return dashboardCanonicalFlagCode($matches[1]);
+    }
+    return 'world';
+}

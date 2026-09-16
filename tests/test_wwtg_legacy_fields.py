@@ -53,6 +53,18 @@ def test_empty_or_null_meta_fields_stay_hidden():
     assert _field_present(rows, "mcc") == "0"
 
 
+def _flag_code(mcc, callsign=""):
+    code = (
+        "require $argv[1];"
+        "$mcc=json_decode($argv[2]);"
+        "echo dashboardTalkgroupFlagCode($mcc, $argv[3]);"
+    )
+    return subprocess.check_output(
+        [PHP, "-r", code, str(CONFIG), json.dumps(mcc), callsign],
+        text=True,
+    ).strip()
+
+
 def test_page_omits_legacy_column_headers():
     source = WWTG.read_text(encoding="utf-8")
     assert "dashboardTalkgroupFieldPresent($tgDataArray, 'country')" in source
@@ -61,3 +73,15 @@ def test_page_omits_legacy_column_headers():
     assert "if ($showMcc)" in source
     assert "API_NETWORK_NAME" in source
     assert "dashboardIsFreestarApiHost" not in source
+    assert "renderDashboardTalkgroupName($tgData['callsign'] ?? '', $tgData['mcc'] ?? '')" in source
+
+
+def test_mcc_selects_country_flag_and_legacy_stays_world():
+    assert _flag_code(None, "WorldWide") == "world"
+    assert _flag_code("", "QuadNet Array") == "world"
+    assert _flag_code(901, "Dial-A-TG") == "world"
+    assert _flag_code(235, "UK") == "234"
+    assert _flag_code(310, "USA") == "310"
+    assert _flag_code(313, "USA") == "313"
+    assert _flag_code(320, "TAC") == "310"
+    assert _flag_code("", '<img src="flags/208.png"> France') == "208"
