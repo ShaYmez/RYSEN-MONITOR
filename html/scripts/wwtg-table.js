@@ -10,9 +10,7 @@
     var tbody = table.tBodies[0];
     var headers = table.tHead ? table.tHead.querySelectorAll('th.sortable') : [];
     var searchInput = document.getElementById('tbltgs_search');
-    var countEl = document.getElementById('wwtg-visible-count');
     var emptyEl = document.getElementById('tbltgs_none');
-    var total = tbody.rows.length;
     var sortColumn = 0;
     var sortDir = 'asc';
 
@@ -58,19 +56,29 @@
         return dir === 'desc' ? -result : result;
     }
 
+    function rowMatches(row, query) {
+        if (query === '') {
+            return true;
+        }
+        var tgid = (row.getAttribute('data-tgid') || '').toLowerCase();
+        var name = (row.getAttribute('data-name') || '').toLowerCase();
+        var country = (row.getAttribute('data-country') || '').toLowerCase();
+        if (/^\d+$/.test(query)) {
+            return tgid === query;
+        }
+        return name.indexOf(query) !== -1 || country.indexOf(query) !== -1;
+    }
+
     function restripe(visibleCount) {
         var shown = 0;
         Array.prototype.forEach.call(tbody.rows, function (row) {
             row.classList.remove('row-even', 'row-odd');
-            if (row.classList.contains('is-hidden')) {
+            if (row.hidden) {
                 return;
             }
             row.classList.add(shown % 2 === 0 ? 'row-odd' : 'row-even');
             shown += 1;
         });
-        if (countEl) {
-            countEl.textContent = visibleCount === total ? String(total) : visibleCount + ' / ' + total;
-        }
         if (emptyEl) {
             emptyEl.hidden = visibleCount !== 0;
         }
@@ -80,9 +88,8 @@
         var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
         var visible = 0;
         Array.prototype.forEach.call(tbody.rows, function (row) {
-            var haystack = row.getAttribute('data-search') || row.textContent.toLowerCase();
-            var match = query === '' || haystack.indexOf(query) !== -1;
-            row.classList.toggle('is-hidden', !match);
+            var match = rowMatches(row, query);
+            row.hidden = !match;
             if (match) {
                 visible += 1;
             }
@@ -133,7 +140,8 @@
 
     if (searchInput) {
         searchInput.addEventListener('input', filterRows);
+        searchInput.addEventListener('search', filterRows);
     }
 
-    restripe(total);
+    restripe(tbody.rows.length);
 })();

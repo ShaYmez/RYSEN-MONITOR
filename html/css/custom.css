@@ -113,14 +113,6 @@
     -webkit-text-fill-color: #212529 !important;
 }
 
-.data-table-count {
-    color: inherit;
-    font-family: verdana, arial, sans-serif;
-    font-size: 0.875rem;
-    font-weight: bolder;
-    white-space: nowrap;
-}
-
 .data-table-empty {
     margin: 0.75rem 0 0;
     text-align: center;
@@ -165,8 +157,9 @@
     opacity: 1;
 }
 
+.data-table tbody tr[hidden],
 .data-table tbody tr.is-hidden {
-    display: none;
+    display: none !important;
 }
 
 .data-table tbody tr.row-even {

@@ -61,7 +61,6 @@ if (count($tgDataArray)) {
         echo "    <div class=\"input-group-prepend\"><span class=\"input-group-text\" aria-hidden=\"true\"><i class=\"fas fa-search\"></i></span></div>\n";
         echo "    <input type=\"search\" class=\"form-control\" id=\"tbltgs_search\" placeholder=\"Search talkgroups...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search talkgroups\" aria-controls=\"wwtg-table\">\n";
         echo "  </div>\n";
-        echo "  <span class=\"data-table-count\" id=\"wwtg-visible-count\" aria-live=\"polite\">".$tgTotal."</span>\n";
         echo "</div>\n";
         $showCountry = dashboardTalkgroupFieldPresent($tgDataArray, 'country');
         $showMcc = dashboardTalkgroupFieldPresent($tgDataArray, 'mcc');
@@ -84,19 +83,12 @@ if (count($tgDataArray)) {
                 $tgCountryRaw = $showCountry ? (string) ($tgData['country'] ?? '') : '';
                 $tgMccRaw = $showMcc ? (string) ($tgData['mcc'] ?? '') : '';
                 $rawName = trim(preg_replace('/<img[^>]*>/i', '', (string) ($tgData['callsign'] ?? '')));
-                $searchParts = array($tgNrRaw, $rawName);
-                if ($showCountry) {
-                        $searchParts[] = $tgCountryRaw;
-                }
-                if ($showMcc) {
-                        $searchParts[] = $tgMccRaw;
-                }
-                $searchHaystack = strtolower(implode(' ', $searchParts));
                 $tgNr   = htmlspecialchars($tgNrRaw, ENT_QUOTES, 'UTF-8');
                 $tgName = renderDashboardTalkgroupName($tgData['callsign'] ?? '');
                 $sortName = htmlspecialchars($rawName, ENT_QUOTES, 'UTF-8');
-                $searchAttr = htmlspecialchars($searchHaystack, ENT_QUOTES, 'UTF-8');
-                echo "  <tr class=\"boxfull\" data-search=\"$searchAttr\"><td align=\"center\" data-sort=\"$tgNr\">$tgNr</td><td align=\"left\" data-sort=\"$sortName\">$tgName</td>";
+                $nameAttr = htmlspecialchars(strtolower($rawName), ENT_QUOTES, 'UTF-8');
+                $countryAttr = htmlspecialchars(strtolower($tgCountryRaw), ENT_QUOTES, 'UTF-8');
+                echo "  <tr class=\"boxfull\" data-tgid=\"$tgNr\" data-name=\"$nameAttr\" data-country=\"$countryAttr\"><td align=\"center\" data-sort=\"$tgNr\">$tgNr</td><td align=\"left\" data-sort=\"$sortName\">$tgName</td>";
                 if ($showCountry) {
                         $tgCountry = htmlspecialchars($tgCountryRaw, ENT_QUOTES, 'UTF-8');
                         echo "<td align=\"center\" data-sort=\"$tgCountry\">$tgCountry</td>";
