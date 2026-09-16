@@ -1399,6 +1399,34 @@
         "zh": "Number of TalkGroups:",
         "el": "Αριθμός TalkGroups:"
     },
+    "tbltgs_search": {
+        "en": "Search talkgroups...",
+        "pt": "Pesquisar talkgroups...",
+        "es": "Buscar talkgroups...",
+        "fr": "Rechercher des talkgroups...",
+        "it": "Cerca talkgroup...",
+        "nl": "Zoek talkgroepen...",
+        "de": "Talkgroups suchen...",
+        "ru": "Search talkgroups...",
+        "ja": "Search talkgroups...",
+        "ar": "Search talkgroups...",
+        "zh": "Search talkgroups...",
+        "el": "Αναζήτηση TalkGroups..."
+    },
+    "tbltgs_none": {
+        "en": "No matching talkgroups",
+        "pt": "Nenhum talkgroup correspondente",
+        "es": "No hay talkgroups coincidentes",
+        "fr": "Aucun talkgroup correspondant",
+        "it": "Nessun talkgroup corrispondente",
+        "nl": "Geen overeenkomende talkgroepen",
+        "de": "Keine passenden Talkgroups",
+        "ru": "No matching talkgroups",
+        "ja": "No matching talkgroups",
+        "ar": "No matching talkgroups",
+        "zh": "No matching talkgroups",
+        "el": "Δεν βρέθηκαν TalkGroups"
+    },
     "clc_title": {
         "en": "Options Calculator",
         "pt": "Calculador de Opções",
