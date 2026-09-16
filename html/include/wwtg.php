@@ -55,14 +55,16 @@ if (count($tgDataArray)) {
         echo "There are <b>".count($tgDataArray)."</b> available TalkGroups on the " . htmlspecialchars(API_NETWORK_LABEL, ENT_QUOTES, 'UTF-8') . ".<br />\n";
         echo "<br />\n";
         echo "<table class=\"data-table\" cellspacing=\"0\" width=\"95%\">\n";
-        echo "<tr class=\"boxtop\"><th align=\"center\">" . htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8') . " TG Number</th><th align=\"center\">" . htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8') . " TG Name</th></tr>\n";
+        echo "<tr class=\"boxtop\"><th align=\"center\">" . htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8') . " TG Number</th><th align=\"center\">" . htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8') . " TG Name</th><th align=\"center\">Country</th><th align=\"center\">MCC</th></tr>\n";
 
         sort($tgDataArray);
 
         foreach ( $tgDataArray as $tgData ) {
-                $tgNr   = $tgData['tgid'];
+                $tgNr   = htmlspecialchars((string) ($tgData['tgid'] ?? ''), ENT_QUOTES, 'UTF-8');
                 $tgName = renderDashboardTalkgroupName($tgData['callsign'] ?? '');
-                echo "  <tr class=\"boxfull\"><td align=\"center\">$tgNr</td><td align=\"left\">$tgName</td></tr>\n";
+                $tgCountry = htmlspecialchars((string) ($tgData['country'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $tgMcc = htmlspecialchars((string) ($tgData['mcc'] ?? ''), ENT_QUOTES, 'UTF-8');
+                echo "  <tr class=\"boxfull\"><td align=\"center\">$tgNr</td><td align=\"left\">$tgName</td><td align=\"center\">$tgCountry</td><td align=\"center\">$tgMcc</td></tr>\n";
         }
 
         echo "</table>\n";
