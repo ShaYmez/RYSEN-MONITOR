@@ -76,6 +76,16 @@ def test_page_omits_legacy_column_headers():
     assert "renderDashboardTalkgroupName($tgData['callsign'] ?? '', $tgData['mcc'] ?? '')" in source
 
 
+def test_search_sits_outside_table_scroll():
+    source = WWTG.read_text(encoding="utf-8")
+    assert "wwtg-search-group" in source
+    assert "table-responsive wwtg-table-scroll" in source
+    toolbar = source.find("data-table-toolbar")
+    scroll = source.find("wwtg-table-scroll")
+    table = source.find('id=\\"wwtg-table\\"', scroll)
+    assert 0 < toolbar < scroll < table
+
+
 def test_mcc_selects_country_flag_and_legacy_stays_world():
     assert _flag_code(None, "WorldWide") == "world"
     assert _flag_code("", "QuadNet Array") == "world"

@@ -6,7 +6,7 @@
             <h3 class="card-title" id="tbl_tgs"></h3>
           </div>
           <div class="card-body p-0">
-            <div class="table-responsive p-3 mt-0">
+            <div class="p-3 mt-0 wwtg-wrap">
    <!-- JSON API SYSTEM X DMR GLOBAL
 	================================================== --> 
 <body>     
@@ -48,22 +48,23 @@ if (count($tgDataArray)) {
         echo "There are <b>".$tgTotal."</b> available TalkGroups on the " . htmlspecialchars(API_NETWORK_LABEL, ENT_QUOTES, 'UTF-8') . ".<br />\n";
         echo "<br />\n";
         echo "<div class=\"data-table-toolbar\">\n";
-        echo "  <div class=\"input-group input-group-sm\">\n";
+        echo "  <div class=\"input-group input-group-sm\" id=\"wwtg-search-group\">\n";
         echo "    <div class=\"input-group-prepend\"><span class=\"input-group-text\" aria-hidden=\"true\"><i class=\"fas fa-search\"></i></span></div>\n";
         echo "    <input type=\"search\" class=\"form-control\" id=\"tbltgs_search\" placeholder=\"Search talkgroups...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search talkgroups\" aria-controls=\"wwtg-table\">\n";
         echo "  </div>\n";
         echo "</div>\n";
         $showCountry = dashboardTalkgroupFieldPresent($tgDataArray, 'country');
         $showMcc = dashboardTalkgroupFieldPresent($tgDataArray, 'mcc');
+        echo "<div class=\"table-responsive wwtg-table-scroll\">\n";
         echo "<table id=\"wwtg-table\" class=\"data-table\" cellspacing=\"0\">\n";
         echo "<thead><tr class=\"boxtop\">";
-        echo "<th scope=\"col\" align=\"center\" class=\"sortable sort-asc\" data-sort-type=\"number\" tabindex=\"0\" aria-sort=\"ascending\" title=\"Click to sort\">" . $networkName . " TG Number</th>";
-        echo "<th scope=\"col\" align=\"center\" class=\"sortable\" data-sort-type=\"text\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">" . $networkName . " TG Name</th>";
+        echo "<th scope=\"col\" align=\"center\" class=\"sortable sort-asc wwtg-col-id\" data-sort-type=\"number\" tabindex=\"0\" aria-sort=\"ascending\" title=\"Click to sort\"><span class=\"d-none d-sm-inline\">" . $networkName . " </span>TG Number</th>";
+        echo "<th scope=\"col\" align=\"center\" class=\"sortable wwtg-col-name\" data-sort-type=\"text\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\"><span class=\"d-none d-sm-inline\">" . $networkName . " </span>TG Name</th>";
         if ($showCountry) {
-                echo "<th scope=\"col\" align=\"center\" class=\"sortable\" data-sort-type=\"text\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">Country</th>";
+                echo "<th scope=\"col\" align=\"center\" class=\"sortable wwtg-col-country\" data-sort-type=\"text\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">Country</th>";
         }
         if ($showMcc) {
-                echo "<th scope=\"col\" align=\"center\" class=\"sortable\" data-sort-type=\"number\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">MCC</th>";
+                echo "<th scope=\"col\" align=\"center\" class=\"sortable wwtg-col-mcc\" data-sort-type=\"number\" tabindex=\"0\" aria-sort=\"none\" title=\"Click to sort\">MCC</th>";
         }
         echo "</tr></thead>\n<tbody>\n";
 
@@ -79,19 +80,20 @@ if (count($tgDataArray)) {
                 $sortName = htmlspecialchars($rawName, ENT_QUOTES, 'UTF-8');
                 $nameAttr = htmlspecialchars(strtolower($rawName), ENT_QUOTES, 'UTF-8');
                 $countryAttr = htmlspecialchars(strtolower($tgCountryRaw), ENT_QUOTES, 'UTF-8');
-                echo "  <tr class=\"boxfull\" data-tgid=\"$tgNr\" data-name=\"$nameAttr\" data-country=\"$countryAttr\"><td align=\"center\" data-sort=\"$tgNr\">$tgNr</td><td align=\"left\" data-sort=\"$sortName\">$tgName</td>";
+                echo "  <tr class=\"boxfull\" data-tgid=\"$tgNr\" data-name=\"$nameAttr\" data-country=\"$countryAttr\"><td align=\"center\" class=\"wwtg-col-id\" data-sort=\"$tgNr\">$tgNr</td><td align=\"left\" class=\"wwtg-col-name\" data-sort=\"$sortName\">$tgName</td>";
                 if ($showCountry) {
                         $tgCountry = htmlspecialchars($tgCountryRaw, ENT_QUOTES, 'UTF-8');
-                        echo "<td align=\"center\" data-sort=\"$tgCountry\">$tgCountry</td>";
+                        echo "<td align=\"center\" class=\"wwtg-col-country\" data-sort=\"$tgCountry\">$tgCountry</td>";
                 }
                 if ($showMcc) {
                         $tgMcc = htmlspecialchars($tgMccRaw, ENT_QUOTES, 'UTF-8');
-                        echo "<td align=\"center\" data-sort=\"$tgMcc\">$tgMcc</td>";
+                        echo "<td align=\"center\" class=\"wwtg-col-mcc\" data-sort=\"$tgMcc\">$tgMcc</td>";
                 }
                 echo "</tr>\n";
         }
 
         echo "</tbody>\n</table>\n";
+        echo "</div>\n";
         echo "<p class=\"data-table-empty\" id=\"tbltgs_none\" hidden>No matching talkgroups</p>\n";
         echo "<script src=\"scripts/wwtg-table.js\"></script>\n";
 }

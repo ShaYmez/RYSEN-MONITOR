@@ -10,9 +10,22 @@
     var tbody = table.tBodies[0];
     var headers = table.tHead ? table.tHead.querySelectorAll('th.sortable') : [];
     var searchInput = document.getElementById('tbltgs_search');
+    var searchGroup = document.getElementById('wwtg-search-group');
+    var firstCol = table.tHead && table.tHead.rows[0] ? table.tHead.rows[0].cells[0] : null;
     var emptyEl = document.getElementById('tbltgs_none');
     var sortColumn = 0;
     var sortDir = 'asc';
+
+    function syncSearchWidth() {
+        if (!searchGroup || !firstCol) {
+            return;
+        }
+        var width = Math.round(firstCol.getBoundingClientRect().width);
+        if (width > 0) {
+            searchGroup.style.setProperty('--wwtg-id-col', width + 'px');
+            searchGroup.style.width = width + 'px';
+        }
+    }
 
     function cellSortValue(row, colIndex, type) {
         var cell = row.cells[colIndex];
@@ -117,6 +130,7 @@
         sortColumn = colIndex;
         sortDir = dir;
         filterRows();
+        syncSearchWidth();
     }
 
     function onHeaderActivate(th) {
@@ -144,4 +158,12 @@
     }
 
     restripe(tbody.rows.length);
+    syncSearchWidth();
+    window.addEventListener('resize', syncSearchWidth);
+    window.addEventListener('load', syncSearchWidth);
+    if (typeof ResizeObserver === 'function' && firstCol) {
+        var colObserver = new ResizeObserver(syncSearchWidth);
+        colObserver.observe(firstCol);
+        colObserver.observe(table);
+    }
 })();
