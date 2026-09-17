@@ -52,8 +52,9 @@ def sec_time(_time):
 
 class MoniDB:
     def __init__(self, host, user, psswd, db_name, port):
-        self.db = adbapi.ConnectionPool("MySQLdb", host, user, psswd, db_name,
-                                        port=port, charset='utf8mb4')
+        self.db = adbapi.ConnectionPool(
+            "MySQLdb", host, user, psswd, db_name,
+            port=port, charset='utf8mb4', cp_reconnect=True)
 
     @inlineCallbacks
     def test_db(self, _reactor):
