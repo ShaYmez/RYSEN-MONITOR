@@ -457,9 +457,12 @@ function authenticateUser($username, $password)
         return false;
     }
 
-    $rows = findClientsByLogin($username, true);
+    // Match PASS= on every Clients row for this callsign or radio ID.
+    // Duplex IDs store the hash on the primary (e.g. 234587502) while a stale
+    // +50 sibling can sit logged_in=1 with an empty psswd and block login.
+    $rows = findClientsByLogin($username, false);
     if (empty($rows)) {
-        logLoginFailure($username, 'device_not_online');
+        logLoginFailure($username, 'device_not_found');
         return false;
     }
 
