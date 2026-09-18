@@ -457,9 +457,9 @@ function authenticateUser($username, $password)
         return false;
     }
 
-    // Match PASS= on every Clients row for this callsign or radio ID.
-    // Duplex IDs store the hash on the primary (e.g. 234587502) while a stale
-    // +50 sibling can sit logged_in=1 with an empty psswd and block login.
+    // Check PASS= on every Clients row for this callsign/radio ID so a stale
+    // duplex sibling with an empty psswd cannot steal the login. Then keep
+    // only rows that are currently connected — logged-out history stays out.
     $rows = findClientsByLogin($username, false);
     if (empty($rows)) {
         logLoginFailure($username, 'device_not_found');
@@ -476,6 +476,17 @@ function authenticateUser($username, $password)
     if (empty($matched)) {
         logLoginFailure($username);
         return false;
+    }
+
+    $matched = array_values(array_filter(
+        $matched,
+        static function ($row) {
+            return (int) ($row['logged_in'] ?? 0) === 1;
+        }
+    ));
+    if (empty($matched)) {
+        logLoginFailure($username, 'device_not_online');
+        return 'None of your hotspots with that password are connected to this server right now.';
     }
 
     $ipscRows = array_values(array_filter(

@@ -193,7 +193,6 @@ $csrfToken = generateCSRFToken();
                                 <div class="card-header border-transparent">
                                     <h3 class="card-title">
                                         <?php echo "<b>" . escapeHtml($callsign) . "</b>  "; ?>
-                                        <?php if (count($int_ids) === 1): ?>
                                         <?php
                                         if ($isIpscDevice) {
                                             echo '   (' . escapeHtml($selint_id) . ' IPSC)';
@@ -201,7 +200,6 @@ $csrfToken = generateCSRFToken();
                                             echo '   (' . escapeHtml($selint_id) . ')';
                                         }
                                         ?>
-                                        <?php endif; ?>
                                     </h3>
                                     <div class="card-tools">
                                         <?php if (isIpscSession()): ?>
