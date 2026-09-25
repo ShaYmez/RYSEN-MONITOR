@@ -34,12 +34,26 @@ class TestActivityStream(unittest.TestCase):
     def setUp(self):
         monitor.CTABLE["MASTERS"].clear()
         monitor.CTABLE["OPENBRIDGES"].clear()
+        monitor.CTABLE["ACTIVE"].clear()
         peer = {1: _slot(), 2: _slot()}
         monitor.CTABLE["MASTERS"]["MASTER"] = {"PEERS": {123: peer, 124: _slot_pair()}}
 
     def tearDown(self):
         monitor.CTABLE["MASTERS"].clear()
         monitor.CTABLE["OPENBRIDGES"].clear()
+        monitor.CTABLE["ACTIVE"].clear()
+
+    @patch("monitor.push_live_dashboard")
+    def test_start_shows_before_the_peer_row_exists(self, push):
+        monitor.CTABLE["MASTERS"]["MASTER"] = {"PEERS": {}}
+        monitor.rts_update(_event("START", "77"))
+        live = monitor.CTABLE["ACTIVE"][("MASTER", 2)]
+        self.assertEqual(live["PEER"], 123)
+        self.assertEqual(live["SID"], "77")
+        self.assertEqual(live["TRX"], "RX")
+        push.assert_called()
+        monitor.rts_update(_event("END", "77"))
+        self.assertNotIn(("MASTER", 2), monitor.CTABLE["ACTIVE"])
 
     @patch("monitor.push_live_dashboard")
     def test_end_clears_the_stream_that_started(self, _push):
