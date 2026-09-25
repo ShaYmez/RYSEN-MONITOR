@@ -1428,10 +1428,12 @@ def rts_update(p):
     changed = False
     call_label = f"{alias_call(sourceSub, subscriber_ids)}"
     tg_label = f"TG&nbsp;{destination}"
-    if action == "START":
+    # Only the receiving leg. A bridged TX of the same over is a different
+    # system and would paint a second copy of this callsign.
+    if trx == "RX" and action == "START":
         _note_active(system, timeSlot, streamId, sourcePeer, call_label, tg_label)
         changed = True
-    elif action == "END":
+    elif trx == "RX" and action == "END":
         before = (system, timeSlot) in CTABLE["ACTIVE"]
         _clear_active(system, timeSlot, streamId)
         if before and (system, timeSlot) not in CTABLE["ACTIVE"]:

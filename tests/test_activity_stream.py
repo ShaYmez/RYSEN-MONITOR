@@ -44,6 +44,18 @@ class TestActivityStream(unittest.TestCase):
         monitor.CTABLE["ACTIVE"].clear()
 
     @patch("monitor.push_live_dashboard")
+    def test_bridged_tx_does_not_copy_the_call_into_activity(self, _push):
+        monitor.CTABLE["MASTERS"]["SYSTEM-56"] = {"PEERS": {}}
+        monitor.CTABLE["MASTERS"]["OBP-1"] = {"PEERS": {}}
+        monitor.rts_update(_event("START", "77"))
+        monitor.rts_update([
+            "GROUP VOICE", "START", "TX", "OBP-1", "77",
+            "123", "456", "2", "9",
+        ])
+        self.assertIn(("MASTER", 2), monitor.CTABLE["ACTIVE"])
+        self.assertNotIn(("OBP-1", 2), monitor.CTABLE["ACTIVE"])
+
+    @patch("monitor.push_live_dashboard")
     def test_start_shows_before_the_peer_row_exists(self, push):
         monitor.CTABLE["MASTERS"]["MASTER"] = {"PEERS": {}}
         monitor.rts_update(_event("START", "77"))
