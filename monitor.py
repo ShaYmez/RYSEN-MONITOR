@@ -697,6 +697,7 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer[ts]["SUB"] = ""
         _ctable_peer[ts]["SRC"] = ""
         _ctable_peer[ts]["DEST"] = ""
+        _ctable_peer[ts]["SID"] = ""
 
 
 ###############################################################################
@@ -786,6 +787,7 @@ def build_hblink_table(_config, _stats_table):
                     _stats_table["PEERS"][_hbp][ts]["SUB"] = ""
                     _stats_table["PEERS"][_hbp][ts]["SRC"] = ""
                     _stats_table["PEERS"][_hbp][ts]["DEST"] = ""
+                    _stats_table["PEERS"][_hbp][ts]["SID"] = ""
 
             # Process OpenBridge systems
             elif _hbp_data["MODE"] == "OPENBRIDGE":
@@ -991,11 +993,41 @@ def push_statictg_live(client=None):
     _broadcast_table("s", html, "statictg", client, "statictg")
 
 
+_live_tables_pending = False
+
+
+def push_activity_live(client=None):
+    """Activity card only. Kept off the full-table render so PTT shows at once."""
+    if not client and not GROUPS["main"]:
+        return
+    html = MTPL["activity"].render(_table=CTABLE)
+    _send_main_section("3", html, client, "main-activity")
+
+
+def _push_live_tables():
+    """Linked-systems and static TG tables, one paint per reactor turn."""
+    global _live_tables_pending
+    _live_tables_pending = False
+    push_lnksys_live()
+    push_statictg_live()
+
+
+def _schedule_live_tables():
+    global _live_tables_pending
+    if _live_tables_pending:
+        return
+    _live_tables_pending = True
+    reactor.callLater(0, _push_live_tables)
+
+
 def push_live_dashboard(client=None):
     """Immediate CTABLE-driven updates when a QSO starts or ends."""
-    push_main_live(client)
-    push_lnksys_live(client)
-    push_statictg_live(client)
+    push_activity_live(client)
+    if client:
+        push_lnksys_live(client)
+        push_statictg_live(client)
+    else:
+        _schedule_live_tables()
 
 
 def _send_main_section(opcode, html, client=None, cache_key=None):
@@ -1327,6 +1359,24 @@ def timeout_clients():
             "CLIENT TIMEOUT: List does not exist, skipping. If this message persists, contact the developer")
 
 
+def _slot_is_stream(slot, stream_id):
+    """END applies only to the stream currently painted on this slot."""
+    current = slot.get("SID") or ""
+    return current == "" or current == stream_id
+
+
+def _clear_slot(slot):
+    slot["TS"] = False
+    slot["TYPE"] = ""
+    slot["SUB"] = ""
+    slot["CALL"] = ""
+    slot["SRC"] = ""
+    slot["DEST"] = ""
+    slot["TG"] = ""
+    slot["TRX"] = ""
+    slot["SID"] = ""
+
+
 def rts_update(p):
     callType = p[0]
     action = p[1]
@@ -1338,71 +1388,68 @@ def rts_update(p):
     timeSlot = int(p[7])
     destination = int(p[8])
     timeout = time()
+    changed = False
     if system in CTABLE["MASTERS"]:
         for peer in CTABLE["MASTERS"][system]["PEERS"]:
+            slot = CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]
             if sourcePeer == peer:
                 crxstatus = "RX"
             else:
                 crxstatus = "TX"
             if action == "START":
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TIMEOUT"] = timeout
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TS"] = True
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TYPE"] = callType
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["SUB"] = (
+                slot["TIMEOUT"] = timeout
+                slot["TS"] = True
+                slot["TYPE"] = callType
+                slot["SUB"] = (
                     f"{alias_short(sourceSub, subscriber_ids)} ({sourceSub})")
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["CALL"] = (
-                    f"{alias_call(sourceSub, subscriber_ids)}")
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["SRC"] = peer
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["DEST"] = (
+                slot["CALL"] = f"{alias_call(sourceSub, subscriber_ids)}"
+                slot["SRC"] = peer
+                slot["DEST"] = (
                     f"TG {destination}&nbsp;&nbsp;&nbsp;&nbsp;{alias_tgid(destination,talkgroup_ids)}")
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TG"] = f"TG&nbsp;{destination}"
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TRX"] = crxstatus
-            if action == "END":
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TS"] = False
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TYPE"] = ""
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["SUB"] = ""
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["CALL"] = ""
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["SRC"] = ""
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["DEST"] = ""
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TG"] = ""
-                CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]["TRX"] = ""
+                slot["TG"] = f"TG&nbsp;{destination}"
+                slot["TRX"] = crxstatus
+                slot["SID"] = streamId
+                changed = True
+            elif action == "END" and _slot_is_stream(slot, streamId):
+                _clear_slot(slot)
+                changed = True
 
     if system in CTABLE["OPENBRIDGES"]:
+        streams = CTABLE["OPENBRIDGES"][system]["STREAMS"]
         if action == "START":
-            CTABLE["OPENBRIDGES"][system]["STREAMS"][streamId] = (
-                trx, alias_call(sourceSub, subscriber_ids),f"{destination}",timeout)
-        if action == "END":
-            if streamId in CTABLE["OPENBRIDGES"][system]["STREAMS"]:
-                del CTABLE["OPENBRIDGES"][system]["STREAMS"][streamId]
+            streams[streamId] = (
+                trx, alias_call(sourceSub, subscriber_ids), f"{destination}", timeout)
+            changed = True
+        elif action == "END" and streamId in streams:
+            del streams[streamId]
+            changed = True
 
     if system in CTABLE["PEERS"]:
+        slot = CTABLE["PEERS"][system][timeSlot]
         if trx == "RX":
             prxstatus = "RX"
         else:
             prxstatus = "TX"
 
         if action == "START":
-            CTABLE["PEERS"][system][timeSlot]["TIMEOUT"] = timeout
-            CTABLE["PEERS"][system][timeSlot]["TS"] = True
-            CTABLE["PEERS"][system][timeSlot]["SUB"]= (
+            slot["TIMEOUT"] = timeout
+            slot["TS"] = True
+            slot["SUB"] = (
                 f"{alias_short(sourceSub, subscriber_ids)} ({sourceSub})")
-            CTABLE["PEERS"][system][timeSlot]["CALL"] = f"{alias_call(sourceSub, subscriber_ids)}"
-            CTABLE["PEERS"][system][timeSlot]["SRC"] = sourcePeer
-            CTABLE["PEERS"][system][timeSlot]["DEST"]= (
+            slot["CALL"] = f"{alias_call(sourceSub, subscriber_ids)}"
+            slot["SRC"] = sourcePeer
+            slot["DEST"] = (
                 f"TG {destination}&nbsp;&nbsp;&nbsp;&nbsp;{alias_tgid(destination,talkgroup_ids)}")
-            CTABLE["PEERS"][system][timeSlot]["TG"]= f"TG&nbsp;{destination}"
-            CTABLE["PEERS"][system][timeSlot]["TRX"] = prxstatus
-        if action == "END":
-            CTABLE["PEERS"][system][timeSlot]["TS"] = False
-            CTABLE["PEERS"][system][timeSlot]["TYPE"] = ""
-            CTABLE["PEERS"][system][timeSlot]["SUB"] = ""
-            CTABLE["PEERS"][system][timeSlot]["CALL"] = ""
-            CTABLE["PEERS"][system][timeSlot]["SRC"] = ""
-            CTABLE["PEERS"][system][timeSlot]["DEST"] = ""
-            CTABLE["PEERS"][system][timeSlot]["TG"] = ""
-            CTABLE["PEERS"][system][timeSlot]["TRX"] = ""
+            slot["TG"] = f"TG&nbsp;{destination}"
+            slot["TRX"] = prxstatus
+            slot["SID"] = streamId
+            changed = True
+        elif action == "END" and _slot_is_stream(slot, streamId):
+            _clear_slot(slot)
+            changed = True
 
-    push_live_dashboard()
+    if changed:
+        push_live_dashboard()
 
 
 ######################################################################
@@ -1453,11 +1500,12 @@ def process_message(_bmessage):
     elif opcode == OPCODE["BRDG_EVENT"]:
         logger.debug(f"BRIDGE EVENT: {_message[1:]}")
         p = _message[1:].split(",")
-        # Import data from DB
-        db2dict(int(p[6]), "subscriber_ids")
-        db2dict(int(p[8]), "talkgroup_ids")
         if p[0] == "GROUP VOICE":
             rts_update(p)
+        if len(p) > 8:
+            db2dict(int(p[6]), "subscriber_ids")
+            db2dict(int(p[8]), "talkgroup_ids")
+        if p[0] == "GROUP VOICE":
             if p[2] == "TX" or p[5] in CONF["OPB_FLTR"]["OPB_FILTER"]:
                 return None
 
