@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 """Activity indicators follow the current stream and ignore a late END."""
+import shutil
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
-import monitor
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+if not (ROOT / "fdmr-mon.cfg").exists():
+    shutil.copy(ROOT / "fdmr-mon_SAMPLE.cfg", ROOT / "fdmr-mon.cfg")
+
+import monitor  # noqa: E402
 
 
 def _slot():
