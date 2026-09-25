@@ -46,26 +46,6 @@
           {% endif %}
           {% endfor %}
           {% endfor %}
-          {% for _key, _live in _table.get('ACTIVE', {}).items() %}
-          {% set _known = _table['MASTERS'].get(_key[0], {}).get('PEERS', {}) %}
-          {% if _live['TRX'] == 'RX' and _live['PEER'] not in _known %}
-          <div class="activity-qso-badge">
-            <span class="badge badge-danger text-sm">
-              <table>
-                <tbody>
-                  <tr>
-                    <td rowspan="2">TX |</td>
-                    <td>{{ _live['CALL']|safe }}</td>
-                  </tr>
-                  <tr>
-                    <td class="text-xs text-dark">{{ _live['TG']|safe }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </span>
-          </div>
-          {% endif %}
-          {% endfor %}
           {% for _peer, _pdata in _table['PEERS'].items() %}
           {% if _pdata[1]['TS'] == True or _pdata[2]['TS'] == True %}
           {% if _pdata[1]['TRX'] == "RX" %}

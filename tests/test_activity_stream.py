@@ -34,38 +34,23 @@ class TestActivityStream(unittest.TestCase):
     def setUp(self):
         monitor.CTABLE["MASTERS"].clear()
         monitor.CTABLE["OPENBRIDGES"].clear()
-        monitor.CTABLE["ACTIVE"].clear()
         peer = {1: _slot(), 2: _slot()}
         monitor.CTABLE["MASTERS"]["MASTER"] = {"PEERS": {123: peer, 124: _slot_pair()}}
 
     def tearDown(self):
         monitor.CTABLE["MASTERS"].clear()
         monitor.CTABLE["OPENBRIDGES"].clear()
-        monitor.CTABLE["ACTIVE"].clear()
 
     @patch("monitor.push_live_dashboard")
-    def test_bridged_tx_does_not_copy_the_call_into_activity(self, _push):
-        monitor.CTABLE["MASTERS"]["SYSTEM-56"] = {"PEERS": {}}
-        monitor.CTABLE["MASTERS"]["OBP-1"] = {"PEERS": {}}
-        monitor.rts_update(_event("START", "77"))
+    def test_openbridge_rx_stays_on_the_bridge_stream(self, _push):
+        monitor.CTABLE["OPENBRIDGES"]["OBP-EU"] = {"STREAMS": {}}
         monitor.rts_update([
-            "GROUP VOICE", "START", "TX", "OBP-1", "77",
-            "123", "456", "2", "9",
+            "GROUP VOICE", "START", "RX", "OBP-EU", "88",
+            "2040", "2340189", "1", "23426",
         ])
-        self.assertIn(("MASTER", 2), monitor.CTABLE["ACTIVE"])
-        self.assertNotIn(("OBP-1", 2), monitor.CTABLE["ACTIVE"])
-
-    @patch("monitor.push_live_dashboard")
-    def test_start_shows_before_the_peer_row_exists(self, push):
-        monitor.CTABLE["MASTERS"]["MASTER"] = {"PEERS": {}}
-        monitor.rts_update(_event("START", "77"))
-        live = monitor.CTABLE["ACTIVE"][("MASTER", 2)]
-        self.assertEqual(live["PEER"], 123)
-        self.assertEqual(live["SID"], "77")
-        self.assertEqual(live["TRX"], "RX")
-        push.assert_called()
-        monitor.rts_update(_event("END", "77"))
-        self.assertNotIn(("MASTER", 2), monitor.CTABLE["ACTIVE"])
+        stream = monitor.CTABLE["OPENBRIDGES"]["OBP-EU"]["STREAMS"]["88"]
+        self.assertEqual(stream[0], "RX")
+        self.assertFalse(monitor.CTABLE["MASTERS"]["MASTER"]["PEERS"][123][2]["TS"])
 
     @patch("monitor.push_live_dashboard")
     def test_end_clears_the_stream_that_started(self, _push):

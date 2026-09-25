@@ -103,7 +103,6 @@ CTABLE = {
     "MASTERS": {},
     "PEERS": {},
     "OPENBRIDGES": {},
-    "ACTIVE": {},
     "SETUP": {"LASTHEARD": CONF["GLOBAL"]["LH_INC"]}
     }
 BTABLE = {
@@ -819,9 +818,6 @@ def update_hblink_table(_config, _stats_table):
                     and _hbp_data["PEERS"][_peer]["CONNECTION"] == "YES"):
                 logger.info(f"Adding peer to CTABLE that has registerred: {int_id(_peer)}")
                 add_hb_peer(_hbp_data["PEERS"][_peer], _stats_table["MASTERS"][_hbp]["PEERS"], _peer)
-                _apply_live_to_peer(
-                    _hbp, int_id(_peer),
-                    _stats_table["MASTERS"][_hbp]["PEERS"][int_id(_peer)])
 
     # Is there a system in monitor that's been removed from HBlink's config?
     for _hbp in list(_stats_table["MASTERS"]):
@@ -1369,39 +1365,6 @@ def _slot_is_stream(slot, stream_id):
     return current == "" or current == stream_id
 
 
-def _note_active(system, time_slot, stream_id, peer, call, tg):
-    """Remember a talker even when their peer row is not in CTABLE yet."""
-    CTABLE["ACTIVE"][(system, time_slot)] = {
-        "SID": stream_id,
-        "PEER": peer,
-        "CALL": call,
-        "TG": tg,
-        "TRX": "RX",
-    }
-
-
-def _clear_active(system, time_slot, stream_id):
-    current = CTABLE["ACTIVE"].get((system, time_slot))
-    if current and _slot_is_stream(current, stream_id):
-        del CTABLE["ACTIVE"][(system, time_slot)]
-
-
-def _apply_live_to_peer(system, peer_id, ctable_peer):
-    """Paint a call that started before this peer row existed."""
-    for (live_system, time_slot), live in CTABLE["ACTIVE"].items():
-        if live_system != system or live.get("PEER") != peer_id:
-            continue
-        if time_slot not in ctable_peer:
-            continue
-        slot = ctable_peer[time_slot]
-        slot["TS"] = True
-        slot["TRX"] = "RX"
-        slot["CALL"] = live["CALL"]
-        slot["TG"] = live["TG"]
-        slot["SUB"] = live["CALL"]
-        slot["SID"] = live["SID"]
-
-
 def _clear_slot(slot):
     slot["TS"] = False
     slot["TYPE"] = ""
@@ -1428,16 +1391,6 @@ def rts_update(p):
     changed = False
     call_label = f"{alias_call(sourceSub, subscriber_ids)}"
     tg_label = f"TG&nbsp;{destination}"
-    # Only the receiving leg. A bridged TX of the same over is a different
-    # system and would paint a second copy of this callsign.
-    if trx == "RX" and action == "START":
-        _note_active(system, timeSlot, streamId, sourcePeer, call_label, tg_label)
-        changed = True
-    elif trx == "RX" and action == "END":
-        before = (system, timeSlot) in CTABLE["ACTIVE"]
-        _clear_active(system, timeSlot, streamId)
-        if before and (system, timeSlot) not in CTABLE["ACTIVE"]:
-            changed = True
     if system in CTABLE["MASTERS"]:
         for peer in CTABLE["MASTERS"][system]["PEERS"]:
             slot = CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]
