@@ -173,6 +173,23 @@
     font-size: 0.85rem;
 }
 
+/* Linked Systems — a long source or destination pill stays inside its column */
+#lnksys .dashboard-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#lnksys .dashboard-table td {
+    overflow: hidden;
+}
+
+#lnksys .dashboard-table td .badge {
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
 .dashboard-card .card-header {
     background: transparent;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
