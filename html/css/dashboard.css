@@ -173,21 +173,30 @@
     font-size: 0.85rem;
 }
 
-/* Linked Systems — a long source or destination pill stays inside its column */
-#lnksys .dashboard-table {
-    table-layout: fixed;
-    width: 100%;
+/* Wide screens: a long source or destination pill stays inside its column */
+@media (min-width: 768px) {
+    #lnksys .dashboard-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    #lnksys .dashboard-table td {
+        overflow: hidden;
+    }
+
+    #lnksys .dashboard-table td .badge {
+        box-sizing: border-box;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
 }
 
-#lnksys .dashboard-table td {
-    overflow: hidden;
-}
-
-#lnksys .dashboard-table td .badge {
-    box-sizing: border-box;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    white-space: normal;
+/* Narrow screens: pills stay on one line and the columns share the width */
+@media (max-width: 767.98px) {
+    #lnksys .dashboard-table td .badge {
+        white-space: nowrap;
+    }
 }
 
 .dashboard-card .card-header {
