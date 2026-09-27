@@ -26,7 +26,7 @@ include_once __DIR__ . '/../config/branding.php';
 <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
 <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
 <link rel="stylesheet" href="plugins/adminlte/css/adminlte.min.css">
-<link rel="stylesheet" href="css/marquee.css">
-<link rel="stylesheet" href="css/custom.css">
-<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/marquee.css?v=<?php echo filemtime(__DIR__ . '/../css/marquee.css'); ?>">
+<link rel="stylesheet" href="css/custom.css?v=<?php echo filemtime(__DIR__ . '/../css/custom.css'); ?>">
+<link rel="stylesheet" href="css/dashboard.css?v=<?php echo filemtime(__DIR__ . '/../css/dashboard.css'); ?>">
 <link rel="preload" href="translations.json" as="fetch" crossorigin="anonymous">

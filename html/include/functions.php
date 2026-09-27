@@ -307,6 +307,9 @@ function formatDevicePickerLabel($intId, $devDetails)
     if (isIpscDeviceMode($devDetails['mode'])) {
         return $intId . ' — ' . trim($devDetails['callsign']) . ' (IPSC)';
     }
+    if (isHyteraDeviceMode($devDetails['mode'])) {
+        return $intId . ' — ' . trim($devDetails['callsign']) . ' (Hytera)';
+    }
 
     return (string) $intId;
 }

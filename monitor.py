@@ -540,7 +540,7 @@ def cleanTE():
                 del CTABLE["OPENBRIDGES"][system]["STREAMS"][streamId]
 
 
-ROUTING_MASTER_MODES = ("MASTER", "IPSC")
+ROUTING_MASTER_MODES = ("MASTER", "IPSC", "HYTERA")
 
 
 def is_routing_master(mode):
@@ -588,6 +588,28 @@ def _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer):
             _ctable_peer[field] = "—"
 
 
+def _apply_hytera_peer_fields(_peer_conf, _ctable_peer, _peer):
+    def _frequency_text(value):
+        try:
+            return "{:.6f} MHz".format(int(value) / 1000000)
+        except (TypeError, ValueError):
+            return "N/A"
+
+    _ctable_peer["PROTOCOL"] = "HYTERA"
+    _ctable_peer["RADIO_ID"] = _ipsc_radio_id(_peer_conf, _peer)
+    _ctable_peer["CALLSIGN"] = _ipsc_callsign(
+        _peer_conf, _peer, _ctable_peer["RADIO_ID"])
+    _ctable_peer["HYTERA_HARDWARE"] = _hb_field_str(
+        _peer_conf.get("HYTERA_HARDWARE", _peer_conf.get("DESCRIPTION", "")))
+    _ctable_peer["PACKAGE_ID"] = _ctable_peer["HYTERA_HARDWARE"].split("-")[0]
+    _ctable_peer["HYTERA_SERIAL"] = _hb_field_str(
+        _peer_conf.get("HYTERA_SERIAL", _peer_conf.get("SERIAL", "")))
+    _ctable_peer["HYTERA_MODE"] = _peer_conf.get("HYTERA_MODE")
+    _ctable_peer["TX_FREQ"] = _frequency_text(_peer_conf.get("TX_FREQ"))
+    _ctable_peer["RX_FREQ"] = _frequency_text(_peer_conf.get("RX_FREQ"))
+    _ctable_peer["LOCATION"] = _alias_location(_ctable_peer["RADIO_ID"])
+
+
 def refresh_hb_peer(_peer_conf, _ctable_peer, _peer):
     """Refresh CTABLE peer metadata from config without resetting timeslots."""
     _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]
@@ -596,6 +618,8 @@ def refresh_hb_peer(_peer_conf, _ctable_peer, _peer):
     _ctable_peer["PORT"] = _peer_conf["PORT"]
     if _peer_conf.get("PROTOCOL") == "IPSC":
         _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
+    elif _peer_conf.get("PROTOCOL") == "HYTERA":
+        _apply_hytera_peer_fields(_peer_conf, _ctable_peer, _peer)
 
 
 def _ipsc_radio_id(peer_conf, peer):
@@ -631,7 +655,12 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
     # if the Frequency is 000.xxx assume it's not an RF peer, otherwise format the text fields
     # (9 char, but we are just software)  see https://wiki.brandmeister.network/index.php/Homebrew/example/php2
 
-    if (_peer_conf["TX_FREQ"].strip().isdigit() and _peer_conf["RX_FREQ"].strip().isdigit()
+    if _peer_conf.get("PROTOCOL") == "HYTERA":
+        _ctable_peer["TX_FREQ"] = "{:.6f} MHz".format(
+            int(_peer_conf.get("TX_FREQ") or 0) / 1000000)
+        _ctable_peer["RX_FREQ"] = "{:.6f} MHz".format(
+            int(_peer_conf.get("RX_FREQ") or 0) / 1000000)
+    elif (_peer_conf["TX_FREQ"].strip().isdigit() and _peer_conf["RX_FREQ"].strip().isdigit()
         and str(type(_peer_conf["TX_FREQ"])).find("bytes") != -1
         and str(type(_peer_conf["RX_FREQ"])).find("bytes") != -1):
 
@@ -681,6 +710,11 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
         logger.info(
             f"IPSC peer registered: {_ctable_peer['CALLSIGN']} "
+            f"(Id: {_ctable_peer['RADIO_ID']})")
+    elif _peer_conf.get("PROTOCOL") == "HYTERA":
+        _apply_hytera_peer_fields(_peer_conf, _ctable_peer, _peer)
+        logger.info(
+            f"Hytera peer registered: {_ctable_peer['CALLSIGN']} "
             f"(Id: {_ctable_peer['RADIO_ID']})")
 
     _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]

@@ -350,6 +350,20 @@ a.badge-ipsc:focus {
     opacity: 0.92;
 }
 
+/* Native Hytera repeaters use the dashboard hotspot yellow in every theme. */
+.badge-hytera {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+a.badge-hytera:hover,
+a.badge-hytera:focus,
+.dark-mode .badge-hytera {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+    opacity: 0.92;
+}
+
 .dark-mode .main-footer a {
     color: #c2c7d0;
 }

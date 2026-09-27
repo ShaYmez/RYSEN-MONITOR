@@ -108,11 +108,14 @@ if (!is_array($ts2Values)) {
     $ts2Values = empty($ts2Values) ? [] : [$ts2Values];
 }
 
+$isHyteraDevice = isHyteraDeviceMode($devDetails['mode']);
 $isIpscDevice = isIpscDeviceMode($devDetails['mode']);
+$isRepeaterDevice = isRepeaterDeviceMode($devDetails['mode']);
+$hyteraMetadata = $isHyteraDevice ? getHyteraMetadata($selint_id) : null;
 $deviceKeyIssuer = dashboardDeviceKeyIssuerConfig();
 $deviceControl = dashboardDeviceControlConfig();
-$showDeviceApiKey = !$isIpscDevice && !isIpscSession() && !empty($deviceKeyIssuer['enabled']);
-$showRuntimeControls = !$isIpscDevice && !isIpscSession() && !empty($deviceControl['enabled']);
+$showDeviceApiKey = !$isRepeaterDevice && !isIpscSession() && !empty($deviceKeyIssuer['enabled']);
+$showRuntimeControls = !$isRepeaterDevice && !isIpscSession() && !empty($deviceControl['enabled']);
 
 // Labels for multi-device picker
 $devicePicker = [];
@@ -159,8 +162,8 @@ $csrfToken = generateCSRFToken();
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
     <link rel="stylesheet" href="plugins/adminlte/css/adminlte.min.css">
-    <link rel="stylesheet" href="css/custom.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/custom.css?v=<?php echo filemtime(__DIR__ . '/css/custom.css'); ?>">
+    <link rel="stylesheet" href="css/dashboard.css?v=<?php echo filemtime(__DIR__ . '/css/dashboard.css'); ?>">
 </head>
 
 <body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm">
@@ -194,7 +197,9 @@ $csrfToken = generateCSRFToken();
                                     <h3 class="card-title">
                                         <?php echo "<b>" . escapeHtml($callsign) . "</b>  "; ?>
                                         <?php
-                                        if ($isIpscDevice) {
+                                        if ($isHyteraDevice) {
+                                            echo '   (' . escapeHtml($selint_id) . ' Hytera)';
+                                        } elseif ($isIpscDevice) {
                                             echo '   (' . escapeHtml($selint_id) . ' IPSC)';
                                         } else {
                                             echo '   (' . escapeHtml($selint_id) . ')';
@@ -228,7 +233,7 @@ $csrfToken = generateCSRFToken();
                                         
                                         <!-- Hidden Configuration Inputs -->
                                         <input type="hidden" id="mode-status" value="<?php echo escapeHtml($devDetails['mode']); ?>">
-                                        <input type="hidden" id="ipsc-device" value="<?php echo $isIpscDevice ? '1' : '0'; ?>">
+                                        <input type="hidden" id="ipsc-device" value="<?php echo $isRepeaterDevice ? '1' : '0'; ?>">
                                         <input type="hidden" id="device-id" value="<?php echo escapeHtml($selint_id); ?>">
                                         <input type="hidden" id="device-modified" value="<?php echo escapeHtml($devDetails['modified']); ?>">
                                         
@@ -246,7 +251,9 @@ $csrfToken = generateCSRFToken();
                                                             </select>
                                                         </form>
                                                     <?php endif; ?>
-                                                    <?php if ($isIpscDevice): ?>
+                                                    <?php if ($isHyteraDevice): ?>
+                                                    <span class="mt-3 badge badge-hytera">HYTERA</span>
+                                                    <?php elseif ($isIpscDevice): ?>
                                                     <span class="mt-3 badge badge-warning">IPSC</span>
                                                     <?php elseif ($devDetails['mode']== 4): ?>
                                                     <span class="mt-3">SIMPLEX</span>
@@ -256,6 +263,29 @@ $csrfToken = generateCSRFToken();
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <?php if ($isHyteraDevice): ?>
+                                        <div class="row justify-content-center">
+                                            <div class="col-12 col-md-8 col-lg-6">
+                                                <div class="card card-outline card-warning">
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Hytera repeater details</h3>
+                                                    </div>
+                                                    <div class="card-body p-0">
+                                                        <table class="table table-sm mb-0">
+                                                            <tbody>
+                                                                <tr><th>Model</th><td><?php echo escapeHtml($hyteraMetadata ? preg_split('/[-\s]/', $hyteraMetadata['hardware'])[0] : 'Pending RDAC'); ?></td></tr>
+                                                                <tr><th>Firmware</th><td><?php echo escapeHtml($hyteraMetadata['firmware'] ?? 'Pending RDAC'); ?></td></tr>
+                                                                <tr><th>Serial</th><td><?php echo escapeHtml($hyteraMetadata['serial_number'] ?? 'Pending RDAC'); ?></td></tr>
+                                                                <tr><th>TX / RX</th><td><?php echo $hyteraMetadata ? escapeHtml(number_format(((int) $hyteraMetadata['tx_frequency']) / 1000000, 6) . ' / ' . number_format(((int) $hyteraMetadata['rx_frequency']) / 1000000, 6) . ' MHz') : 'Pending RDAC'; ?></td></tr>
+                                                                <tr><th>RDAC mode</th><td><?php echo escapeHtml($hyteraMetadata['mode_raw'] ?? 'Pending RDAC'); ?></td></tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
 
                                         <div class="row justify-content-center">
                                             <div id="timeslot1col" class="col-5">
@@ -301,7 +331,7 @@ $csrfToken = generateCSRFToken();
                                                 </div>
                                             </div>
                                         </div>
-                                        <?php if (!$isIpscDevice): ?>
+                                    <?php if (!$isRepeaterDevice): ?>
                                         <div class="row justify-content-center">
                                             <div class="col-8">
                                                 <table class="table table-sm border align-middle mt-4">

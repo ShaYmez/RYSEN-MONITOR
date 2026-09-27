@@ -31,6 +31,10 @@ if (!defined('RATE_LIMIT_LOCKOUT_MINUTES')) {
 if (!defined('IPSC_DEVICE_MODE')) {
     define('IPSC_DEVICE_MODE', 0);
 }
+/** Clients.mode value reserved for native Hytera repeaters. */
+if (!defined('HYTERA_DEVICE_MODE')) {
+    define('HYTERA_DEVICE_MODE', -1);
+}
 
 /**
  * Whether a Clients.mode value identifies an IPSC repeater row.
@@ -41,6 +45,16 @@ if (!defined('IPSC_DEVICE_MODE')) {
 function isIpscDeviceMode($mode)
 {
     return (int) $mode === IPSC_DEVICE_MODE;
+}
+
+function isHyteraDeviceMode($mode)
+{
+    return (int) $mode === HYTERA_DEVICE_MODE;
+}
+
+function isRepeaterDeviceMode($mode)
+{
+    return isIpscDeviceMode($mode) || isHyteraDeviceMode($mode);
 }
 
 /**
@@ -197,7 +211,7 @@ function getIpscClaimRowByLogin($username)
     $rows = findClientsByLogin($username, true);
     foreach ($rows as $row) {
         if (
-            isIpscDeviceMode($row['mode'])
+            isRepeaterDeviceMode($row['mode'])
             && isStoredPasswordEmpty($row['psswd'])
             && (int) $row['logged_in'] === 1
         ) {
@@ -241,7 +255,8 @@ function claimIpscPassword($radioId, $password)
     $psswdHash = hashPasswordForStorage($password);
     $conn = connectDatabase();
     $stmt = $conn->prepare(
-        "UPDATE Clients SET psswd = ? WHERE int_id = ? AND mode = ? AND logged_in = 1 "
+        "UPDATE Clients SET psswd = ? WHERE int_id = ? "
+        . "AND mode IN (" . IPSC_DEVICE_MODE . ", " . HYTERA_DEVICE_MODE . ") AND logged_in = 1 "
         . "AND (psswd IS NULL OR psswd = '')"
     );
     if (!$stmt) {
@@ -249,8 +264,7 @@ function claimIpscPassword($radioId, $password)
         return "Database error. Please contact administrator.";
     }
 
-    $ipscMode = IPSC_DEVICE_MODE;
-    $stmt->bind_param("sii", $psswdHash, $radioId, $ipscMode);
+    $stmt->bind_param("si", $psswdHash, $radioId);
     $stmt->execute();
     $updated = $stmt->affected_rows === 1;
     $stmt->close();
@@ -283,15 +297,15 @@ function changeIpscPassword($radioId, $currentPassword, $newPassword)
 
     $conn = connectDatabase();
     $stmt = $conn->prepare(
-        "SELECT psswd FROM Clients WHERE int_id = ? AND mode = ?"
+        "SELECT psswd FROM Clients WHERE int_id = ? "
+        . "AND mode IN (" . IPSC_DEVICE_MODE . ", " . HYTERA_DEVICE_MODE . ")"
     );
     if (!$stmt) {
         $conn->close();
         return "Database error. Please contact administrator.";
     }
 
-    $ipscMode = IPSC_DEVICE_MODE;
-    $stmt->bind_param("ii", $radioId, $ipscMode);
+    $stmt->bind_param("i", $radioId);
     if (!$stmt->execute()) {
         $stmt->close();
         $conn->close();
@@ -314,13 +328,16 @@ function changeIpscPassword($radioId, $currentPassword, $newPassword)
     }
 
     $psswdHash = hashPasswordForStorage($newPassword);
-    $stmt = $conn->prepare("UPDATE Clients SET psswd = ? WHERE int_id = ? AND mode = ?");
+    $stmt = $conn->prepare(
+        "UPDATE Clients SET psswd = ? WHERE int_id = ? "
+        . "AND mode IN (" . IPSC_DEVICE_MODE . ", " . HYTERA_DEVICE_MODE . ")"
+    );
     if (!$stmt) {
         $conn->close();
         return "Database error. Please contact administrator.";
     }
 
-    $stmt->bind_param("sii", $psswdHash, $radioId, $ipscMode);
+    $stmt->bind_param("si", $psswdHash, $radioId);
     $stmt->execute();
     $updated = $stmt->affected_rows === 1;
     $stmt->close();
@@ -375,7 +392,7 @@ function explainIpscClaimFailureByLogin($username)
     $ipscLoggedIn = array_values(array_filter(
         $loggedInRows,
         static function ($row) {
-            return isIpscDeviceMode($row['mode']);
+            return isRepeaterDeviceMode($row['mode']);
         }
     ));
 
@@ -394,7 +411,7 @@ function explainIpscClaimFailureByLogin($username)
     $ipscAny = array_values(array_filter(
         $anyRows,
         static function ($row) {
-            return isIpscDeviceMode($row['mode']);
+            return isRepeaterDeviceMode($row['mode']);
         }
     ));
 
@@ -492,19 +509,19 @@ function authenticateUser($username, $password)
     $ipscRows = array_values(array_filter(
         $matched,
         static function ($row) {
-            return isIpscDeviceMode($row['mode']);
+            return isRepeaterDeviceMode($row['mode']);
         }
     ));
     $mmdvmRows = array_values(array_filter(
         $matched,
         static function ($row) {
-            return !isIpscDeviceMode($row['mode']);
+            return !isRepeaterDeviceMode($row['mode']);
         }
     ));
 
     if (count($matched) === 1) {
         $row = $matched[0];
-        if (isIpscDeviceMode($row['mode'])) {
+        if (isRepeaterDeviceMode($row['mode'])) {
             establishIpscSession($row);
         } else {
             establishMmdvmSession([$row]);
@@ -835,6 +852,33 @@ function getDevDetails($intId)
     $stmt->close();
     $conn->close();
     return null;
+}
+
+function getHyteraMetadata($intId)
+{
+    $conn = connectDatabase();
+    $stmt = $conn->prepare(
+        "SELECT firmware, hardware, serial_number, callsign, mode_raw, "
+        . "tx_frequency, rx_frequency, updated_at "
+        . "FROM HyteraMetadata WHERE int_id = ?"
+    );
+    if (!$stmt) {
+        $conn->close();
+        return null;
+    }
+    $stmt->bind_param("i", $intId);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        $conn->close();
+        return null;
+    }
+    $result = $stmt->get_result();
+    $metadata = ($result && $result->num_rows === 1)
+        ? $result->fetch_assoc()
+        : null;
+    $stmt->close();
+    $conn->close();
+    return $metadata;
 }
 
 /**
