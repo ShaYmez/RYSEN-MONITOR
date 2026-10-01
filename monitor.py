@@ -601,6 +601,8 @@ def _apply_hytera_peer_fields(_peer_conf, _ctable_peer, _peer):
     _ctable_peer["RADIO_ID"] = _ipsc_radio_id(_peer_conf, _peer)
     _ctable_peer["CALLSIGN"] = _ipsc_callsign(
         _peer_conf, _peer, _ctable_peer["RADIO_ID"])
+    _ctable_peer["SOFTWARE_ID"] = _hb_field_str(
+        _peer_conf.get("SOFTWARE_ID", "")) or "—"
     _ctable_peer["HYTERA_HARDWARE"] = _hb_field_str(
         _peer_conf.get("HYTERA_HARDWARE", _peer_conf.get("DESCRIPTION", "")))
     _ctable_peer["PACKAGE_ID"] = _ctable_peer["HYTERA_HARDWARE"].split("-")[0]

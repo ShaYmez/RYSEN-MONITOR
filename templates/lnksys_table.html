@@ -128,7 +128,7 @@ Latitude: {{ _cdata['LATITUDE'] }}
 Longitude: {{ _cdata['LONGITUDE'] }}
 Height: {{ _cdata['HEIGHT'] }}
 {% endif %}Software: {{_cdata['SOFTWARE_ID'] }}
-Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
+Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIAL') or '—' }}{% else %}{{_cdata['PACKAGE_ID'] }}{% endif %}">{{ _cdata['CALLSIGN']}}</a>
                         <span class="badge peer-id-badge {% if _cdata.get('PROTOCOL') == 'IPSC' %}badge-ipsc{% elif _cdata.get('PROTOCOL') == 'HYTERA' %}badge-hytera{% else %}badge-info{% endif %}">{{ _peer_id }}</span>
                       </div>
                     </td>
@@ -359,7 +359,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                 {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0)
                 and emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
                 {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-                {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
+                {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') not in ('IPSC', 'HYTERA') %}
                 <tr>
                   <td class="peer-id-cell">
                     {% set ctrynum = _client|flag_code %}

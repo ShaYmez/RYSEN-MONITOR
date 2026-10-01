@@ -30,7 +30,7 @@ TX: {{_cdata['TX_FREQ'] }}
 RX: {{_cdata['RX_FREQ'] }}
 TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
 TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}{% endif %}
-Hardware: {{_cdata['PACKAGE_ID'] }}
+Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIAL') or '—' }}{% else %}{{_cdata['PACKAGE_ID'] }}{% endif %}
 Software: {{_cdata['SOFTWARE_ID'] }}
 Info: {{_cdata['LOCATION']}}
 Master: {{_master }}
@@ -85,7 +85,7 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
           {% for _master in _table['MASTERS'] %}
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-          {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
+          {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') not in ('IPSC', 'HYTERA') %}
           <a href="#" class="badge badge-pill badge-success" style="min-width: 3.5rem;" data-bs-toggle="tooltip"
             data-bs-placement="top" data-bs-html="true" title="
 ID DMR: {{ _client }}

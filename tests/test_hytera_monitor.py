@@ -11,7 +11,7 @@ if not (ROOT / "fdmr-mon.cfg").exists():
     shutil.copy(ROOT / "fdmr-mon_SAMPLE.cfg", ROOT / "fdmr-mon.cfg")
 
 from dmr_utils3.utils import int_id  # noqa: E402
-from monitor import add_hb_peer, build_hblink_table, is_routing_master  # noqa: E402
+from monitor import add_hb_peer, build_hblink_table, is_routing_master, refresh_hb_peer  # noqa: E402
 
 
 PEER_ID = (235287).to_bytes(4, "big")
@@ -61,6 +61,23 @@ def test_hytera_peer_formats_integer_frequency_metadata():
     assert peer["RX_FREQ"] == "430.437500 MHz"
     assert peer["HYTERA_HARDWARE"].startswith("RD985")
     assert peer["HYTERA_SERIAL"] == "14218D0441"
+    assert peer["SOFTWARE_ID"] == "A9.02.03.009"
+
+
+def test_refresh_hytera_peer_replaces_pending_firmware():
+    peers = {}
+    conf = _hytera_peer()
+    conf["SOFTWARE_ID"] = "RDAC metadata pending"
+    add_hb_peer(conf, peers, PEER_ID)
+    peer = peers[int_id(PEER_ID)]
+    peer[1]["TS"] = "keep"
+    assert peer["SOFTWARE_ID"] == "RDAC metadata pending"
+
+    conf["SOFTWARE_ID"] = "A9.02.03.009"
+    refresh_hb_peer(conf, peer, PEER_ID)
+
+    assert peer["SOFTWARE_ID"] == "A9.02.03.009"
+    assert peer[1]["TS"] == "keep"
 
 
 def test_hytera_system_appears_with_repeaters():
