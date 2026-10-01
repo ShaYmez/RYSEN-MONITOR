@@ -34,12 +34,14 @@ class TestActivityStream(unittest.TestCase):
     def setUp(self):
         monitor.CTABLE["MASTERS"].clear()
         monitor.CTABLE["OPENBRIDGES"].clear()
+        monitor.CTABLE["PEERS"].clear()
         peer = {1: _slot(), 2: _slot()}
         monitor.CTABLE["MASTERS"]["MASTER"] = {"PEERS": {123: peer, 124: _slot_pair()}}
 
     def tearDown(self):
         monitor.CTABLE["MASTERS"].clear()
         monitor.CTABLE["OPENBRIDGES"].clear()
+        monitor.CTABLE["PEERS"].clear()
 
     @patch("monitor.push_live_dashboard")
     def test_openbridge_rx_stays_on_the_bridge_stream(self, _push):
@@ -78,6 +80,41 @@ class TestActivityStream(unittest.TestCase):
         self.assertEqual(talker["SID"], "100")
         self.assertEqual(talker["TRX"], "RX")
         self.assertEqual(push.call_count, 2)
+
+    @patch("monitor.push_live_dashboard")
+    def test_rssi_sits_on_the_busy_slot_and_clears(self, _push):
+        monitor.rts_update(_event("START", "99") + ["87"])
+        talker = monitor.CTABLE["MASTERS"]["MASTER"]["PEERS"][123][2]
+        listener = monitor.CTABLE["MASTERS"]["MASTER"]["PEERS"][124][2]
+        self.assertEqual(talker["RSSI"], "-87 dBm")
+        self.assertEqual(listener["RSSI"], "-87 dBm")
+
+        monitor.rts_update(_event("RSSI", "50") + ["70"])
+        self.assertEqual(talker["RSSI"], "-87 dBm")
+
+        monitor.rts_update(_event("RSSI", "99") + ["90"])
+        self.assertEqual(talker["RSSI"], "-90 dBm")
+        self.assertEqual(listener["RSSI"], "-90 dBm")
+
+        monitor.rts_update(_event("RSSI", "99") + ["0"])
+        self.assertEqual(talker["RSSI"], "")
+
+        monitor.CTABLE["PEERS"]["HOTSPOT"] = {1: _slot(), 2: _slot()}
+        monitor.rts_update([
+            "GROUP VOICE", "START", "RX", "HOTSPOT", "7",
+            "1", "456", "1", "235", "64",
+        ])
+        hotspot = monitor.CTABLE["PEERS"]["HOTSPOT"][1]
+        self.assertEqual(hotspot["RSSI"], "-64 dBm")
+        monitor.rts_update([
+            "GROUP VOICE", "END", "RX", "HOTSPOT", "7",
+            "1", "456", "1", "235",
+        ])
+        self.assertEqual(hotspot["RSSI"], "")
+        self.assertFalse(hotspot["TS"])
+
+        page = (ROOT / "templates" / "lnksys_table.html").read_text(encoding="utf-8")
+        self.assertEqual(page.count(".get('RSSI')"), 8)
 
     @patch("monitor.push_live_dashboard")
     def test_openbridge_end_drops_only_that_stream(self, _push):

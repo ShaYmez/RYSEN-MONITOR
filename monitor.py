@@ -515,6 +515,7 @@ def cleanTE():
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["TS"] = False
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["TYPE"] = ""
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["SUB"] = ""
+                        CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["RSSI"] = ""
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["SRC"] = ""
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["DEST"] = ""
 
@@ -528,6 +529,7 @@ def cleanTE():
                     CTABLE["PEERS"][system][timeS]["TS"] = False
                     CTABLE["PEERS"][system][timeS]["TYPE"] = ""
                     CTABLE["PEERS"][system][timeS]["SUB"] = ""
+                    CTABLE["PEERS"][system][timeS]["RSSI"] = ""
                     CTABLE["PEERS"][system][timeS]["SRC"] = ""
                     CTABLE["PEERS"][system][timeS]["DEST"] = ""
 
@@ -540,7 +542,7 @@ def cleanTE():
                 del CTABLE["OPENBRIDGES"][system]["STREAMS"][streamId]
 
 
-ROUTING_MASTER_MODES = ("MASTER", "IPSC")
+ROUTING_MASTER_MODES = ("MASTER", "IPSC", "HYTERA")
 
 
 def is_routing_master(mode):
@@ -588,6 +590,30 @@ def _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer):
             _ctable_peer[field] = "—"
 
 
+def _apply_hytera_peer_fields(_peer_conf, _ctable_peer, _peer):
+    def _frequency_text(value):
+        try:
+            return "{:.6f} MHz".format(int(value) / 1000000)
+        except (TypeError, ValueError):
+            return "N/A"
+
+    _ctable_peer["PROTOCOL"] = "HYTERA"
+    _ctable_peer["RADIO_ID"] = _ipsc_radio_id(_peer_conf, _peer)
+    _ctable_peer["CALLSIGN"] = _ipsc_callsign(
+        _peer_conf, _peer, _ctable_peer["RADIO_ID"])
+    _ctable_peer["SOFTWARE_ID"] = _hb_field_str(
+        _peer_conf.get("SOFTWARE_ID", "")) or "—"
+    _ctable_peer["HYTERA_HARDWARE"] = _hb_field_str(
+        _peer_conf.get("HYTERA_HARDWARE", _peer_conf.get("DESCRIPTION", "")))
+    _ctable_peer["PACKAGE_ID"] = _ctable_peer["HYTERA_HARDWARE"].split("-")[0]
+    _ctable_peer["HYTERA_SERIAL"] = _hb_field_str(
+        _peer_conf.get("HYTERA_SERIAL", _peer_conf.get("SERIAL", "")))
+    _ctable_peer["HYTERA_MODE"] = _peer_conf.get("HYTERA_MODE")
+    _ctable_peer["TX_FREQ"] = _frequency_text(_peer_conf.get("TX_FREQ"))
+    _ctable_peer["RX_FREQ"] = _frequency_text(_peer_conf.get("RX_FREQ"))
+    _ctable_peer["LOCATION"] = _alias_location(_ctable_peer["RADIO_ID"])
+
+
 def refresh_hb_peer(_peer_conf, _ctable_peer, _peer):
     """Refresh CTABLE peer metadata from config without resetting timeslots."""
     _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]
@@ -596,6 +622,8 @@ def refresh_hb_peer(_peer_conf, _ctable_peer, _peer):
     _ctable_peer["PORT"] = _peer_conf["PORT"]
     if _peer_conf.get("PROTOCOL") == "IPSC":
         _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
+    elif _peer_conf.get("PROTOCOL") == "HYTERA":
+        _apply_hytera_peer_fields(_peer_conf, _ctable_peer, _peer)
 
 
 def _ipsc_radio_id(peer_conf, peer):
@@ -631,7 +659,12 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
     # if the Frequency is 000.xxx assume it's not an RF peer, otherwise format the text fields
     # (9 char, but we are just software)  see https://wiki.brandmeister.network/index.php/Homebrew/example/php2
 
-    if (_peer_conf["TX_FREQ"].strip().isdigit() and _peer_conf["RX_FREQ"].strip().isdigit()
+    if _peer_conf.get("PROTOCOL") == "HYTERA":
+        _ctable_peer["TX_FREQ"] = "{:.6f} MHz".format(
+            int(_peer_conf.get("TX_FREQ") or 0) / 1000000)
+        _ctable_peer["RX_FREQ"] = "{:.6f} MHz".format(
+            int(_peer_conf.get("RX_FREQ") or 0) / 1000000)
+    elif (_peer_conf["TX_FREQ"].strip().isdigit() and _peer_conf["RX_FREQ"].strip().isdigit()
         and str(type(_peer_conf["TX_FREQ"])).find("bytes") != -1
         and str(type(_peer_conf["RX_FREQ"])).find("bytes") != -1):
 
@@ -682,6 +715,11 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         logger.info(
             f"IPSC peer registered: {_ctable_peer['CALLSIGN']} "
             f"(Id: {_ctable_peer['RADIO_ID']})")
+    elif _peer_conf.get("PROTOCOL") == "HYTERA":
+        _apply_hytera_peer_fields(_peer_conf, _ctable_peer, _peer)
+        logger.info(
+            f"Hytera peer registered: {_ctable_peer['CALLSIGN']} "
+            f"(Id: {_ctable_peer['RADIO_ID']})")
 
     _ctable_peer["CONNECTION"] = _peer_conf["CONNECTION"]
     _ctable_peer["CONNECTED"] = time_str(_peer_conf["CONNECTED"], "since")
@@ -695,6 +733,7 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer[ts]["TS"] = ""
         _ctable_peer[ts]["TYPE"] = ""
         _ctable_peer[ts]["SUB"] = ""
+        _ctable_peer[ts]["RSSI"] = ""
         _ctable_peer[ts]["SRC"] = ""
         _ctable_peer[ts]["DEST"] = ""
         _ctable_peer[ts]["SID"] = ""
@@ -785,6 +824,7 @@ def build_hblink_table(_config, _stats_table):
                     _stats_table["PEERS"][_hbp][ts]["TS"] = ""
                     _stats_table["PEERS"][_hbp][ts]["TYPE"] = ""
                     _stats_table["PEERS"][_hbp][ts]["SUB"] = ""
+                    _stats_table["PEERS"][_hbp][ts]["RSSI"] = ""
                     _stats_table["PEERS"][_hbp][ts]["SRC"] = ""
                     _stats_table["PEERS"][_hbp][ts]["DEST"] = ""
                     _stats_table["PEERS"][_hbp][ts]["SID"] = ""
@@ -1365,6 +1405,19 @@ def _slot_is_stream(slot, stream_id):
     return current == "" or current == stream_id
 
 
+def _event_rssi(parts):
+    """Raw Homebrew RSSI as `-N dBm`. Zero and a missing field stay blank."""
+    if len(parts) < 10:
+        return ""
+    try:
+        value = int(parts[9])
+    except (TypeError, ValueError):
+        return ""
+    if value <= 0:
+        return ""
+    return f"-{value} dBm"
+
+
 def _clear_slot(slot):
     slot["TS"] = False
     slot["TYPE"] = ""
@@ -1375,6 +1428,7 @@ def _clear_slot(slot):
     slot["TG"] = ""
     slot["TRX"] = ""
     slot["SID"] = ""
+    slot["RSSI"] = ""
 
 
 def rts_update(p):
@@ -1411,7 +1465,14 @@ def rts_update(p):
                 slot["TG"] = tg_label
                 slot["TRX"] = crxstatus
                 slot["SID"] = streamId
+                slot["RSSI"] = _event_rssi(p)
                 changed = True
+            elif (action == "RSSI" and slot.get("TS")
+                    and slot.get("SID") == streamId):
+                label = _event_rssi(p)
+                if slot.get("RSSI") != label:
+                    slot["RSSI"] = label
+                    changed = True
             elif action == "END" and _slot_is_stream(slot, streamId):
                 _clear_slot(slot)
                 changed = True
@@ -1445,7 +1506,14 @@ def rts_update(p):
             slot["TG"] = tg_label
             slot["TRX"] = prxstatus
             slot["SID"] = streamId
+            slot["RSSI"] = _event_rssi(p)
             changed = True
+        elif (action == "RSSI" and slot.get("TS")
+                and slot.get("SID") == streamId):
+            label = _event_rssi(p)
+            if slot.get("RSSI") != label:
+                slot["RSSI"] = label
+                changed = True
         elif action == "END" and _slot_is_stream(slot, streamId):
             _clear_slot(slot)
             changed = True
@@ -1508,6 +1576,8 @@ def process_message(_bmessage):
             db2dict(int(p[6]), "subscriber_ids")
             db2dict(int(p[8]), "talkgroup_ids")
         if p[0] == "GROUP VOICE":
+            if p[1] == "RSSI":
+                return None
             if p[2] == "TX" or p[5] in CONF["OPB_FLTR"]["OPB_FILTER"]:
                 return None
 

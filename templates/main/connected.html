@@ -10,21 +10,27 @@
           {% for _master in _table['MASTERS'] %}
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-          {% if _cdata.get('PROTOCOL') == 'IPSC' or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
-          {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
-          {% set _rptr_badge = 'badge-ipsc' if _cdata.get('PROTOCOL') == 'IPSC' else 'badge-success' %}
+          {% if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
+          {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') else _client %}
+          {% set _rptr_badge = 'badge-ipsc' if _cdata.get('PROTOCOL') == 'IPSC' else 'badge-hytera' if _cdata.get('PROTOCOL') == 'HYTERA' else 'badge-success' %}
           <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}"
             class="badge badge-pill {{ _rptr_badge }}" style="min-width: 3.5rem;" data-bs-toggle="tooltip" data-bs-placement="top"
             title="
 ID DMR: {{ _peer_id }}
 {% if _cdata.get('PROTOCOL') == 'IPSC' %}Mode: IPSC Repeater ({{ _cdata['SLOTS'] }})
 Description: {{ _cdata['DESCRIPTION'] }}
+{% elif _cdata.get('PROTOCOL') == 'HYTERA' %}Mode: Hytera Repeater ({{ _cdata['SLOTS'] }})
+Model: {{ (_cdata.get('HYTERA_HARDWARE') or _cdata['DESCRIPTION']).split('-')[0] }}
+TX: {{ _cdata['TX_FREQ'] }}
+RX: {{ _cdata['RX_FREQ'] }}
+TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
+TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}
 {% elif _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Mode: IP Network{% else %}Mode: {{ _cdata['SLOTS'] }}
 TX: {{_cdata['TX_FREQ'] }}
 RX: {{_cdata['RX_FREQ'] }}
 TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
 TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}{% endif %}
-Hardware: {{_cdata['PACKAGE_ID'] }}
+Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIAL') or '—' }}{% else %}{{_cdata['PACKAGE_ID'] }}{% endif %}
 Software: {{_cdata['SOFTWARE_ID'] }}
 Info: {{_cdata['LOCATION']}}
 Master: {{_master }}
@@ -79,7 +85,7 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
           {% for _master in _table['MASTERS'] %}
           {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-          {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
+          {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') not in ('IPSC', 'HYTERA') %}
           <a href="#" class="badge badge-pill badge-success" style="min-width: 3.5rem;" data-bs-toggle="tooltip"
             data-bs-placement="top" data-bs-html="true" title="
 ID DMR: {{ _client }}

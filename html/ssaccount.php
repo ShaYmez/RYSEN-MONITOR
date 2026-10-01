@@ -12,6 +12,10 @@ if (!isSelfcareLoggedIn() || !isIpscSession()) {
 
 $radioId = (int) $_SESSION['int_ids'][0];
 $callsign = $_SESSION['user_id'];
+$deviceDetails = getDevDetails($radioId);
+$deviceProtocol = ($deviceDetails && isHyteraDeviceMode($deviceDetails['mode']))
+    ? 'Hytera'
+    : 'IPSC';
 $successMsg = null;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -43,7 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 $csrfToken = generateCSRFToken();
-$ss_page_title = 'System X DMR Global | IPSC Selfcare Account | ' . escapeHtml($callsign);
+$ss_page_title = 'System X DMR Global | ' . $deviceProtocol . ' Selfcare Account | ' . escapeHtml($callsign);
 ?>
 <!DOCTYPE html>
 <html>
@@ -70,14 +74,14 @@ $ss_page_title = 'System X DMR Global | IPSC Selfcare Account | ' . escapeHtml($
                     <div class="row justify-content-center mb-5">
                         <div class="login-box">
                             <div class="login-logo">
-                                <a href="ssmain.php">IPSC Selfcare Account</a>
+                                <a href="ssmain.php"><?php echo $deviceProtocol; ?> Selfcare Account</a>
                             </div>
 
                             <div class="card">
                                 <div class="card-body login-card-body">
                                     <p class="text-center mb-3">
                                         <b><?php echo escapeHtml($callsign); ?></b>
-                                        (<?php echo $radioId; ?> IPSC)
+                                        (<?php echo $radioId . ' ' . $deviceProtocol; ?>)
                                     </p>
 
                                     <?php if ($successMsg): ?>

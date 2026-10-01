@@ -24,7 +24,7 @@ Python 3 implementation of N0MJS HBmonitor for HBlink https://github.com/kc1awv/
 
 ---
 
-## Motorola IPSC repeaters
+## Native repeaters
 
 RYSEN reports IPSC systems (`MODE: IPSC`, `PROTOCOL: IPSC`) on the TCP report socket (default port 4321). These appear on **Linked Systems** in the Repeaters section with callsign, DMR ID, Motorola software/hardware, and live TS1/TS2 activity. Point `[FDMR CONNECTION]` in `fdmr-mon.cfg` at your RYSEN instance (use the container IP on Docker Compose, not `127.0.0.1`).
 
@@ -32,11 +32,24 @@ IPSC repeater selfcare (static TS1/TS2) is included in this release; MMDVM hotsp
 
 **Admin (IPSC):** install once with `sudo ./scripts/install-selfcare-admin.sh`, then run `sudo selfcare-admin` (symlink in `/usr/local/sbin`; bash + docker + php-cli for hashes — no Python on host).
 
+Hytera IP Multi-site Connect systems (`MODE: HYTERA`, `PROTOCOL: HYTERA`) use
+the same repeater section and static TS1/TS2 selfcare lifecycle. Their Hytera
+badge is yellow with black text. The dashboard exposes validated RDAC details
+(firmware, serial, callsign, raw channel mode, and TX/RX frequency) to the
+authenticated owner, while showing the compact model prefix such as `RD985`.
+No RDAC control, SNMP, or CPS write functions are provided.
+
+While a timeslot is busy, Linked Systems can show live RSSI as `-N dBm`
+beside the subscriber. Homebrew and enhanced OpenBridge already carry that
+byte. A Hytera call fills it from RYSEN's RDAC slot poll after the first
+sample; START may still be blank for about a second. Field-validated on
+GB7NR at `-107 dBm` on 1 October 2026.
+
 ## FreeSTAR Selfcare runtime controls
 
 FreeSTAR hotspot Selfcare can show live dynamic talkgroups and provide **Drop
 QSO** and **Drop Dynamic** beside the existing OPTIONS-based Disconnect button.
-The panel is not rendered for IPSC or third-party networks. Disconnect remains
+The panel is not rendered for IPSC, Hytera, or third-party networks. Disconnect remains
 available independently and keeps its existing `DISC=1` request/cleanup flow.
 
 Configure the existing server-held issuer credential and the two exact HTTPS

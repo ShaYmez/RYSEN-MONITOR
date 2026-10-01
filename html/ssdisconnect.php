@@ -52,7 +52,7 @@ if ($action === 'request') {
     }
 
     $original = $devDetails['options'];
-    $isIpsc = isIpscDeviceMode($devDetails['mode']);
+    $isIpsc = isRepeaterDeviceMode($devDetails['mode']);
     $dialActive = !$isIpsc && (int) getDeviceOption($original, 'DIAL', 0) > 0;
 
     $_SESSION[$sessionKey][$intId] = [

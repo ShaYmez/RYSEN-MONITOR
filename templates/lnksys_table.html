@@ -15,13 +15,13 @@
 
 {% for _master in _table['MASTERS'] %}
 {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-    {% if _cdata.get('PROTOCOL') == 'IPSC' %}
+    {% if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') %}
       {% set countrepeaters.value = countrepeaters.value + 1 %}
     {% elif _client|string|length == 6 and _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %} 
       {% set countrepeaters.value = countrepeaters.value + 1 %} 
     {% elif _client|string|length >= 7 and _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
   {% set counthotspots.value = counthotspots.value + 1 %}
-    {% elif _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
+    {% elif _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') not in ('IPSC', 'HYTERA') %}
   {% set countbridges.value = countbridges.value + 1 %}
   {% endif %}
   {% endfor %}
@@ -99,8 +99,8 @@
                 and
                 emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
                 {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-                {% if _cdata.get('PROTOCOL') == 'IPSC' or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
-                  {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') == 'IPSC' else _client %}
+                {% if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
+                  {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') else _client %}
                   <tr>
                     <td class="peer-id-cell">
                       {% set ctrynum = _peer_id|flag_code %}
@@ -112,18 +112,24 @@
 {{_master}}
 {% if _cdata.get('PROTOCOL') == 'IPSC' %}Type: IPSC Repeater ({{ _cdata['SLOTS'] }})
 Mode: {{ _cdata['DESCRIPTION'] }}
+{% elif _cdata.get('PROTOCOL') == 'HYTERA' %}Type: Hytera Repeater ({{ _cdata['SLOTS'] }})
+Model: {{ (_cdata.get('HYTERA_HARDWARE') or _cdata['DESCRIPTION']).split('-')[0] }}
+TX: {{ _cdata['TX_FREQ'] }}
+RX: {{ _cdata['RX_FREQ'] }}
+TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
+TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}
 {% elif _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' %}Type: IP Network {% else %}Type: Radio ({{ _cdata['SLOTS'] }})
 TX: {{_cdata['TX_FREQ'] }}
 RX: {{_cdata['RX_FREQ'] }}
 TS1: {{ _cdata['TS1_STATIC']|default([], true)|join(', ') }}
 TS2: {{ _cdata['TS2_STATIC']|default([], true)|join(', ') }}{% endif %}
-{% if _cdata.get('PROTOCOL') != 'IPSC' %}Power: {{ _cdata['TX_POWER'] }}
+{% if _cdata.get('PROTOCOL') not in ('IPSC', 'HYTERA') %}Power: {{ _cdata['TX_POWER'] }}
 Latitude: {{ _cdata['LATITUDE'] }}
 Longitude: {{ _cdata['LONGITUDE'] }}
 Height: {{ _cdata['HEIGHT'] }}
 {% endif %}Software: {{_cdata['SOFTWARE_ID'] }}
-Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
-                        <span class="badge peer-id-badge {% if _cdata.get('PROTOCOL') == 'IPSC' %}badge-ipsc{% else %}badge-info{% endif %}">{{ _peer_id }}</span>
+Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIAL') or '—' }}{% else %}{{_cdata['PACKAGE_ID'] }}{% endif %}">{{ _cdata['CALLSIGN']}}</a>
+                        <span class="badge peer-id-badge {% if _cdata.get('PROTOCOL') == 'IPSC' %}badge-ipsc{% elif _cdata.get('PROTOCOL') == 'HYTERA' %}badge-hytera{% else %}badge-info{% endif %}">{{ _peer_id }}</span>
                       </div>
                     </td>
                     <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
@@ -145,7 +151,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[1]['SUB']|safe }}</span>
+                            ">{{ _cdata[1]['SUB']|safe }}</span>{% if _cdata[1]['TS'] and _cdata[1].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[1]['RSSI'] }}</span>{% endif %}
                     </td>
                     <td class="table-active align-middle text-center">
                       <span class="badge 
@@ -176,7 +182,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[2]['SUB']|safe }}</span>
+                            ">{{ _cdata[2]['SUB']|safe }}</span>{% if _cdata[2]['TS'] and _cdata[2].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[2]['RSSI'] }}</span>{% endif %}
                     </td>
                     <td class="align-middle text-center">
                       <span class="badge 
@@ -270,7 +276,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[1]['SUB']|safe }}</span>
+                            ">{{ _cdata[1]['SUB']|safe }}</span>{% if _cdata[1]['TS'] and _cdata[1].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[1]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
@@ -301,7 +307,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[2]['SUB']|safe }}</span>
+                            ">{{ _cdata[2]['SUB']|safe }}</span>{% if _cdata[2]['TS'] and _cdata[2].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[2]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
@@ -353,7 +359,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                 {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0)
                 and emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
                 {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
-                {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') != 'IPSC' %}
+                {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') not in ('IPSC', 'HYTERA') %}
                 <tr>
                   <td class="peer-id-cell">
                     {% set ctrynum = _client|flag_code %}
@@ -391,7 +397,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[1]['SUB']|safe }}</span>
+                            ">{{ _cdata[1]['SUB']|safe }}</span>{% if _cdata[1]['TS'] and _cdata[1].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[1]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
@@ -422,7 +428,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[2]['SUB']|safe }}</span>
+                            ">{{ _cdata[2]['SUB']|safe }}</span>{% if _cdata[2]['TS'] and _cdata[2].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[2]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
@@ -514,7 +520,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                     {% elif _pdata[1]['TRX'] == 'TX' %}
                       badge-success
                     {% endif %}
-                    ">{{ _pdata[1]['SUB']|safe }}</span>
+                    ">{{ _pdata[1]['SUB']|safe }}</span>{% if _pdata[1]['TS'] and _pdata[1].get('RSSI') %} <span class="badge badge-secondary">{{ _pdata[1]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
@@ -545,7 +551,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                       {% elif _pdata[2]['TRX'] == 'TX' %}
                         badge-success
                       {% endif %}
-                      ">{{ _pdata[2]['SUB']|safe }}</span>
+                      ">{{ _pdata[2]['SUB']|safe }}</span>{% if _pdata[2]['TS'] and _pdata[2].get('RSSI') %} <span class="badge badge-secondary">{{ _pdata[2]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
