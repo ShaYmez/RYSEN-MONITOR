@@ -1,8 +1,8 @@
-**Dashboard backend with Selfcare for SystemX Servers**
+**Dashboard with Selfcare for SystemX Stack RYSEN Servers**
 
 ![Dashboard](./screenshot.png)
 
-Forked from [FDMR Monitor with Selfcare](https://github.com/CS8ABG/FDMR-Monitor) by Bruno **CS8ABG** (initial PHP dashboard design). Maintained as **RYSEN-MONITOR / System X** v1.5.1 by Shane Daley **M0VUB** <shane@freestar.network>.
+Forked from [FDMR Monitor with Selfcare](https://github.com/CS8ABG/FDMR-Monitor) by Bruno **CS8ABG** (initial PHP dashboard design). Maintained as **RYSEN-MONITOR / System X** v1.6.0 by Shane Daley **M0VUB** <shane@freestar.network>.
 
 ---
 
@@ -34,15 +34,12 @@ IPSC repeater selfcare (static TS1/TS2) is included in this release; MMDVM hotsp
 
 Hytera IP Multi-site Connect systems (`MODE: HYTERA`, `PROTOCOL: HYTERA`) use
 the same repeater section and static TS1/TS2 selfcare lifecycle. Their Hytera
-badge is yellow with black text. The dashboard exposes validated RDAC details
+badge is yellow. The dashboard exposes validated RDAC
 (firmware, serial, callsign, raw channel mode, and TX/RX frequency) to the
-authenticated owner, while showing the compact model prefix such as `RD985`.
+authenticated owner, while showing model prefix such as `RD985`.
 No RDAC control, SNMP, or CPS write functions are provided.
 
-While a timeslot is busy, Linked Systems can show live RSSI as `-N dBm`
-beside the subscriber. Homebrew and enhanced OpenBridge already carry that
-byte. A Hytera call fills it from RYSEN's RDAC slot poll after the first
-sample; START may still be blank for about a second. Field-validated on
+While a timeslot is busy, Linked Systems can show live RSSI as `-N dBm` Field-validated on
 GB7NR at `-107 dBm` on 1 October 2026.
 
 ## FreeSTAR Selfcare runtime controls
@@ -71,7 +68,7 @@ be written into JavaScript, HTML, browser storage, or a third-party deployment.
 
 **RYSEN-MONITOR / System X** — Copyright (C) 2020-2026 Shane Daley, M0VUB <shane@freestar.network>
 
-Upstream lineage: N0MJS (HBmonitor/HBlink), KC1AWV (Python 3 port), SP2ONG (HBMonitor v2), OA4DOA (FDMR-Monitor), **CS8ABG** (initial dashboard design), G4KLX (MMDVM), G7RZU (FDMR Peer Server). See [COPYRIGHT](COPYRIGHT) for the full notice.
+Upstream lineage: N0MJS (HBmonitor/HBlink), KC1AWV (Python 3 port), SP2ONG (HBMonitor v2), OA4DOA (FDMR-Monitor), **CS8ABG** (initial dashboard design), G4KLX (MMDVM / HomeBrew Protocol), G7RZU (FDMR Peer Server). See [COPYRIGHT](COPYRIGHT) for the full notice.
 
 Copyright (C) 2013-2018 Cortney T. Buffington, N0MJS <n0mjs@me.com>
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of 
