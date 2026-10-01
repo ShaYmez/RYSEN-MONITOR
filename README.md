@@ -39,6 +39,12 @@ badge is yellow with black text. The dashboard exposes validated RDAC details
 authenticated owner, while showing the compact model prefix such as `RD985`.
 No RDAC control, SNMP, or CPS write functions are provided.
 
+While a timeslot is busy, Linked Systems can show live RSSI as `-N dBm`
+beside the subscriber. Homebrew and enhanced OpenBridge already carry that
+byte. A Hytera call fills it from RYSEN's RDAC slot poll after the first
+sample; START may still be blank for about a second. Field-validated on
+GB7NR at `-107 dBm` on 1 October 2026.
+
 ## FreeSTAR Selfcare runtime controls
 
 FreeSTAR hotspot Selfcare can show live dynamic talkgroups and provide **Drop
