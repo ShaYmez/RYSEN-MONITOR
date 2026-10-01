@@ -151,7 +151,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[1]['SUB']|safe }}</span>
+                            ">{{ _cdata[1]['SUB']|safe }}</span>{% if _cdata[1]['TS'] and _cdata[1].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[1]['RSSI'] }}</span>{% endif %}
                     </td>
                     <td class="table-active align-middle text-center">
                       <span class="badge 
@@ -182,7 +182,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[2]['SUB']|safe }}</span>
+                            ">{{ _cdata[2]['SUB']|safe }}</span>{% if _cdata[2]['TS'] and _cdata[2].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[2]['RSSI'] }}</span>{% endif %}
                     </td>
                     <td class="align-middle text-center">
                       <span class="badge 
@@ -276,7 +276,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[1]['SUB']|safe }}</span>
+                            ">{{ _cdata[1]['SUB']|safe }}</span>{% if _cdata[1]['TS'] and _cdata[1].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[1]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
@@ -307,7 +307,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[2]['SUB']|safe }}</span>
+                            ">{{ _cdata[2]['SUB']|safe }}</span>{% if _cdata[2]['TS'] and _cdata[2].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[2]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
@@ -397,7 +397,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[1]['SUB']|safe }}</span>
+                            ">{{ _cdata[1]['SUB']|safe }}</span>{% if _cdata[1]['TS'] and _cdata[1].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[1]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
@@ -428,7 +428,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
                             {% endif %}
-                            ">{{ _cdata[2]['SUB']|safe }}</span>
+                            ">{{ _cdata[2]['SUB']|safe }}</span>{% if _cdata[2]['TS'] and _cdata[2].get('RSSI') %} <span class="badge badge-secondary">{{ _cdata[2]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
@@ -520,7 +520,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                     {% elif _pdata[1]['TRX'] == 'TX' %}
                       badge-success
                     {% endif %}
-                    ">{{ _pdata[1]['SUB']|safe }}</span>
+                    ">{{ _pdata[1]['SUB']|safe }}</span>{% if _pdata[1]['TS'] and _pdata[1].get('RSSI') %} <span class="badge badge-secondary">{{ _pdata[1]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
@@ -551,7 +551,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                       {% elif _pdata[2]['TRX'] == 'TX' %}
                         badge-success
                       {% endif %}
-                      ">{{ _pdata[2]['SUB']|safe }}</span>
+                      ">{{ _pdata[2]['SUB']|safe }}</span>{% if _pdata[2]['TS'] and _pdata[2].get('RSSI') %} <span class="badge badge-secondary">{{ _pdata[2]['RSSI'] }}</span>{% endif %}
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 

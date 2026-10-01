@@ -515,6 +515,7 @@ def cleanTE():
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["TS"] = False
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["TYPE"] = ""
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["SUB"] = ""
+                        CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["RSSI"] = ""
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["SRC"] = ""
                         CTABLE["MASTERS"][system]["PEERS"][peer][timeS]["DEST"] = ""
 
@@ -528,6 +529,7 @@ def cleanTE():
                     CTABLE["PEERS"][system][timeS]["TS"] = False
                     CTABLE["PEERS"][system][timeS]["TYPE"] = ""
                     CTABLE["PEERS"][system][timeS]["SUB"] = ""
+                    CTABLE["PEERS"][system][timeS]["RSSI"] = ""
                     CTABLE["PEERS"][system][timeS]["SRC"] = ""
                     CTABLE["PEERS"][system][timeS]["DEST"] = ""
 
@@ -729,6 +731,7 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer[ts]["TS"] = ""
         _ctable_peer[ts]["TYPE"] = ""
         _ctable_peer[ts]["SUB"] = ""
+        _ctable_peer[ts]["RSSI"] = ""
         _ctable_peer[ts]["SRC"] = ""
         _ctable_peer[ts]["DEST"] = ""
         _ctable_peer[ts]["SID"] = ""
@@ -819,6 +822,7 @@ def build_hblink_table(_config, _stats_table):
                     _stats_table["PEERS"][_hbp][ts]["TS"] = ""
                     _stats_table["PEERS"][_hbp][ts]["TYPE"] = ""
                     _stats_table["PEERS"][_hbp][ts]["SUB"] = ""
+                    _stats_table["PEERS"][_hbp][ts]["RSSI"] = ""
                     _stats_table["PEERS"][_hbp][ts]["SRC"] = ""
                     _stats_table["PEERS"][_hbp][ts]["DEST"] = ""
                     _stats_table["PEERS"][_hbp][ts]["SID"] = ""
@@ -1399,6 +1403,19 @@ def _slot_is_stream(slot, stream_id):
     return current == "" or current == stream_id
 
 
+def _event_rssi(parts):
+    """Raw Homebrew RSSI as `-N dBm`. Zero and a missing field stay blank."""
+    if len(parts) < 10:
+        return ""
+    try:
+        value = int(parts[9])
+    except (TypeError, ValueError):
+        return ""
+    if value <= 0:
+        return ""
+    return f"-{value} dBm"
+
+
 def _clear_slot(slot):
     slot["TS"] = False
     slot["TYPE"] = ""
@@ -1409,6 +1426,7 @@ def _clear_slot(slot):
     slot["TG"] = ""
     slot["TRX"] = ""
     slot["SID"] = ""
+    slot["RSSI"] = ""
 
 
 def rts_update(p):
@@ -1445,7 +1463,14 @@ def rts_update(p):
                 slot["TG"] = tg_label
                 slot["TRX"] = crxstatus
                 slot["SID"] = streamId
+                slot["RSSI"] = _event_rssi(p)
                 changed = True
+            elif (action == "RSSI" and slot.get("TS")
+                    and slot.get("SID") == streamId):
+                label = _event_rssi(p)
+                if slot.get("RSSI") != label:
+                    slot["RSSI"] = label
+                    changed = True
             elif action == "END" and _slot_is_stream(slot, streamId):
                 _clear_slot(slot)
                 changed = True
@@ -1479,7 +1504,14 @@ def rts_update(p):
             slot["TG"] = tg_label
             slot["TRX"] = prxstatus
             slot["SID"] = streamId
+            slot["RSSI"] = _event_rssi(p)
             changed = True
+        elif (action == "RSSI" and slot.get("TS")
+                and slot.get("SID") == streamId):
+            label = _event_rssi(p)
+            if slot.get("RSSI") != label:
+                slot["RSSI"] = label
+                changed = True
         elif action == "END" and _slot_is_stream(slot, streamId):
             _clear_slot(slot)
             changed = True
@@ -1542,6 +1574,8 @@ def process_message(_bmessage):
             db2dict(int(p[6]), "subscriber_ids")
             db2dict(int(p[8]), "talkgroup_ids")
         if p[0] == "GROUP VOICE":
+            if p[1] == "RSSI":
+                return None
             if p[2] == "TX" or p[5] in CONF["OPB_FLTR"]["OPB_FILTER"]:
                 return None
 
