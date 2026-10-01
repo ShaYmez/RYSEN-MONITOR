@@ -48,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['genText'])) {
     }
     
     $postDev = getDevDetails($selint_id);
-    $options = ($postDev && isIpscDeviceMode($postDev['mode']))
+    $options = ($postDev && isRepeaterDeviceMode($postDev['mode']))
         ? sanitizeIpscOptions($_POST['genText'])
         : sanitizeOptions($_POST['genText']);
     
@@ -274,10 +274,10 @@ $csrfToken = generateCSRFToken();
                                                     <div class="card-body p-0">
                                                         <table class="table table-sm mb-0">
                                                             <tbody>
-                                                                <tr><th>Model</th><td><?php echo escapeHtml($hyteraMetadata ? preg_split('/[-\s]/', $hyteraMetadata['hardware'])[0] : 'Pending RDAC'); ?></td></tr>
+                                                                <tr><th>Model</th><td><?php echo escapeHtml($hyteraMetadata ? hyteraMetadataModel($hyteraMetadata['hardware'] ?? null) : 'Pending RDAC'); ?></td></tr>
                                                                 <tr><th>Firmware</th><td><?php echo escapeHtml($hyteraMetadata['firmware'] ?? 'Pending RDAC'); ?></td></tr>
                                                                 <tr><th>Serial</th><td><?php echo escapeHtml($hyteraMetadata['serial_number'] ?? 'Pending RDAC'); ?></td></tr>
-                                                                <tr><th>TX / RX</th><td><?php echo $hyteraMetadata ? escapeHtml(number_format(((int) $hyteraMetadata['tx_frequency']) / 1000000, 6) . ' / ' . number_format(((int) $hyteraMetadata['rx_frequency']) / 1000000, 6) . ' MHz') : 'Pending RDAC'; ?></td></tr>
+                                                                <tr><th>TX / RX</th><td><?php echo escapeHtml($hyteraMetadata ? hyteraMetadataFrequency($hyteraMetadata['tx_frequency'] ?? null, $hyteraMetadata['rx_frequency'] ?? null) : 'Pending RDAC'); ?></td></tr>
                                                                 <tr><th>RDAC mode</th><td><?php echo escapeHtml($hyteraMetadata['mode_raw'] ?? 'Pending RDAC'); ?></td></tr>
                                                             </tbody>
                                                         </table>

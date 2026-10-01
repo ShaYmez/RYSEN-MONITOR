@@ -164,7 +164,7 @@ function sanitizeOptions($options) {
 }
 
 /**
- * Sanitize IPSC repeater options (same allowlist as hotspot selfcare).
+ * Sanitize repeater options for IPSC and Hytera (TS1/TS2 only).
  *
  * @param string $options Raw options string
  * @return string|false Sanitized options string, empty string when no selfcare override, or false if invalid
@@ -312,6 +312,40 @@ function formatDevicePickerLabel($intId, $devDetails)
     }
 
     return (string) $intId;
+}
+
+/**
+ * Short Hytera model from an RDAC hardware string.
+ *
+ * @param mixed $hardware RDAC hardware field
+ * @return string Model abbreviation or pending placeholder
+ */
+function hyteraMetadataModel($hardware)
+{
+    $hardware = trim((string) ($hardware ?? ''));
+    if ($hardware === '') {
+        return 'Pending RDAC';
+    }
+    $parts = preg_split('/[-\s]/', $hardware);
+    $model = trim((string) ($parts[0] ?? ''));
+    return $model !== '' ? $model : 'Pending RDAC';
+}
+
+/**
+ * Hytera TX/RX display from RDAC Hertz values.
+ *
+ * @param mixed $txFrequency
+ * @param mixed $rxFrequency
+ * @return string Formatted pair or pending placeholder
+ */
+function hyteraMetadataFrequency($txFrequency, $rxFrequency)
+{
+    $tx = (int) ($txFrequency ?? 0);
+    $rx = (int) ($rxFrequency ?? 0);
+    if ($tx <= 0 || $rx <= 0) {
+        return 'Pending RDAC';
+    }
+    return number_format($tx / 1000000, 6) . ' / ' . number_format($rx / 1000000, 6) . ' MHz';
 }
 
 /**
