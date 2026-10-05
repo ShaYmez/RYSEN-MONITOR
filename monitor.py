@@ -446,6 +446,40 @@ def alias_tgid(_id, _dict):
         return str(" ")
 
 
+def unit_voice_log_message(parts, now, subscriber_ids, talkgroup_ids):
+    """Monitor log line for a unit call that started on this master.
+
+    OpenBridge copies and TX repeats are not a hear. The line uses the same
+    VOICE shape the last-heard agent already parses, with the destination
+    radio in the TGID field.
+    """
+    if len(parts) < 9 or parts[0] != "UNIT VOICE":
+        return None
+    action = parts[1]
+    if action not in ("START", "END"):
+        return None
+    if parts[2] == "TX" or str(parts[3]).startswith("OBP"):
+        return None
+    if action == "END" and len(parts) < 10:
+        return None
+    try:
+        dest = int(parts[8])
+        radio = int(parts[6])
+    except (TypeError, ValueError):
+        return None
+    clock = now[10:19] if len(now) >= 19 else now
+    # GROUP VOICE is long enough that [6:] is "VOICE". UNIT VOICE is one
+    # character shorter, so the word is written out.
+    line = (
+        f"{clock} {'VOICE':5.5s} {action:5.5s} SYS: {parts[3]:10.10s} SRC_ID: {parts[5]:5.5s} "
+        f"TS: {parts[7]} TGID: {dest:<7} {alias_tgid(dest, talkgroup_ids):17.17s} "
+        f"SUB: {radio:<9}; {alias_short(radio, subscriber_ids):18.18s}"
+    )
+    if action == "END":
+        line += f" Time: {int(float(parts[9]))}s"
+    return line
+
+
 # Return friendly elapsed time from time in seconds.
 def time_str(_time, param):
     now = int(time())
@@ -1634,6 +1668,13 @@ def process_message(_bmessage):
             else:
                 log_message = f"{_now[10:19]} Unknown GROUP VOICE log message."
 
+            dashboard_server.broadcast("l" + log_message, "log")
+            LOGBUF.append(log_message)
+
+        elif p[0] == "UNIT VOICE" and p[5] not in CONF["OPB_FLTR"]["OPB_FILTER"]:
+            log_message = unit_voice_log_message(p, _now, subscriber_ids, talkgroup_ids)
+            if not log_message:
+                return None
             dashboard_server.broadcast("l" + log_message, "log")
             LOGBUF.append(log_message)
 
