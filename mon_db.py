@@ -239,27 +239,33 @@ class MoniDB:
     def slct_2render(self, _table, _row_num):
         try:
             if _table == "last_heard":
-                stm = '''SELECT CONVERT(date_time, CHAR), qso_time, qso_type, system, tg_num,
-                    (SELECT callsign FROM talkgroup_ids WHERE id = tg_num), dmr_id,
-                    (SELECT json_array(callsign, name) FROM subscriber_ids WHERE id = dmr_id)
-                    FROM last_heard ORDER BY date_time DESC LIMIT %s'''
+                stm = '''SELECT CONVERT(lh.date_time, CHAR), lh.qso_time, lh.qso_type,
+                    lh.system, lh.tg_num,
+                    (SELECT callsign FROM talkgroup_ids WHERE id = lh.tg_num), lh.dmr_id,
+                    (SELECT json_array(callsign, name) FROM subscriber_ids WHERE id = lh.dmr_id),
+                    (SELECT json_array(callsign, name) FROM subscriber_ids
+                     WHERE id = lh.tg_num AND lh.qso_type = 'UNIT VOICE')
+                    FROM last_heard lh ORDER BY lh.date_time DESC LIMIT %s'''
 
             elif _table == "lstheard_log":
-                stm = '''SELECT CONVERT(date_time, CHAR), qso_time, qso_type, system, tg_num,
-                    (SELECT callsign FROM talkgroup_ids WHERE id = tg_num), dmr_id,
-                    (SELECT json_array(callsign, name) FROM subscriber_ids WHERE id = dmr_id)
-                    FROM lstheard_log ORDER BY date_time DESC LIMIT %s'''
+                stm = '''SELECT CONVERT(lh.date_time, CHAR), lh.qso_time, lh.qso_type,
+                    lh.system, lh.tg_num,
+                    (SELECT callsign FROM talkgroup_ids WHERE id = lh.tg_num), lh.dmr_id,
+                    (SELECT json_array(callsign, name) FROM subscriber_ids WHERE id = lh.dmr_id),
+                    (SELECT json_array(callsign, name) FROM subscriber_ids
+                     WHERE id = lh.tg_num AND lh.qso_type = 'UNIT VOICE')
+                    FROM lstheard_log lh ORDER BY lh.date_time DESC LIMIT %s'''
 
             result = yield self.db.runQuery(stm, (_row_num,))
             tmp_lst = []
             if result:
                 for row in result:
+                    r_lst = list(row)
                     if row[7]:
-                        r_lst = list(row)
                         r_lst[7] = jloads(row[7])
-                        tmp_lst.append(tuple(r_lst))
-                    else:
-                        tmp_lst.append(row)
+                    if len(row) > 8 and row[8]:
+                        r_lst[8] = jloads(row[8])
+                    tmp_lst.append(tuple(r_lst))
             returnValue(tmp_lst)
 
         except Exception as err:

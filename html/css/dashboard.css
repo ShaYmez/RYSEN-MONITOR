@@ -106,6 +106,34 @@
     flex: 0 0 auto;
 }
 
+.badge-unit-tx {
+    background-color: #e0007a !important;
+    color: #fff !important;
+}
+
+.badge-unit-tx .text-dark {
+    color: #fff !important;
+}
+
+.badge-unit-rx {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge-unit-rx .text-dark {
+    color: #212529 !important;
+}
+
+.lh-unit-row > td {
+    border-bottom-color: #e0007a;
+    border-top-color: #e0007a;
+}
+
+.lh-unit-label {
+    color: #e0007a;
+    font-weight: 700;
+}
+
 /* Narrow phones: 3 badges per row, centred as a group */
 @media (max-width: 575.98px) {
     .dashboard-activity-card .activity-qso-grid {

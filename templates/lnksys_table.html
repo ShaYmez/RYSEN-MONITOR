@@ -135,7 +135,11 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                     <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                     <td class="table-active align-middle text-center">
                       <span class="badge badge-pill
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -146,7 +150,11 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                     </td>
                     <td class="table-active align-middle text-center">
                       <span class="badge 
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -155,7 +163,11 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                     </td>
                     <td class="table-active align-middle text-center">
                       <span class="badge 
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -166,7 +178,11 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                     <td class="peer-loc-cell align-middle text-center">{{_cdata['LOCATION']}}</td>
                     <td class="align-middle text-center">
                       <span class="badge badge-pill 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -177,7 +193,11 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                     </td>
                     <td class="align-middle text-center">
                       <span class="badge 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -186,7 +206,11 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                     </td>
                     <td class="align-middle text-center">
                       <span class="badge 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -260,7 +284,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                   <td class="table-active align-middle text-center">
                     <span class="badge badge-pill
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -271,7 +299,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -280,7 +312,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -291,7 +327,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   <td class="p-0 align-middle text-center">{{_cdata['LOCATION']}}</td>
                   <td class="align-middle text-center">
                     <span class="badge badge-pill 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -302,7 +342,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -311,7 +355,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -381,7 +429,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                   <td class="table-active align-middle text-center">
                     <span class="badge badge-pill
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -392,7 +444,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -401,7 +457,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
-                            {% if _cdata[1]['TRX'] == 'RX' %}
+                            {% if _cdata[1]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[1]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[1]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[1]['TRX'] == 'TX' %}
                               badge-success
@@ -412,7 +472,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   <td class="p-0 align-middle text-center">{{_cdata['LOCATION']}}</td>
                   <td class="align-middle text-center">
                     <span class="badge badge-pill 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -423,7 +487,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -432,7 +500,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
-                            {% if _cdata[2]['TRX'] == 'RX' %}
+                            {% if _cdata[2]['TRX'] == 'UNIT_TX' %}
+                              badge-unit-tx
+                            {% elif _cdata[2]['TRX'] == 'UNIT_RX' %}
+                              badge-unit-rx
+                            {% elif _cdata[2]['TRX'] == 'RX' %}
                               badge-danger
                             {% elif _cdata[2]['TRX'] == 'TX' %}
                               badge-success
@@ -504,7 +576,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge badge-pill
-                      {% if _pdata[1]['TRX'] == 'RX' %}
+                      {% if _pdata[1]['TRX'] == 'UNIT_TX' %}
+                        badge-unit-tx
+                      {% elif _pdata[1]['TRX'] == 'UNIT_RX' %}
+                        badge-unit-rx
+                      {% elif _pdata[1]['TRX'] == 'RX' %}
                         badge-danger
                       {% elif _pdata[1]['TRX'] == 'TX' %}
                         badge-success
@@ -515,7 +591,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
-                    {% if _pdata[1]['TRX'] == 'RX' %}
+                    {% if _pdata[1]['TRX'] == 'UNIT_TX' %}
+                      badge-unit-tx
+                    {% elif _pdata[1]['TRX'] == 'UNIT_RX' %}
+                      badge-unit-rx
+                    {% elif _pdata[1]['TRX'] == 'RX' %}
                       badge-danger
                     {% elif _pdata[1]['TRX'] == 'TX' %}
                       badge-success
@@ -524,7 +604,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="table-active align-middle text-center">
                     <span class="badge 
-                    {% if _pdata[1]['TRX'] == 'RX' %}
+                    {% if _pdata[1]['TRX'] == 'UNIT_TX' %}
+                      badge-unit-tx
+                    {% elif _pdata[1]['TRX'] == 'UNIT_RX' %}
+                      badge-unit-rx
+                    {% elif _pdata[1]['TRX'] == 'RX' %}
                       badge-danger
                     {% elif _pdata[1]['TRX'] == 'TX' %}
                       badge-success
@@ -535,7 +619,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   <td class="p-0 align-middle text-center">{{_table['PEERS'][_peer]['LOCATION']}}</td>
                   <td class="align-middle text-center">
                     <span class="badge badge-pill 
-                      {% if _pdata[2]['TRX'] == 'RX' %}
+                      {% if _pdata[2]['TRX'] == 'UNIT_TX' %}
+                        badge-unit-tx
+                      {% elif _pdata[2]['TRX'] == 'UNIT_RX' %}
+                        badge-unit-rx
+                      {% elif _pdata[2]['TRX'] == 'RX' %}
                         badge-danger
                       {% elif _pdata[2]['TRX'] == 'TX' %}
                         badge-success
@@ -546,7 +634,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
-                      {% if _pdata[2]['TRX'] == 'RX' %}
+                      {% if _pdata[2]['TRX'] == 'UNIT_TX' %}
+                        badge-unit-tx
+                      {% elif _pdata[2]['TRX'] == 'UNIT_RX' %}
+                        badge-unit-rx
+                      {% elif _pdata[2]['TRX'] == 'RX' %}
                         badge-danger
                       {% elif _pdata[2]['TRX'] == 'TX' %}
                         badge-success
@@ -555,7 +647,11 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                   <td class="align-middle text-center">
                     <span class="badge 
-                      {% if _pdata[2]['TRX'] == 'RX' %}
+                      {% if _pdata[2]['TRX'] == 'UNIT_TX' %}
+                        badge-unit-tx
+                      {% elif _pdata[2]['TRX'] == 'UNIT_RX' %}
+                        badge-unit-rx
+                      {% elif _pdata[2]['TRX'] == 'RX' %}
                         badge-danger
                       {% elif _pdata[2]['TRX'] == 'TX' %}
                         badge-success
