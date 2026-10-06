@@ -126,6 +126,8 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         self.assertIn(
             'class="text-xs text-dark">PC&nbsp;G0DEST', activity)
         self.assertNotIn(".badge-unit-tx .text-dark", css)
+        self.assertIn("background-color: #28a745 !important;", css)
+        self.assertNotIn(".badge-unit-rx .text-dark", css)
         self.assertEqual(activity.count("badge-unit-tx"), 1)
         self.assertEqual(activity.count("badge-unit-rx"), 1)
         self.assertNotIn("PC OUT", activity)
