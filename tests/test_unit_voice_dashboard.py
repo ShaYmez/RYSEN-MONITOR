@@ -112,6 +112,8 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         env.get_template("main/stats.html")
         activity = env.get_template("main/activity.html").render(
             _table=monitor.CTABLE)
+        stats = env.get_template("main/stats.html").render(
+            _table=monitor.CTABLE)
         opb = env.get_template("opb_table.html").render(
             _table=monitor.CTABLE)
         self.assertIn("badge-unit-tx", activity)
@@ -122,6 +124,7 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         self.assertIn("PC OUT", opb)
         self.assertIn("M0CALL", opb)
         self.assertIn("G0DEST", opb)
+        self.assertIn("<h3>3</h3>", stats)
 
     def test_lastheard_unit_row_uses_destination_subscriber(self):
         env = Environment(loader=FileSystemLoader(str(ROOT / "templates")))
@@ -133,11 +136,13 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         )
         html = env.get_template("main/lastheard_rows.html").render(
             _table={"SETUP": {"LASTHEARD": True}}, lastheard=[row])
+        full_html = env.get_template("lasthrd_log.html").render(_table=[row])
         self.assertIn("lh-unit-row", html)
         self.assertIn("badge-unit-tx", html)
         self.assertIn("PC 2345875", html)
         self.assertIn("G0DEST", html)
         self.assertIn("Callee", html)
+        self.assertIn('<tr class="lh-unit-row">', full_html)
 
 
 if __name__ == "__main__":

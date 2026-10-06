@@ -17,7 +17,7 @@
         <div class="table-responsive">
           <table class="table m-0 table-striped table-sm dashboard-table lh-table">
             <thead>
-              <tr{% if itm[2] == 'UNIT VOICE' %} class="lh-unit-row"{% endif %}>
+              <tr>
                 <th style="width: 105px;" id="lh_date"></th>
                 <th id="lh_time"></th>
                 <th style="width: 150px;" id="lh_callsignid"></th>
@@ -30,7 +30,7 @@
             </thead>
             <tbody>
               {% for itm in _table %}
-              <tr>
+              <tr{% if itm[2] == 'UNIT VOICE' %} class="lh-unit-row"{% endif %}>
                 <td>{{ itm[0][:10] }}</td>
                 <td>{{ itm[0][11:] }}</td>
                 {% if not itm[7] %}
