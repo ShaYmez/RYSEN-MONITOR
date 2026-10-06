@@ -9,13 +9,13 @@
           {% for _master in _table['MASTERS'] %}
           {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
           {% if _cdata[1]['TS'] == True or _cdata[2]['TS'] == True %}
-          {% if _cdata[1]['TRX'] == "RX" %}
+          {% if _cdata[1]['TRX'] in ("RX", "UNIT_TX", "UNIT_RX") %}
           <div class="activity-qso-badge">
-            <span class="badge badge-danger text-sm">
+            <span class="badge text-sm {% if _cdata[1]['TRX'] == 'UNIT_TX' %}badge-unit-tx{% elif _cdata[1]['TRX'] == 'UNIT_RX' %}badge-unit-rx{% else %}badge-danger{% endif %}">
               <table>
                 <tbody>
                   <tr>
-                    <td rowspan="2">TX |</td>
+                    <td rowspan="2">{% if _cdata[1]['TRX'] == 'UNIT_RX' %}RX{% else %}TX{% endif %} |</td>
                     <td>{{ _cdata[1]['CALL']|safe }}</td>
                   </tr>
                   <tr>
@@ -26,13 +26,13 @@
             </span>
           </div>
           {% endif %}
-          {% if _cdata[2]['TRX'] == "RX" %}
+          {% if _cdata[2]['TRX'] in ("RX", "UNIT_TX", "UNIT_RX") %}
           <div class="activity-qso-badge">
-            <span class="badge badge-danger text-sm">
+            <span class="badge text-sm {% if _cdata[2]['TRX'] == 'UNIT_TX' %}badge-unit-tx{% elif _cdata[2]['TRX'] == 'UNIT_RX' %}badge-unit-rx{% else %}badge-danger{% endif %}">
               <table>
                 <tbody>
                   <tr>
-                    <td rowspan="2">TX |</td>
+                    <td rowspan="2">{% if _cdata[2]['TRX'] == 'UNIT_RX' %}RX{% else %}TX{% endif %} |</td>
                     <td>{{ _cdata[2]['CALL']|safe}}</td>
                   </tr>
                   <tr>
@@ -48,13 +48,13 @@
           {% endfor %}
           {% for _peer, _pdata in _table['PEERS'].items() %}
           {% if _pdata[1]['TS'] == True or _pdata[2]['TS'] == True %}
-          {% if _pdata[1]['TRX'] == "RX" %}
+          {% if _pdata[1]['TRX'] in ("RX", "UNIT_TX", "UNIT_RX") %}
           <div class="activity-qso-badge">
-            <span class="badge badge-danger text-sm">
+            <span class="badge text-sm {% if _pdata[1]['TRX'] == 'UNIT_TX' %}badge-unit-tx{% elif _pdata[1]['TRX'] == 'UNIT_RX' %}badge-unit-rx{% else %}badge-danger{% endif %}">
               <table>
                 <tbody>
                   <tr>
-                    <td rowspan="2">TX |</td>
+                    <td rowspan="2">{% if _pdata[1]['TRX'] == 'UNIT_RX' %}RX{% else %}TX{% endif %} |</td>
                     <td>{{ _pdata[1]['CALL']|safe }}</td>
                   </tr>
                   <tr>
@@ -65,13 +65,13 @@
             </span>
           </div>
           {% endif %}
-          {% if _pdata[2]['TRX'] == "RX" %}
+          {% if _pdata[2]['TRX'] in ("RX", "UNIT_TX", "UNIT_RX") %}
           <div class="activity-qso-badge">
-            <span class="badge badge-danger text-sm">
+            <span class="badge text-sm {% if _pdata[2]['TRX'] == 'UNIT_TX' %}badge-unit-tx{% elif _pdata[2]['TRX'] == 'UNIT_RX' %}badge-unit-rx{% else %}badge-danger{% endif %}">
               <table>
                 <tbody>
                   <tr>
-                    <td rowspan="2">TX |</td>
+                    <td rowspan="2">{% if _pdata[2]['TRX'] == 'UNIT_RX' %}RX{% else %}TX{% endif %} |</td>
                     <td>{{ _pdata[2]['CALL']|safe }}</td>
                   </tr>
                   <tr>
@@ -86,32 +86,42 @@
           {% endfor %}
           {% if _table['OPENBRIDGES']|length >0 %}
           {% for _openbridge in _table['OPENBRIDGES'] %}
-          {% set rx = namespace(value=0) %}
           {% if _table['OPENBRIDGES'][_openbridge]['STREAMS']|length >0 %}
-          {% for entry in _table['OPENBRIDGES'][_openbridge]['STREAMS'] if
-          _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0]=='RX' %}
-          {% set rx.value=1 %}
-          {% endfor %}
-          {% if rx.value == 1 %}
-          {% for entry in _table['OPENBRIDGES'][_openbridge]['STREAMS'] if
-          _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0] == 'RX' %}
+          {% for entry, stream in _table['OPENBRIDGES'][_openbridge]['STREAMS'].items() %}
+          {% if stream is mapping and stream.get('TYPE') == 'UNIT VOICE' %}
           <div class="activity-qso-badge">
-            <span class="badge badge-success text-sm">
+            <span class="badge {{ 'badge-unit-tx' if stream['ROLE'] == 'OUT' else 'badge-unit-rx' }} text-sm">
               <table>
                 <tbody>
                   <tr>
-                    <td rowspan="2">{{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0]}} |</td>
-                    <td>{{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][1]}}</td>
+                    <td rowspan="2">PC {{ stream['ROLE'] }} |</td>
+                    <td>{{ stream['CALL'] }}</td>
                   </tr>
                   <tr>
-                    <td class="text-xs text-dark">TG {{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][2]}}</td>
+                    <td class="text-xs text-dark">PC {{ stream['DEST'] }}</td>
                   </tr>
                 </tbody>
               </table>
             </span>
           </div>
-          {% endfor %}
+          {% elif stream[0] == 'RX' %}
+          <div class="activity-qso-badge">
+            <span class="badge badge-success text-sm">
+              <table>
+                <tbody>
+                  <tr>
+                    <td rowspan="2">{{ stream[0]}} |</td>
+                    <td>{{ stream[1]}}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-xs text-dark">TG {{ stream[2]}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </span>
+          </div>
           {% endif %}
+          {% endfor %}
           {% endif %}
           {% endfor %}
           {% endif %}

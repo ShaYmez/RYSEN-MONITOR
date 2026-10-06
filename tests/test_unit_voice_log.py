@@ -43,6 +43,14 @@ class TestUnitVoiceLog(unittest.TestCase):
         self.assertIsNone(monitor.unit_voice_log_message(_parts("OBP-EU"), NOW, {}, {}))
         self.assertIsNone(monitor.unit_voice_log_message(_parts("HYTERA-0", trx="TX"), NOW, {}, {}))
 
+    def test_delivery_and_route_telemetry_are_not_legacy_hears(self):
+        self.assertIsNone(
+            monitor.unit_voice_log_message(
+                _parts("MASTER", action="TO START", trx="TX"), NOW, {}, {}))
+        self.assertIsNone(
+            monitor.unit_voice_log_message(
+                _parts("OBP-EU", action="VIA START", trx="TX"), NOW, {}, {}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -152,6 +152,7 @@ TGC_DATE = None
 
 # create empty systems list
 sys_dict = {"lst_clean": 0}
+unit_sys_dict = {}
 
 # CONSTANTS
 SUB_FIELDS   = ("id", "callsign", "fname", "surname", "city", "state", "country")
@@ -446,7 +447,7 @@ def alias_tgid(_id, _dict):
         return str(" ")
 
 
-def unit_voice_log_message(parts, now, subscriber_ids, talkgroup_ids):
+def unit_voice_log_message(parts, now, subscriber_ids, destination_subscribers):
     """Monitor log line for a unit call that started on this master.
 
     OpenBridge copies and TX repeats are not a hear. The line uses the same
@@ -472,7 +473,7 @@ def unit_voice_log_message(parts, now, subscriber_ids, talkgroup_ids):
     # character shorter, so the word is written out.
     line = (
         f"{clock} {'VOICE':5.5s} {action:5.5s} SYS: {parts[3]:10.10s} SRC_ID: {parts[5]:5.5s} "
-        f"TS: {parts[7]} TGID: {dest:<7} {alias_tgid(dest, talkgroup_ids):17.17s} "
+        f"TS: {parts[7]} TGID: {dest:<7} {alias_short(dest, destination_subscribers):17.17s} "
         f"SUB: {radio:<9}; {alias_short(radio, subscriber_ids):18.18s}"
     )
     if action == "END":
@@ -569,7 +570,8 @@ def cleanTE():
 
     for system in CTABLE["OPENBRIDGES"]:
         for streamId in list(CTABLE["OPENBRIDGES"][system]["STREAMS"]):
-            ts = CTABLE["OPENBRIDGES"][system]["STREAMS"][streamId][3]
+            stream = CTABLE["OPENBRIDGES"][system]["STREAMS"][streamId]
+            ts = stream.get("TIMEOUT", 0) if isinstance(stream, dict) else stream[3]
             td = ts - timeout if ts > timeout else timeout - ts
             td = int(round(abs((td)) / 60))
             if td > 3:
@@ -771,6 +773,8 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer[ts]["SRC"] = ""
         _ctable_peer[ts]["DEST"] = ""
         _ctable_peer[ts]["SID"] = ""
+        _ctable_peer[ts]["UNIT_FROM"] = ""
+        _ctable_peer[ts]["UNIT_TO"] = ""
 
 
 ###############################################################################
@@ -862,6 +866,8 @@ def build_hblink_table(_config, _stats_table):
                     _stats_table["PEERS"][_hbp][ts]["SRC"] = ""
                     _stats_table["PEERS"][_hbp][ts]["DEST"] = ""
                     _stats_table["PEERS"][_hbp][ts]["SID"] = ""
+                    _stats_table["PEERS"][_hbp][ts]["UNIT_FROM"] = ""
+                    _stats_table["PEERS"][_hbp][ts]["UNIT_TO"] = ""
 
             # Process OpenBridge systems
             elif _hbp_data["MODE"] == "OPENBRIDGE":
@@ -1067,6 +1073,16 @@ def push_statictg_live(client=None):
     _broadcast_table("s", html, "statictg", client, "statictg")
 
 
+def push_opb_live(client=None):
+    """Push OpenBridge streams immediately on live QSO events."""
+    if not CONFIG:
+        return
+    if not client and not GROUPS["opb"]:
+        return
+    html = otemplate.render(_table=CTABLE, dbridges=CONF["GLOBAL"]["BRDG_INC"])
+    _broadcast_table("o", html, "opb", client, "opb")
+
+
 _live_tables_pending = False
 
 
@@ -1084,6 +1100,7 @@ def _push_live_tables():
     _live_tables_pending = False
     push_lnksys_live()
     push_statictg_live()
+    push_opb_live()
 
 
 def _schedule_live_tables():
@@ -1100,6 +1117,7 @@ def push_live_dashboard(client=None):
     if client:
         push_lnksys_live(client)
         push_statictg_live(client)
+        push_opb_live(client)
     else:
         _schedule_live_tables()
 
@@ -1463,10 +1481,125 @@ def _clear_slot(slot):
     slot["TRX"] = ""
     slot["SID"] = ""
     slot["RSSI"] = ""
+    slot["UNIT_FROM"] = ""
+    slot["UNIT_TO"] = ""
+
+
+def _set_unit_slot(slot, role, stream_id, source_sub, destination, timeout, parts):
+    """Paint one exact private-call endpoint using radio-facing roles."""
+    caller = alias_call(source_sub, subscriber_ids)
+    callee = alias_call(destination, subscriber_ids)
+    is_origin = role == "ORIGIN"
+    actor_id = source_sub if is_origin else destination
+    actor_call = caller if is_origin else callee
+    other_id = destination if is_origin else source_sub
+    other_call = callee if is_origin else caller
+    slot["TIMEOUT"] = timeout
+    slot["TS"] = True
+    slot["TYPE"] = "UNIT VOICE"
+    slot["SUB"] = f"{actor_call} ({actor_id})"
+    slot["CALL"] = actor_call
+    slot["SRC"] = actor_id
+    slot["DEST"] = f"PC {other_call} ({other_id})"
+    slot["TG"] = f"PC&nbsp;{other_call}"
+    slot["TRX"] = "UNIT_TX" if is_origin else "UNIT_RX"
+    slot["SID"] = stream_id
+    slot["RSSI"] = _event_rssi(parts) if is_origin else ""
+    slot["UNIT_FROM"] = f"{caller} ({source_sub})"
+    slot["UNIT_TO"] = f"{callee} ({destination})"
+
+
+def unit_rts_update(parts):
+    """Update exact origin, delivery, and OpenBridge legs for a unit call."""
+    if len(parts) < 9:
+        return
+    action = parts[1]
+    if action in ("START", "END", "RSSI"):
+        leg, phase = "ORIGIN", action
+    elif action.startswith("TO "):
+        leg, phase = "TO", action[3:]
+    elif action.startswith("VIA "):
+        leg, phase = "VIA", action[4:]
+    else:
+        return
+    if phase not in ("START", "END", "RSSI"):
+        return
+    try:
+        system = parts[3]
+        stream_id = parts[4]
+        peer_id = int(parts[5])
+        source_sub = int(parts[6])
+        time_slot = int(parts[7])
+        destination = int(parts[8])
+    except (TypeError, ValueError):
+        return
+    timeout = time()
+    changed = False
+
+    if leg in ("ORIGIN", "TO") and system in CTABLE["MASTERS"]:
+        peer = CTABLE["MASTERS"][system]["PEERS"].get(peer_id)
+        if peer and time_slot in peer:
+            slot = peer[time_slot]
+            if phase == "START":
+                _set_unit_slot(
+                    slot, leg, stream_id, source_sub, destination, timeout, parts)
+                changed = True
+            elif (phase == "RSSI" and leg == "ORIGIN" and slot.get("TS")
+                    and slot.get("SID") == stream_id):
+                label = _event_rssi(parts)
+                if slot.get("RSSI") != label:
+                    slot["RSSI"] = label
+                    changed = True
+            elif phase == "END" and _slot_is_stream(slot, stream_id):
+                _clear_slot(slot)
+                changed = True
+
+    if leg in ("ORIGIN", "TO") and system in CTABLE["PEERS"]:
+        slot = CTABLE["PEERS"][system].get(time_slot)
+        if slot is not None:
+            if phase == "START":
+                _set_unit_slot(
+                    slot, leg, stream_id, source_sub, destination, timeout, parts)
+                changed = True
+            elif (phase == "RSSI" and leg == "ORIGIN" and slot.get("TS")
+                    and slot.get("SID") == stream_id):
+                label = _event_rssi(parts)
+                if slot.get("RSSI") != label:
+                    slot["RSSI"] = label
+                    changed = True
+            elif phase == "END" and _slot_is_stream(slot, stream_id):
+                _clear_slot(slot)
+                changed = True
+
+    if leg == "VIA" and system in CTABLE["OPENBRIDGES"]:
+        streams = CTABLE["OPENBRIDGES"][system]["STREAMS"]
+        if phase == "START":
+            caller = alias_call(source_sub, subscriber_ids)
+            callee = alias_call(destination, subscriber_ids)
+            streams[stream_id] = {
+                "TRX": parts[2],
+                "TYPE": "UNIT VOICE",
+                "ROLE": "OUT" if parts[2] == "TX" else "IN",
+                "CALL": caller,
+                "SOURCE_ID": source_sub,
+                "DEST": callee,
+                "DEST_ID": destination,
+                "TIMEOUT": timeout,
+            }
+            changed = True
+        elif phase == "END" and stream_id in streams:
+            del streams[stream_id]
+            changed = True
+
+    if changed:
+        push_live_dashboard()
 
 
 def rts_update(p):
     callType = p[0]
+    if callType == "UNIT VOICE":
+        unit_rts_update(p)
+        return
     action = p[1]
     trx = p[2]
     system = p[3]
@@ -1604,11 +1737,14 @@ def process_message(_bmessage):
     elif opcode == OPCODE["BRDG_EVENT"]:
         logger.debug(f"BRIDGE EVENT: {_message[1:]}")
         p = _message[1:].split(",")
-        if p[0] == "GROUP VOICE":
+        if p[0] in ("GROUP VOICE", "UNIT VOICE"):
             rts_update(p)
         if len(p) > 8:
             db2dict(int(p[6]), "subscriber_ids")
-            db2dict(int(p[8]), "talkgroup_ids")
+            if p[0] == "GROUP VOICE":
+                db2dict(int(p[8]), "talkgroup_ids")
+            elif p[0] in ("UNIT VOICE", "UNIT DATA HEADER"):
+                db2dict(int(p[8]), "subscriber_ids")
         if p[0] == "GROUP VOICE":
             if p[1] == "RSSI":
                 return None
@@ -1672,11 +1808,21 @@ def process_message(_bmessage):
             LOGBUF.append(log_message)
 
         elif p[0] == "UNIT VOICE" and p[5] not in CONF["OPB_FLTR"]["OPB_FILTER"]:
-            log_message = unit_voice_log_message(p, _now, subscriber_ids, talkgroup_ids)
+            log_message = unit_voice_log_message(p, _now, subscriber_ids, subscriber_ids)
             if not log_message:
                 return None
             dashboard_server.broadcast("l" + log_message, "log")
             LOGBUF.append(log_message)
+            unit_key = (p[3], p[4])
+            if p[1] == "START":
+                unit_sys_dict[unit_key] = {"timeST": time()}
+            elif p[1] == "END" and unit_key in unit_sys_dict:
+                del unit_sys_dict[unit_key]
+                if CONF["GLOBAL"]["LH_INC"]:
+                    db_conn.ins_lstheard_log(p[9], p[0], p[3], p[8], p[6])
+                    if int(float(p[9])) > 2:
+                        ensureDeferred(
+                            record_lastheard(p[9], p[0], p[3], p[8], p[6]))
 
         elif p[0] == "UNIT DATA HEADER" and p[2] != "TX" and p[5] not in CONF["OPB_FLTR"]["OPB_FILTER"]:
             logger.info(f"BRIDGE EVENT: {_message[1:]}")

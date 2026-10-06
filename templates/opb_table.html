@@ -32,13 +32,18 @@
                 <td class="align-middle"><strong>{{ _table['OPENBRIDGES'][_openbridge]['NETWORK_ID']
                     }}</strong></td>
                 <td class="align-middle">
-                  {% for entry in _table['OPENBRIDGES'][_openbridge]['STREAMS'] %}
-                  <span
-                    class="badge {{ 'badge-success' if _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0] == 'RX' else 'badge-danger' }}">
-                    {{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][0] }}:&nbsp;
-                    {{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][1] }}&nbsp;>>
-                    TG&nbsp;{{ _table['OPENBRIDGES'][_openbridge]['STREAMS'][entry][2] }}
+                  {% for entry, stream in _table['OPENBRIDGES'][_openbridge]['STREAMS'].items() %}
+                  {% if stream is mapping and stream.get('TYPE') == 'UNIT VOICE' %}
+                  <span class="badge {{ 'badge-unit-tx' if stream['ROLE'] == 'OUT' else 'badge-unit-rx' }}">
+                    PC {{ stream['ROLE'] }}:&nbsp;{{ stream['CALL'] }} ({{ stream['SOURCE_ID'] }})&nbsp;>>
+                    {{ stream['DEST'] }} ({{ stream['DEST_ID'] }})
                   </span>
+                  {% else %}
+                  <span class="badge {{ 'badge-success' if stream[0] == 'RX' else 'badge-danger' }}">
+                    {{ stream[0] }}:&nbsp;{{ stream[1] }}&nbsp;>>
+                    TG&nbsp;{{ stream[2] }}
+                  </span>
+                  {% endif %}
                   {% endfor %}
                 </td>
               </tr>
