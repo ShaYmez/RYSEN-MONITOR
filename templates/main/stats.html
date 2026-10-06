@@ -42,7 +42,7 @@
   {% for _openbridge in _table['OPENBRIDGES'] %}
     {% if _table['OPENBRIDGES'][_openbridge]['STREAMS']|length > 0 %}
       {% for entry, stream in _table['OPENBRIDGES'][_openbridge]['STREAMS'].items() %}
-        {% if (stream is mapping and stream.get('TYPE') == 'UNIT VOICE') or (stream is not mapping and stream[0] == 'RX') %}
+        {% if stream is not mapping and stream[0] == 'RX' %}
           {% set countcon.value = countcon.value + 1 %}
         {% endif %}
       {% endfor %}
