@@ -35,8 +35,8 @@
                   {% for entry, stream in _table['OPENBRIDGES'][_openbridge]['STREAMS'].items() %}
                   {% if stream is mapping and stream.get('TYPE') == 'UNIT VOICE' %}
                   <span class="badge {{ 'badge-unit-tx' if stream['ROLE'] == 'OUT' else 'badge-unit-rx' }}">
-                    PC {{ stream['ROLE'] }}:&nbsp;{{ stream['CALL'] }} ({{ stream['SOURCE_ID'] }})&nbsp;>>
-                    {{ stream['DEST'] }} ({{ stream['DEST_ID'] }})
+                    {{ 'TX' if stream['ROLE'] == 'OUT' else 'RX' }}:&nbsp;{{ stream['CALL'] }}&nbsp;>>
+                    PC&nbsp;{{ stream['DEST'] }}
                   </span>
                   {% else %}
                   <span class="badge {{ 'badge-success' if stream[0] == 'RX' else 'badge-danger' }}">
