@@ -121,10 +121,13 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         self.assertIn("TX", activity)
         self.assertIn("RX", activity)
         self.assertIn("PC&nbsp;G0DEST", activity)
+        self.assertEqual(activity.count("badge-unit-tx"), 1)
+        self.assertEqual(activity.count("badge-unit-rx"), 1)
+        self.assertNotIn("PC OUT", activity)
         self.assertIn("PC OUT", opb)
         self.assertIn("M0CALL", opb)
         self.assertIn("G0DEST", opb)
-        self.assertIn("<h3>3</h3>", stats)
+        self.assertIn("<h3>2</h3>", stats)
 
     def test_lastheard_unit_row_uses_destination_subscriber(self):
         env = Environment(loader=FileSystemLoader(str(ROOT / "templates")))
