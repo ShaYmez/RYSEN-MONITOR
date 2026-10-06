@@ -106,6 +106,8 @@ class TestUnitVoiceDashboard(unittest.TestCase):
             _event("TO START", "MASTER-B", 222, slot="2", trx="TX"))
         monitor.unit_rts_update(
             _event("VIA START", "OBP-EU", 2040, trx="TX", stream="via"))
+        monitor.unit_rts_update(
+            _event("VIA START", "OBP-EU", 2040, trx="RX", stream="via-in"))
         env = Environment(loader=FileSystemLoader(str(ROOT / "templates")))
         env.filters["flag_code"] = monitor.country_flag_code
         env.get_template("lnksys_table.html")
@@ -116,17 +118,23 @@ class TestUnitVoiceDashboard(unittest.TestCase):
             _table=monitor.CTABLE)
         opb = env.get_template("opb_table.html").render(
             _table=monitor.CTABLE)
+        css = (ROOT / "html" / "css" / "dashboard.css").read_text()
         self.assertIn("badge-unit-tx", activity)
         self.assertIn("badge-unit-rx", activity)
         self.assertIn("TX", activity)
         self.assertIn("RX", activity)
-        self.assertIn("PC&nbsp;G0DEST", activity)
+        self.assertIn(
+            'class="text-xs text-dark">PC&nbsp;G0DEST', activity)
+        self.assertNotIn(".badge-unit-tx .text-dark", css)
         self.assertEqual(activity.count("badge-unit-tx"), 1)
         self.assertEqual(activity.count("badge-unit-rx"), 1)
         self.assertNotIn("PC OUT", activity)
-        self.assertIn("PC OUT", opb)
+        self.assertIn("TX:", opb)
+        self.assertIn("RX:", opb)
+        self.assertNotIn("PC OUT", opb)
+        self.assertNotIn("PC IN", opb)
         self.assertIn("M0CALL", opb)
-        self.assertIn("G0DEST", opb)
+        self.assertIn("PC&nbsp;G0DEST", opb)
         self.assertIn("<h3>2</h3>", stats)
 
     def test_lastheard_unit_row_uses_destination_subscriber(self):

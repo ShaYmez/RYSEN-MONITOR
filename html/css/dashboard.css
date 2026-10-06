@@ -111,16 +111,8 @@
     color: #fff !important;
 }
 
-.badge-unit-tx .text-dark {
-    color: #fff !important;
-}
-
 .badge-unit-rx {
     background-color: #ffc107 !important;
-    color: #212529 !important;
-}
-
-.badge-unit-rx .text-dark {
     color: #212529 !important;
 }
 
