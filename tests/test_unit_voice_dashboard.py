@@ -155,7 +155,33 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         self.assertIn("PC 2345875", html)
         self.assertIn("G0DEST", html)
         self.assertIn("Callee", html)
+        self.assertNotIn("lh-data", html)
         self.assertIn('<tr class="lh-unit-row">', full_html)
+
+    def test_lastheard_sms_shows_recipient_and_green_data(self):
+        env = Environment(loader=FileSystemLoader(str(ROOT / "templates")))
+        env.filters["flag_code"] = monitor.country_flag_code
+        row = (
+            "2026-10-09 18:30:23", None, "UNIT DATA HEADER", "SYSTEM-119",
+            2345548, None, 2345875, ["M0VUB", "Shane"],
+            ["2E0KZV", "Tony"],
+        )
+        html = env.get_template("main/lastheard_rows.html").render(
+            _table={"SETUP": {"LASTHEARD": True}}, lastheard=[row])
+        full_html = env.get_template("lasthrd_log.html").render(_table=[row])
+        query = (ROOT / "mon_db.py").read_text()
+        css = (ROOT / "html" / "css" / "dashboard.css").read_text()
+        self.assertEqual(
+            query.count("lh.qso_type IN ('UNIT VOICE', 'UNIT DATA HEADER')"), 2)
+        self.assertIn(".lh-data {\n    color: #28a745 !important;\n}", css)
+        for rendered in (html, full_html):
+            self.assertIn("2E0KZV", rendered)
+            self.assertIn("Tony", rendered)
+            self.assertIn("lh-data", rendered)
+            self.assertIn("DATA", rendered)
+            self.assertNotIn("badge-unit-tx", rendered)
+            self.assertNotIn("PC 2345548", rendered)
+            self.assertNotIn("lh-unit-row", rendered)
 
 
 if __name__ == "__main__":
