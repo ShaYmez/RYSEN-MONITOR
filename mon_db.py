@@ -244,7 +244,7 @@ class MoniDB:
                     (SELECT callsign FROM talkgroup_ids WHERE id = lh.tg_num), lh.dmr_id,
                     (SELECT json_array(callsign, name) FROM subscriber_ids WHERE id = lh.dmr_id),
                     (SELECT json_array(callsign, name) FROM subscriber_ids
-                     WHERE id = lh.tg_num AND lh.qso_type = 'UNIT VOICE')
+                     WHERE id = lh.tg_num AND lh.qso_type IN ('UNIT VOICE', 'UNIT DATA HEADER'))
                     FROM last_heard lh ORDER BY lh.date_time DESC LIMIT %s'''
 
             elif _table == "lstheard_log":
@@ -253,7 +253,7 @@ class MoniDB:
                     (SELECT callsign FROM talkgroup_ids WHERE id = lh.tg_num), lh.dmr_id,
                     (SELECT json_array(callsign, name) FROM subscriber_ids WHERE id = lh.dmr_id),
                     (SELECT json_array(callsign, name) FROM subscriber_ids
-                     WHERE id = lh.tg_num AND lh.qso_type = 'UNIT VOICE')
+                     WHERE id = lh.tg_num AND lh.qso_type IN ('UNIT VOICE', 'UNIT DATA HEADER'))
                     FROM lstheard_log lh ORDER BY lh.date_time DESC LIMIT %s'''
 
             result = yield self.db.runQuery(stm, (_row_num,))

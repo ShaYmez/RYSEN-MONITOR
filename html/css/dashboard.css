@@ -126,6 +126,10 @@
     font-weight: 700;
 }
 
+.lh-data {
+    color: #28a745 !important;
+}
+
 /* Narrow phones: 3 badges per row, centred as a group */
 @media (max-width: 575.98px) {
     .dashboard-activity-card .activity-qso-grid {

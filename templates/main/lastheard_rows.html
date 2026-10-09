@@ -31,6 +31,23 @@
       {% if dest and dest[1] %}<strong class="lh-tg-name">{{ dest[1] }}</strong>{% endif %}
     </div>
   </td>
+  {% elif itm[2] == 'UNIT DATA HEADER' %}
+  <td class="lh-tgnum-cell"><strong>{{ itm[4] }}</strong></td>
+  <td class="lh-tg-cell">
+    <div class="lh-tg-row">
+      {% set dest = itm[8] if itm|length > 8 else none %}
+      {% set dest_call = dest[0] if dest else itm[4] %}
+      {% set ctrydest = itm[4]|flag_code %}
+      <img class="dashboard-flag" src="./flags/{{ ctrydest }}.png" width="18" height="13"
+        onerror="this.onerror=null;this.src='./flags/world.png'" alt="">
+      {% if dest %}
+      <a class="lh-callsign" target="_blank" href="https://qrz.com/db/{{ dest_call }}">{{ dest_call }}</a>
+      {% if dest[1] %}<strong class="lh-tg-name">{{ dest[1] }}</strong>{% endif %}
+      {% else %}
+      <strong class="lh-tg-name">{{ itm[4] }}</strong>
+      {% endif %}
+    </div>
+  </td>
   {% else %}
   <td class="lh-tgnum-cell"><a href=""><strong>{{ itm[4] }}</strong></a></td>
   <td class="lh-tg-cell">
@@ -61,7 +78,7 @@
     </div>
   </td>
   {% endif %}
-  <td class="lh-tx-cell">{{ 'DATA' if not itm[1] else itm[1]|int }}</td>
+  <td class="lh-tx-cell{% if not itm[1] %} lh-data{% endif %}">{{ 'DATA' if not itm[1] else itm[1]|int }}</td>
 </tr>
 {% endfor %}
 {% endif %}
