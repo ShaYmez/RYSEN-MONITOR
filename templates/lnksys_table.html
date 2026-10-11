@@ -94,11 +94,7 @@
                 </tr>
               </thead>
               <tbody>
-                {% for _master in _table['MASTERS'] %}
-                {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0)
-                and
-                emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
-                {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+                {% for _master, _client, _cdata in _table['MASTERS']|peers_by_callsign %}
                 {% if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
                   {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') else _client %}
                   <tr>
@@ -221,8 +217,6 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                   </tr>
                   {% endif %}
                   {% endfor %}
-                  {% endif %}
-                  {% endfor %}
               </tbody>
             </table>
           </div>
@@ -254,10 +248,7 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                 </tr>
               </thead>
               <tbody>
-                {% for _master in _table['MASTERS'] %}
-                {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0)
-                and emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
-                {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+                {% for _master, _client, _cdata in _table['MASTERS']|peers_by_callsign %}
                 {% if _client|string|length >= 7 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
                 <tr>
                   <td class="peer-id-cell">
@@ -370,8 +361,6 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                 </tr>
                 {% endif %}
                 {% endfor %}
-                {% endif %}
-                {% endfor %}
               </tbody>
             </table>
           </div>
@@ -403,10 +392,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                 </tr>
               </thead>
               <tbody>
-                {% for _master in _table['MASTERS'] %}
-                {% if ((_table['MASTERS'][_master]['PEERS']|length==0 or _table['MASTERS'][_master]['PEERS']|length>0)
-                and emaster==True) or (_table['MASTERS'][_master]['PEERS']|length>0 and emaster==False) %}
-                {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+                {% for _master, _client, _cdata in _table['MASTERS']|peers_by_callsign %}
                 {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') not in ('IPSC', 'HYTERA') %}
                 <tr>
                   <td class="peer-id-cell">
@@ -513,8 +499,6 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                   </td>
                 </tr>
                 </tr>
-                {% endif %}
-                {% endfor %}
                 {% endif %}
                 {% endfor %}
               </tbody>
