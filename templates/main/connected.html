@@ -7,9 +7,7 @@
       </div>
       <div class="card-body">
         <div class="peer-pill-grid">
-          {% for _master in _table['MASTERS'] %}
-          {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
-          {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+          {% for _master, _client, _cdata in _table['MASTERS']|peers_by_callsign %}
           {% if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') or (_client|string|length == 6 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A') %}
           {% set _peer_id = _cdata['RADIO_ID'] if _cdata.get('PROTOCOL') in ('IPSC', 'HYTERA') else _client %}
           {% set _rptr_badge = 'badge-ipsc' if _cdata.get('PROTOCOL') == 'IPSC' else 'badge-hytera' if _cdata.get('PROTOCOL') == 'HYTERA' else 'badge-success' %}
@@ -37,8 +35,6 @@ Master: {{_master }}
 Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a>
           {% endif %}
           {% endfor %}
-          {% endif %}
-          {% endfor %}
         </div>
       </div>
     </div>
@@ -50,9 +46,7 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
       </div>
       <div class="card-body">
         <div class="peer-pill-grid">
-          {% for _master in _table['MASTERS'] %}
-          {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
-          {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+          {% for _master, _client, _cdata in _table['MASTERS']|peers_by_callsign %}
           {% if _client|string|length >= 7 and  _cdata['RX_FREQ'] != 'N/A' and _cdata['TX_FREQ'] != 'N/A' %}
           <a target="_blank" href="https://qrz.com/db/{{_cdata['CALLSIGN']}}" class="badge badge-pill badge-success"
             style="min-width: 3.5rem;" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="
@@ -69,8 +63,6 @@ Master: {{_master }}
 Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a>
           {% endif %}
           {% endfor %}
-          {% endif %}
-          {% endfor %}
         </div>
       </div>
     </div>
@@ -82,9 +74,7 @@ Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a
       </div>
       <div class="card-body">
         <div class="peer-pill-grid">
-          {% for _master in _table['MASTERS'] %}
-          {% if _table['MASTERS'][_master]['PEERS']|length >0 %}
-          {% for _client, _cdata in _table['MASTERS'][_master]['PEERS'].items() %}
+          {% for _master, _client, _cdata in _table['MASTERS']|peers_by_callsign %}
           {% if _cdata['RX_FREQ'] == 'N/A' and _cdata['TX_FREQ'] == 'N/A' and _cdata.get('PROTOCOL') not in ('IPSC', 'HYTERA') %}
           <a href="#" class="badge badge-pill badge-success" style="min-width: 3.5rem;" data-bs-toggle="tooltip"
             data-bs-placement="top" data-bs-html="true" title="
@@ -99,8 +89,6 @@ Software: {{_cdata['SOFTWARE_ID'] }}
 Info: {{_cdata['LOCATION']}}
 Master: {{_master }}
 Connected: {{ _cdata['CONNECTED'] }}"><strong>{{_cdata['CALLSIGN']}}</strong></a>
-          {% endif %}
-          {% endfor %}
           {% endif %}
           {% endfor %}
         </div>

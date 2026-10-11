@@ -142,6 +142,22 @@ def country_flag_code(value):
         return "world"
     code = match.group(1)
     return "world" if code == "000" else code
+
+
+def peers_by_callsign(masters):
+    """Flatten peers from every master and order them by callsign.
+
+    Master names (SYSTEM-N, IPSC-N, HYTERA-N) follow connection order.
+    Linked systems and the repeater, hotspot, and bridge sections should
+    read in callsign order instead.
+    """
+    rows = []
+    for master, master_data in (masters or {}).items():
+        for client, peer in (master_data.get("PEERS") or {}).items():
+            callsign = str((peer or {}).get("CALLSIGN") or "").strip()
+            rows.append((callsign.casefold(), str(client), master, client, peer))
+    rows.sort(key=lambda row: (row[0], row[1]))
+    return [(master, client, peer) for _call, _client_key, master, client, peer in rows]
 not_in_db = []
 # Last modified local files
 lcl_lstmod = {"peer_ids": None, "subscriber_ids": None, "talkgroup_ids": None}
@@ -2100,6 +2116,7 @@ if __name__ == "__main__":
         autoescape=select_autoescape(["html", "xml"])
         )
     env.filters["flag_code"] = country_flag_code
+    env.filters["peers_by_callsign"] = peers_by_callsign
 
     # define tables template
     itemplate = env.get_template("main_table.html")
