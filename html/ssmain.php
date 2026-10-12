@@ -5,6 +5,7 @@ initSecureSession();
 session_start();
 
 include_once "include/functions.php";
+require_once "include/ui-mode.php";
 include_once "include/api-config.php";
 checkSessionTimeout();
 
@@ -15,7 +16,7 @@ if (!isSelfcareLoggedIn()) {
     error_log("Access denied to ssmain.php - user not authenticated. Session user_id: " .
               (isset($_SESSION['user_id']) ? 'set' : 'not set') .
               ", int_ids: " . (isset($_SESSION['int_ids']) ? 'set' : 'not set'));
-    header("Location: sslogin.php");
+    header("Location: sslogin.php" . rysen_mode_query());
     exit();
 }
 
@@ -166,7 +167,8 @@ $csrfToken = generateCSRFToken();
     <link rel="stylesheet" href="css/dashboard.css?v=<?php echo filemtime(__DIR__ . '/css/dashboard.css'); ?>">
 </head>
 
-<body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm">
+<body class="hold-transition <?php echo rysen_ui_mode_class(); ?> layout-top-nav layout-navbar-fixed text-sm">
+    <?php include 'elements/mode-boot.php'; ?>
     <div class="wrapper">
         <?php if ($display_preloader): ?>
         <div class="preloader flex-column justify-content-center align-items-center">
@@ -570,7 +572,7 @@ $csrfToken = generateCSRFToken();
     </div>
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="scripts/mode.js"></script>
+    <script src="scripts/mode.js?v=<?php echo filemtime(__DIR__ . '/scripts/mode.js'); ?>"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
     <script src="scripts/monitor.js"></script>
     <script src="scripts/selfcare.js"></script>

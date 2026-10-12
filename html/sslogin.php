@@ -3,6 +3,7 @@
 require_once "error_handler.php";
 require_once "ssconfunc.php";
 require_once "include/functions.php";
+require_once "include/ui-mode.php";
 initSecureSession();
 session_start();
 
@@ -10,7 +11,7 @@ session_start();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' && isSelfcareLoggedIn()) {
     checkSessionTimeout();
     if (isSelfcareLoggedIn()) {
-        header('Location: ssmain.php');
+        header('Location: ssmain.php' . rysen_mode_query());
         exit();
     }
 }
@@ -69,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } catch (Exception $e) {
                     error_log("Claim audit logging failed: " . $e->getMessage());
                 }
-                header("Location: ssmain.php");
+                header("Location: ssmain.php" . rysen_mode_query());
                 exit();
             }
 
@@ -116,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $authResult = authenticateUser($username, $password);
             if ($authResult === true) {
                 clearLoginAttempts($clientIP);
-                header("Location: ssmain.php");
+                header("Location: ssmain.php" . rysen_mode_query());
                 exit();
             }
 
@@ -140,7 +141,8 @@ $csrfToken = generateCSRFToken();
     <?php include 'elements/header.php';?>
   </head>
   
-  <body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm">
+  <body class="hold-transition <?php echo rysen_ui_mode_class(); ?> layout-top-nav layout-navbar-fixed text-sm">
+    <?php include 'elements/mode-boot.php'; ?>
     <div class="wrapper">
       <?php if ($display_preloader): ?>
       <div class="preloader flex-column justify-content-center align-items-center">
@@ -283,7 +285,7 @@ $csrfToken = generateCSRFToken();
     
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="scripts/mode.js"></script>
+    <script src="scripts/mode.js?v=<?php echo filemtime(__DIR__ . '/scripts/mode.js'); ?>"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
     <script src="scripts/monitor.js"></script>
     <script src="scripts/selfcare-login.js"></script>

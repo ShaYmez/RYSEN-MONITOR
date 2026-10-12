@@ -1,41 +1,69 @@
-function setModePreference() {
-    const userPreference = localStorage.getItem('mode');
-    if (userPreference === 'light-mode') {
+function isEmbeddedFrame() {
+    try {
+      return window.self !== window.top;
+    } catch (err) {
+      return true;
+    }
+  }
+
+  function queryMode() {
+    try {
+      const mode = new URLSearchParams(window.location.search).get('mode');
+      if (mode === 'light' || mode === 'light-mode') {
+        return 'light-mode';
+      }
+      if (mode === 'dark' || mode === 'dark-mode') {
+        return 'dark-mode';
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    return null;
+  }
+
+  function applyMode(mode, persist) {
+    const nav = document.querySelector('nav');
+    if (mode === 'light-mode') {
       document.body.classList.remove('accent-warning');
       document.body.classList.remove('dark-mode');
       document.body.classList.add('light-mode');
-      document.querySelector('nav').classList.remove('navbar-dark');
-      document.querySelector('nav').classList.add('navbar-light');
+      if (nav) {
+        nav.classList.remove('navbar-dark');
+        nav.classList.add('navbar-light');
+      }
     } else {
       document.body.classList.remove('light-mode');
       document.body.classList.add('dark-mode');
       document.body.classList.add('accent-warning');
-      document.querySelector('nav').classList.remove('navbar-light');
-      document.querySelector('nav').classList.add('navbar-dark');
-      localStorage.setItem('mode', 'dark-mode');
+      if (nav) {
+        nav.classList.remove('navbar-light');
+        nav.classList.add('navbar-dark');
+      }
+    }
+    if (persist) {
+      localStorage.setItem('mode', mode);
+    }
+  }
+
+  function setModePreference() {
+    const forced = queryMode() || (isEmbeddedFrame() ? 'light-mode' : null);
+    if (forced) {
+      applyMode(forced, false);
+      return;
+    }
+    const userPreference = localStorage.getItem('mode');
+    if (userPreference === 'light-mode') {
+      applyMode('light-mode', false);
+    } else {
+      applyMode('dark-mode', userPreference !== 'dark-mode');
     }
   }
   
   function toggleMode() {
-    const body = document.body;
-    const nav = document.querySelector('nav');
-  
-    if (body.classList.contains('dark-mode')) {
-      body.classList.remove('accent-warning');
-      body.classList.remove('dark-mode');
-      body.classList.add('light-mode');
-      nav.classList.remove('navbar-dark');
-      nav.classList.add('navbar-light');
-  
-      localStorage.setItem('mode', 'light-mode');
+    if (document.body.classList.contains('dark-mode')) {
+      applyMode('light-mode', true);
     } else {
-      body.classList.remove('light-mode');
-      body.classList.add('dark-mode');
-      body.classList.add('accent-warning');  
-      nav.classList.remove('navbar-light');
-      nav.classList.add('navbar-dark');
-  
-      localStorage.setItem('mode', 'dark-mode');
+      applyMode('dark-mode', true);
     }
   }
   

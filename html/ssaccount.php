@@ -1,12 +1,13 @@
 <?php
 require_once "ssconfunc.php";
 require_once "include/functions.php";
+require_once "include/ui-mode.php";
 initSecureSession();
 session_start();
 checkSessionTimeout();
 
 if (!isSelfcareLoggedIn() || !isIpscSession()) {
-    header("Location: sslogin.php");
+    header("Location: sslogin.php" . rysen_mode_query());
     exit();
 }
 
@@ -54,7 +55,8 @@ $ss_page_title = 'System X DMR Global | ' . $deviceProtocol . ' Selfcare Account
 <head>
     <?php include 'elements/header.php';?>
 </head>
-<body class="hold-transition dark-mode layout-top-nav layout-navbar-fixed text-sm selfcare-account-page">
+<body class="hold-transition <?php echo rysen_ui_mode_class(); ?> layout-top-nav layout-navbar-fixed text-sm selfcare-account-page">
+    <?php include 'elements/mode-boot.php'; ?>
     <div class="wrapper">
         <?php include 'elements/navbar.php';?>
 
@@ -140,7 +142,7 @@ $ss_page_title = 'System X DMR Global | ' . $deviceProtocol . ' Selfcare Account
 
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="scripts/mode.js"></script>
+    <script src="scripts/mode.js?v=<?php echo filemtime(__DIR__ . '/scripts/mode.js'); ?>"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
 </body>
 </html>
