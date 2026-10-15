@@ -595,10 +595,137 @@ def cleanTE():
 
 
 ROUTING_MASTER_MODES = ("MASTER", "IPSC", "HYTERA")
+SERVICE_PEER_MODES = ("XLXPEER", "YSFPEER")
 
 
 def is_routing_master(mode):
     return mode in ROUTING_MASTER_MODES
+
+
+def _include_service_peer(mode):
+    """Outbound services on Linked Systems. XLX and YSF always; Homebrew peers only when enabled."""
+    if mode in SERVICE_PEER_MODES:
+        return True
+    return mode == "PEER" and bool(CONF["GLOBAL"].get("HB_INC"))
+
+
+def _cfg_text(value):
+    if isinstance(value, bytes):
+        return value.decode("utf-8", "replace").rstrip("\x00").strip()
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _slots_label(slots):
+    if slots in (b"0", "0", 0):
+        return "NONE"
+    if slots in (b"1", b"2", "1", "2", 1, 2):
+        return slots.decode("utf-8") if isinstance(slots, bytes) else str(slots)
+    if slots in (b"3", "3", 3):
+        return "1&2"
+    return "DMO"
+
+
+def _ysf_location(data):
+    """Room name, plus the DGID when this stanza is not the whole reflector."""
+    text = _cfg_text(data.get("DESCRIPTION"))
+    try:
+        dgid = int(data.get("DGID") or 0)
+    except (TypeError, ValueError):
+        dgid = 0
+    if not dgid:
+        return text
+    extra = f"DGID {dgid}"
+    return f"{text} · {extra}" if text else extra
+
+
+def _blank_peer_slot():
+    return {
+        "COLOR": "",
+        "BGCOLOR": "",
+        "TS": "",
+        "TYPE": "",
+        "SUB": "",
+        "RSSI": "",
+        "SRC": "",
+        "DEST": "",
+        "SID": "",
+        "UNIT_FROM": "",
+        "UNIT_TO": "",
+    }
+
+
+def _apply_service_identity(row, data):
+    mode = data["MODE"]
+    row["MODE"] = mode
+    if mode == "YSFPEER":
+        row["LOCATION"] = _ysf_location(data)
+        row["DESCRIPTION"] = _cfg_text(data.get("DESCRIPTION"))
+        row["URL"] = ""
+        row["SLOTS"] = "2"
+    else:
+        row["LOCATION"] = _cfg_text(data.get("LOCATION"))
+        row["DESCRIPTION"] = _cfg_text(data.get("DESCRIPTION"))
+        row["URL"] = _cfg_text(data.get("DESCRIPTION"))
+        row["SLOTS"] = _slots_label(data.get("SLOTS"))
+    row["CALLSIGN"] = _cfg_text(data.get("CALLSIGN"))
+    row["RADIO_ID"] = int_id(data["RADIO_ID"])
+    row["MASTER_IP"] = data.get("MASTER_IP")
+    row["MASTER_PORT"] = data.get("MASTER_PORT")
+
+
+def _apply_service_stats(row, data):
+    """Copy link stats. YSF has no ack counter and no CONNECTED stamp until RYSEN sends one."""
+    stats = (data.get("XLXSTATS") if row.get("MODE") == "XLXPEER" else data.get("STATS")) or {}
+    row.setdefault("STATS", {})
+    connection = stats.get("CONNECTION") or "NO"
+    row["STATS"]["CONNECTION"] = connection
+    if connection == "YES":
+        stamp = stats.get("CONNECTED")
+        if not isinstance(stamp, (int, float)) or not stamp:
+            stamp = row.get("_CONNECTED_AT") or time()
+        row["_CONNECTED_AT"] = stamp
+        row["STATS"]["CONNECTED"] = time_str(stamp, "since")
+        row["STATS"]["PINGS_SENT"] = int(stats.get("PINGS_SENT") or 0)
+        ackd = stats.get("PINGS_ACKD")
+        row["STATS"]["PINGS_ACKD"] = None if ackd is None else int(ackd or 0)
+    else:
+        row.pop("_CONNECTED_AT", None)
+        row["STATS"]["CONNECTED"] = "--   --"
+        row["STATS"]["PINGS_SENT"] = 0
+        row["STATS"]["PINGS_ACKD"] = 0
+
+
+def _ensure_service_peer(name, data, peers):
+    """Insert or refresh one XLX, YSF, or Homebrew peer without clearing a live timeslot."""
+    row = peers.get(name)
+    fresh = row is None
+    if fresh:
+        row = {}
+        peers[name] = row
+    _apply_service_identity(row, data)
+    if fresh:
+        row["STATS"] = {}
+        for ts in (1, 2):
+            row[ts] = _blank_peer_slot()
+    _apply_service_stats(row, data)
+    return row
+
+
+def _sync_service_peers(_config, _stats_table):
+    seen = set()
+    for _hbp, _hbp_data in _config.items():
+        if not _hbp_data.get("ENABLED"):
+            continue
+        if not _include_service_peer(_hbp_data.get("MODE")):
+            continue
+        seen.add(_hbp)
+        _ensure_service_peer(_hbp, _hbp_data, _stats_table["PEERS"])
+    for _hbp in list(_stats_table["PEERS"]):
+        if _hbp not in seen:
+            logger.info(f"Deleting stats peer system not in hblink config: {_hbp}")
+            del _stats_table["PEERS"][_hbp]
 
 
 def _hb_field_str(value):
@@ -811,79 +938,9 @@ def build_hblink_table(_config, _stats_table):
                 for _peer in _hbp_data["PEERS"]:
                     add_hb_peer(_hbp_data["PEERS"][_peer], _stats_table["MASTERS"][_hbp]["PEERS"], _peer)
 
-            # Process Peer Systems
-            elif (_hbp_data["MODE"] == "XLXPEER" or _hbp_data["MODE"] == "PEER"
-                  and CONF["GLOBAL"]["HB_INC"]):
-                _stats_table["PEERS"][_hbp] = {}
-                _stats_table["PEERS"][_hbp]["MODE"] = _hbp_data["MODE"]
-
-                if str(type(_hbp_data["LOCATION"])).find("bytes") != -1:
-                    _stats_table["PEERS"][_hbp]["LOCATION"] = _hbp_data["LOCATION"].decode("utf-8").strip()
-                else:
-                    _stats_table["PEERS"][_hbp]["LOCATION"] = _hbp_data["LOCATION"]
-
-                if str(type(_hbp_data["DESCRIPTION"])).find("bytes") != -1:
-                    _stats_table["PEERS"][_hbp]["DESCRIPTION"] = _hbp_data["DESCRIPTION"].decode("utf-8").strip()
-                else:
-                    _stats_table["PEERS"][_hbp]["DESCRIPTION"] = _hbp_data["DESCRIPTION"]
-
-                if str(type(_hbp_data["URL"])).find("bytes") != -1:
-                    _stats_table["PEERS"][_hbp]["URL"] = _hbp_data["DESCRIPTION"].decode("utf-8").strip()
-                else:
-                    _stats_table["PEERS"][_hbp]["URL"] = _hbp_data["DESCRIPTION"]
-
-                if str(type(_hbp_data["CALLSIGN"])).find("bytes") != -1:
-                    _stats_table["PEERS"][_hbp]["CALLSIGN"] = _hbp_data["CALLSIGN"].decode("utf-8").strip()
-                else:
-                    _stats_table["PEERS"][_hbp]["CALLSIGN"] = _hbp_data["CALLSIGN"]
-
-                _stats_table["PEERS"][_hbp]["RADIO_ID"] = int_id(_hbp_data["RADIO_ID"])
-                _stats_table["PEERS"][_hbp]["MASTER_IP"] = _hbp_data["MASTER_IP"]
-                _stats_table["PEERS"][_hbp]["MASTER_PORT"] = _hbp_data["MASTER_PORT"]
-                _stats_table["PEERS"][_hbp]["STATS"] = {}
-                if _stats_table["PEERS"][_hbp]["MODE"] == "XLXPEER":
-                    _stats_table["PEERS"][_hbp]["STATS"]["CONNECTION"] = _hbp_data["XLXSTATS"]["CONNECTION"]
-                    if _hbp_data["XLXSTATS"]["CONNECTION"] == "YES":
-                        _stats_table["PEERS"][_hbp]["STATS"]["CONNECTED"] = time_str(_hbp_data["XLXSTATS"]["CONNECTED"],"since")
-                        _stats_table["PEERS"][_hbp]["STATS"]["PINGS_SENT"] = _hbp_data["XLXSTATS"]["PINGS_SENT"]
-                        _stats_table["PEERS"][_hbp]["STATS"]["PINGS_ACKD"] = _hbp_data["XLXSTATS"]["PINGS_ACKD"]
-                    else:
-                        _stats_table["PEERS"][_hbp]["STATS"]["CONNECTED"] = "--   --"
-                        _stats_table["PEERS"][_hbp]["STATS"]["PINGS_SENT"] = 0
-                        _stats_table["PEERS"][_hbp]["STATS"]["PINGS_ACKD"] = 0
-                else:
-                    _stats_table["PEERS"][_hbp]["STATS"]["CONNECTION"] = _hbp_data["STATS"]["CONNECTION"]
-                    if _hbp_data["STATS"]["CONNECTION"] == "YES":
-                        _stats_table["PEERS"][_hbp]["STATS"]["CONNECTED"] = time_str(_hbp_data["STATS"]["CONNECTED"], "since")
-                        _stats_table["PEERS"][_hbp]["STATS"]["PINGS_SENT"] = _hbp_data["STATS"]["PINGS_SENT"]
-                        _stats_table["PEERS"][_hbp]["STATS"]["PINGS_ACKD"] = _hbp_data["STATS"]["PINGS_ACKD"]
-                    else:
-                        _stats_table["PEERS"][_hbp]["STATS"]["CONNECTED"] = "--   --"
-                        _stats_table["PEERS"][_hbp]["STATS"]["PINGS_SENT"] = 0
-                        _stats_table["PEERS"][_hbp]["STATS"]["PINGS_ACKD"] = 0
-                if _hbp_data["SLOTS"] == b"0":
-                    _stats_table["PEERS"][_hbp]["SLOTS"] = "NONE"
-                elif _hbp_data["SLOTS"] == b"1" or _hbp_data["SLOTS"] == b"2":
-                    _stats_table["PEERS"][_hbp]["SLOTS"] = _hbp_data["SLOTS"].decode("utf-8")
-                elif _hbp_data["SLOTS"] == b"3":
-                    _stats_table["PEERS"][_hbp]["SLOTS"] = "1&2"
-                else:
-                    _stats_table["PEERS"][_hbp]["SLOTS"] = "DMO"
-                # SLOT 1&2 - for real-time montior: make the structure for later use
-
-                for ts in range(1,3):
-                    _stats_table["PEERS"][_hbp][ts]= {}
-                    _stats_table["PEERS"][_hbp][ts]["COLOR"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["BGCOLOR"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["TS"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["TYPE"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["SUB"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["RSSI"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["SRC"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["DEST"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["SID"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["UNIT_FROM"] = ""
-                    _stats_table["PEERS"][_hbp][ts]["UNIT_TO"] = ""
+            # Process Peer Systems (XLX, YSF reflectors, optional Homebrew peers)
+            elif _include_service_peer(_hbp_data["MODE"]):
+                _ensure_service_peer(_hbp, _hbp_data, _stats_table["PEERS"])
 
             # Process OpenBridge systems
             elif _hbp_data["MODE"] == "OPENBRIDGE":
@@ -940,29 +997,7 @@ def update_hblink_table(_config, _stats_table):
                     _stats_table["MASTERS"][_hbp]["PEERS"][_peer],
                     peer_key)
 
-    for _hbp in _stats_table["PEERS"]:
-        if _stats_table["PEERS"][_hbp]["MODE"] == "XLXPEER":
-            if _config[_hbp]["XLXSTATS"]["CONNECTION"] == "YES":
-                _stats_table["PEERS"][_hbp]["STATS"]["CONNECTED"] = time_str(_config[_hbp]["XLXSTATS"]["CONNECTED"],"since")
-                _stats_table["PEERS"][_hbp]["STATS"]["CONNECTION"] = _config[_hbp]["XLXSTATS"]["CONNECTION"]
-                _stats_table["PEERS"][_hbp]["STATS"]["PINGS_SENT"] = _config[_hbp]["XLXSTATS"]["PINGS_SENT"]
-                _stats_table["PEERS"][_hbp]["STATS"]["PINGS_ACKD"] = _config[_hbp]["XLXSTATS"]["PINGS_ACKD"]
-            else:
-                _stats_table["PEERS"][_hbp]["STATS"]["CONNECTED"] = "--   --"
-                _stats_table["PEERS"][_hbp]["STATS"]["CONNECTION"] = _config[_hbp]["XLXSTATS"]["CONNECTION"]
-                _stats_table["PEERS"][_hbp]["STATS"]["PINGS_SENT"] = 0
-                _stats_table["PEERS"][_hbp]["STATS"]["PINGS_ACKD"] = 0
-        else:
-            if _config[_hbp]["STATS"]["CONNECTION"] == "YES":
-                _stats_table["PEERS"][_hbp]["STATS"]["CONNECTED"] = time_str(_config[_hbp]["STATS"]["CONNECTED"],"since")
-                _stats_table["PEERS"][_hbp]["STATS"]["CONNECTION"] = _config[_hbp]["STATS"]["CONNECTION"]
-                _stats_table["PEERS"][_hbp]["STATS"]["PINGS_SENT"] = _config[_hbp]["STATS"]["PINGS_SENT"]
-                _stats_table["PEERS"][_hbp]["STATS"]["PINGS_ACKD"] = _config[_hbp]["STATS"]["PINGS_ACKD"]
-            else:
-                _stats_table["PEERS"][_hbp]["STATS"]["CONNECTED"] = "--   --"
-                _stats_table["PEERS"][_hbp]["STATS"]["CONNECTION"] = _config[_hbp]["STATS"]["CONNECTION"]
-                _stats_table["PEERS"][_hbp]["STATS"]["PINGS_SENT"] = 0
-                _stats_table["PEERS"][_hbp]["STATS"]["PINGS_ACKD"] = 0
+    _sync_service_peers(_config, _stats_table)
     cleanTE()
     build_stats()
 

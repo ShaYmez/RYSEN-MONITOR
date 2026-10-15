@@ -537,7 +537,12 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                 <tr>
                   <td class="align-middle text-center p-0" rowspan="3">
                     <span><strong>{{ _peer}}</strong></span><br>
+                    {% if _table['PEERS'][_peer]['MODE'] == 'YSFPEER' %}
+                    <img class="dashboard-flag dashboard-flag-protocol" src="./flags/yaesu.png" width="18" height="13" alt="">
+                    <span>YSF</span>
+                    {% else %}
                     <span>{{ _table['PEERS'][_peer]['MODE'] }}</span>
+                    {% endif %}
                   </td>
                 </tr>
                 <tr>
@@ -553,9 +558,14 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                       bg-warning
                     {% endif %}">
                     {{ _table['PEERS'][_peer]['STATS']['CONNECTED'] }}<br>
-                    <div style="font-size: smaller;">{{ _table['PEERS'][_peer]['STATS']['PINGS_SENT'] }} / {{
+                    <div style="font-size: smaller;">
+                    {% if _table['PEERS'][_peer]['MODE'] == 'YSFPEER' and _table['PEERS'][_peer]['STATS']['PINGS_ACKD'] is none %}
+                      {{ _table['PEERS'][_peer]['STATS']['PINGS_SENT'] }} polls
+                    {% else %}
+                      {{ _table['PEERS'][_peer]['STATS']['PINGS_SENT'] }} / {{
                       _table['PEERS'][_peer]['STATS']['PINGS_ACKD'] }} / {{
                       _table['PEERS'][_peer]['STATS']['PINGS_SENT'] - _table['PEERS'][_peer]['STATS']['PINGS_ACKD'] }}
+                    {% endif %}
                     </div>
                   </td>
                   <td class="table-active align-middle text-center">
