@@ -688,8 +688,13 @@ def _apply_service_stats(row, data):
         row["_CONNECTED_AT"] = stamp
         row["STATS"]["CONNECTED"] = time_str(stamp, "since")
         row["STATS"]["PINGS_SENT"] = int(stats.get("PINGS_SENT") or 0)
-        ackd = stats.get("PINGS_ACKD")
-        row["STATS"]["PINGS_ACKD"] = None if ackd is None else int(ackd or 0)
+        # A reflector does not ack YSFP the way a Homebrew master acks RPTPING.
+        # The counter stays 0, which would draw every poll as lost.
+        if row.get("MODE") == "YSFPEER":
+            row["STATS"]["PINGS_ACKD"] = None
+        else:
+            ackd = stats.get("PINGS_ACKD")
+            row["STATS"]["PINGS_ACKD"] = None if ackd is None else int(ackd or 0)
     else:
         row.pop("_CONNECTED_AT", None)
         row["STATS"]["CONNECTED"] = "--   --"

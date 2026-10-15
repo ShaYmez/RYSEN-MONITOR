@@ -19,14 +19,13 @@ import monitor  # noqa: E402
 from monitor import build_hblink_table, rts_update, update_hblink_table  # noqa: E402
 
 
-def _ysf(connection="NO", pings=0, connected=None, ackd_missing=True, dgid=0):
+def _ysf(connection="NO", pings=0, connected=None, dgid=0):
     stats = {
         "CONNECTION": connection,
         "CONNECTED": connected,
         "PINGS_SENT": pings,
+        "PINGS_ACKD": 0,
     }
-    if not ackd_missing:
-        stats["PINGS_ACKD"] = pings
     return {
         "MODE": "YSFPEER",
         "ENABLED": True,
