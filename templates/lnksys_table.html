@@ -540,6 +540,8 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                     {% if _table['PEERS'][_peer]['MODE'] == 'YSFPEER' %}
                     <img class="dashboard-flag dashboard-flag-protocol" src="./flags/yaesu.png" width="18" height="13" alt="">
                     <span>YSF</span>
+                    {% elif _table['PEERS'][_peer]['MODE'] == 'NXDNPEER' %}
+                    <span class="mode-nxdn">NXDN</span>
                     {% else %}
                     <span>{{ _table['PEERS'][_peer]['MODE'] }}</span>
                     {% endif %}
@@ -559,7 +561,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a>
                     {% endif %}">
                     {{ _table['PEERS'][_peer]['STATS']['CONNECTED'] }}<br>
                     <div style="font-size: smaller;">
-                    {% if _table['PEERS'][_peer]['MODE'] == 'YSFPEER' and _table['PEERS'][_peer]['STATS']['PINGS_ACKD'] is none %}
+                    {% if _table['PEERS'][_peer]['MODE'] in ('YSFPEER', 'NXDNPEER') and _table['PEERS'][_peer]['STATS']['PINGS_ACKD'] is none %}
                       {{ _table['PEERS'][_peer]['STATS']['PINGS_SENT'] }} polls
                     {% else %}
                       {{ _table['PEERS'][_peer]['STATS']['PINGS_SENT'] }} / {{

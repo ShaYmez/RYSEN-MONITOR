@@ -595,7 +595,8 @@ def cleanTE():
 
 
 ROUTING_MASTER_MODES = ("MASTER", "IPSC", "HYTERA")
-SERVICE_PEER_MODES = ("XLXPEER", "YSFPEER")
+SERVICE_PEER_MODES = ("XLXPEER", "YSFPEER", "NXDNPEER")
+REFLECTOR_PEER_MODES = ("YSFPEER", "NXDNPEER")
 
 
 def is_routing_master(mode):
@@ -603,7 +604,7 @@ def is_routing_master(mode):
 
 
 def _include_service_peer(mode):
-    """Outbound services on Linked Systems. XLX and YSF always; Homebrew peers only when enabled."""
+    """Outbound services on Linked Systems. XLX, YSF and NXDN always; Homebrew peers only when enabled."""
     if mode in SERVICE_PEER_MODES:
         return True
     return mode == "PEER" and bool(CONF["GLOBAL"].get("HB_INC"))
@@ -640,6 +641,19 @@ def _ysf_location(data):
     return f"{text} · {extra}" if text else extra
 
 
+def _nxdn_location(data):
+    """Room name, plus the reflector talkgroup."""
+    text = _cfg_text(data.get("DESCRIPTION"))
+    try:
+        talkgroup = int(data.get("TALKGROUP") or 0)
+    except (TypeError, ValueError):
+        talkgroup = 0
+    if not talkgroup:
+        return text
+    extra = f"TG {talkgroup}"
+    return f"{text} · {extra}" if text else extra
+
+
 def _blank_peer_slot():
     return {
         "COLOR": "",
@@ -664,6 +678,11 @@ def _apply_service_identity(row, data):
         row["DESCRIPTION"] = _cfg_text(data.get("DESCRIPTION"))
         row["URL"] = ""
         row["SLOTS"] = "2"
+    elif mode == "NXDNPEER":
+        row["LOCATION"] = _nxdn_location(data)
+        row["DESCRIPTION"] = _cfg_text(data.get("DESCRIPTION"))
+        row["URL"] = ""
+        row["SLOTS"] = "2"
     else:
         row["LOCATION"] = _cfg_text(data.get("LOCATION"))
         row["DESCRIPTION"] = _cfg_text(data.get("DESCRIPTION"))
@@ -676,7 +695,7 @@ def _apply_service_identity(row, data):
 
 
 def _apply_service_stats(row, data):
-    """Copy link stats. YSF has no ack counter and no CONNECTED stamp until RYSEN sends one."""
+    """Copy link stats. A reflector has no ack counter until RYSEN sends one."""
     stats = (data.get("XLXSTATS") if row.get("MODE") == "XLXPEER" else data.get("STATS")) or {}
     row.setdefault("STATS", {})
     connection = stats.get("CONNECTION") or "NO"
@@ -688,9 +707,9 @@ def _apply_service_stats(row, data):
         row["_CONNECTED_AT"] = stamp
         row["STATS"]["CONNECTED"] = time_str(stamp, "since")
         row["STATS"]["PINGS_SENT"] = int(stats.get("PINGS_SENT") or 0)
-        # A reflector does not ack YSFP the way a Homebrew master acks RPTPING.
+        # A reflector does not ack a poll the way a Homebrew master acks RPTPING.
         # The counter stays 0, which would draw every poll as lost.
-        if row.get("MODE") == "YSFPEER":
+        if row.get("MODE") in REFLECTOR_PEER_MODES:
             row["STATS"]["PINGS_ACKD"] = None
         else:
             ackd = stats.get("PINGS_ACKD")
@@ -703,7 +722,7 @@ def _apply_service_stats(row, data):
 
 
 def _ensure_service_peer(name, data, peers):
-    """Insert or refresh one XLX, YSF, or Homebrew peer without clearing a live timeslot."""
+    """Insert or refresh one XLX, YSF, NXDN, or Homebrew peer without clearing a live timeslot."""
     row = peers.get(name)
     fresh = row is None
     if fresh:
