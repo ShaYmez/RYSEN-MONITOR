@@ -31,7 +31,7 @@
       {% if dest and dest[1] %}<strong class="lh-tg-name">{{ dest[1] }}</strong>{% endif %}
     </div>
   </td>
-  {% elif itm[2] == 'UNIT DATA HEADER' %}
+  {% elif itm[2] in ('UNIT DATA HEADER', 'UNIT CSBK') %}
   <td class="lh-tgnum-cell"><strong>{{ itm[4] }}</strong></td>
   <td class="lh-tg-cell">
     <div class="lh-tg-row">

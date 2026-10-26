@@ -497,6 +497,56 @@ def unit_voice_log_message(parts, now, subscriber_ids, destination_subscribers):
     return line
 
 
+# RYSEN bridge_master DATA rows: "{name},DATA,{RX|TX},system,stream,peer,sub,slot,dest"
+UNIT_DATA_LASTHEARD_TYPES = frozenset(("UNIT DATA HEADER", "UNIT CSBK"))
+
+BRIDGE_DATA_SILENT_TYPES = frozenset((
+    "UNIT DATA",
+    "UNIT VCSBK 1/2 DATA BLOCK",
+    "UNIT VCSBK 3/4 DATA BLOCK",
+    "DATA HEADER",
+    "OTHER DATA",
+    "VCSBK 1/2 DATA BLOCK",
+    "VCSBK 3/4 DATA BLOCK",
+))
+
+_unit_sms_lh_recent = {}
+
+
+def bridge_data_telemetry(parts):
+    return len(parts) > 8 and parts[1] == "DATA" and parts[2] in ("RX", "TX")
+
+
+def bridge_opb_peer_filtered(parts):
+    return str(parts[5]) in CONF["OPB_FLTR"]["OPB_FILTER"]
+
+
+def bridge_data_telemetry_known(parts):
+    if not bridge_data_telemetry(parts):
+        return False
+    name = parts[0]
+    return name in UNIT_DATA_LASTHEARD_TYPES or name in BRIDGE_DATA_SILENT_TYPES
+
+
+def record_unit_data_lastheard(parts):
+    """Last Heard for unit SMS; dedupe HEADER after CSBK on the same stream."""
+    stream = str(parts[4])
+    now = time()
+    last = _unit_sms_lh_recent.get(stream)
+    if last is not None and now - last < 30:
+        return
+    _unit_sms_lh_recent[stream] = now
+    if len(_unit_sms_lh_recent) > 500:
+        cutoff = now - 60
+        for key, stamp in list(_unit_sms_lh_recent.items()):
+            if stamp < cutoff:
+                del _unit_sms_lh_recent[key]
+
+    logger.info("BRIDGE EVENT: %s", ",".join(parts))
+    ensureDeferred(record_lastheard(None, parts[0], parts[3], parts[8], parts[6]))
+    db_conn.ins_lstheard_log(None, parts[0], parts[3], parts[8], parts[6])
+
+
 # Return friendly elapsed time from time in seconds.
 def time_str(_time, param):
     now = int(time())
@@ -1818,7 +1868,7 @@ def process_message(_bmessage):
             db2dict(int(p[6]), "subscriber_ids")
             if p[0] == "GROUP VOICE":
                 db2dict(int(p[8]), "talkgroup_ids")
-            elif p[0] in ("UNIT VOICE", "UNIT DATA HEADER"):
+            elif p[0] == "UNIT VOICE" or p[0] in UNIT_DATA_LASTHEARD_TYPES:
                 db2dict(int(p[8]), "subscriber_ids")
         if p[0] == "GROUP VOICE":
             if p[1] == "RSSI":
@@ -1899,11 +1949,16 @@ def process_message(_bmessage):
                         ensureDeferred(
                             record_lastheard(p[9], p[0], p[3], p[8], p[6]))
 
-        elif p[0] == "UNIT DATA HEADER" and p[2] != "TX" and p[5] not in CONF["OPB_FLTR"]["OPB_FILTER"]:
-            logger.info(f"BRIDGE EVENT: {_message[1:]}")
-            ensureDeferred(record_lastheard(None, p[0], p[3], p[8], p[6]))
-            # Insert data qso into lstheard_log DB table
-            db_conn.ins_lstheard_log(None, p[0], p[3], p[8], p[6])
+        elif (
+            p[0] in UNIT_DATA_LASTHEARD_TYPES
+            and bridge_data_telemetry(p)
+            and p[2] != "TX"
+            and not bridge_opb_peer_filtered(p)
+        ):
+            record_unit_data_lastheard(p)
+
+        elif bridge_data_telemetry_known(p):
+            logger.debug("BRIDGE DATA telemetry: %s", _message[1:])
 
         else:
             logger.warning(f"Unknown log message: {_message}")
