@@ -172,7 +172,11 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         query = (ROOT / "mon_db.py").read_text()
         css = (ROOT / "html" / "css" / "dashboard.css").read_text()
         self.assertEqual(
-            query.count("lh.qso_type IN ('UNIT VOICE', 'UNIT DATA HEADER')"), 2)
+            query.count(
+                "lh.qso_type IN ('UNIT VOICE', 'UNIT DATA HEADER', 'UNIT CSBK')"
+            ),
+            2,
+        )
         self.assertIn(".lh-data {\n    color: #28a745 !important;\n}", css)
         for rendered in (html, full_html):
             self.assertIn("2E0KZV", rendered)
