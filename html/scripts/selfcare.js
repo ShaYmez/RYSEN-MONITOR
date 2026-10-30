@@ -34,6 +34,10 @@ class SelfcareManager {
      * Initialize the manager
      */
     init() {
+        this.initialSlots = {
+            1: this.getTimeslotValues(document.getElementById('timeslotTable')),
+            2: this.getTimeslotValues(document.getElementById('timeslotTable2')),
+        };
         this.attachEventListeners();
         this.toggleTimeslotTable();
         const dialTGInput = document.getElementById('dialTGInput');
@@ -209,7 +213,10 @@ class SelfcareManager {
     }
 
     /**
-     * Build TS1=/TS2= fragment; empty slot sends TSx=; so RYSEN clears statics.
+     * Build a TS1=/TS2= fragment.
+     * A slot that still has talkgroups is sent as-is.
+     * A slot that loaded with talkgroups and is now empty sends TSx=; so RYSEN clears them.
+     * A slot that loaded empty stays omitted, so an alias-only save does not clear statics.
      */
     formatTimeslotOption(slot, values, applicable) {
         if (!applicable) {
@@ -218,7 +225,11 @@ class SelfcareManager {
         if (values.length > 0) {
             return 'TS' + slot + '=' + values.join(',') + ';';
         }
-        return 'TS' + slot + '=;';
+        const initial = this.initialSlots && this.initialSlots[slot];
+        if (initial && initial.length > 0) {
+            return 'TS' + slot + '=;';
+        }
+        return '';
     }
 
     /**

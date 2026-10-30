@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+NODE = shutil.which("node")
+
 ROOT = Path(__file__).resolve().parents[1]
 PHP = shutil.which("php")
 
@@ -38,6 +40,47 @@ def test_alias_option_is_omitted_until_the_switch_moves():
     script = _read("html/scripts/selfcare.js")
     assert "aliasOptionFragment" in script
     assert "Server default" in script or "aliasSelect.value !== '0'" in script
+
+
+@pytest.mark.skipif(NODE is None, reason="Node is not installed")
+def test_alias_only_save_does_not_clear_empty_slots(tmp_path):
+    script = _read("html/scripts/selfcare.js")
+    script = script.split("// Initialize when DOM is ready", 1)[0]
+    harness = script + r"""
+global.document = {
+  getElementById(id) {
+    if (id === "timeslotTable") return 1;
+    if (id === "timeslotTable2") return 2;
+    if (id === "aliasSelect") return { value: "1" };
+    return null;
+  }
+};
+const mgr = Object.create(SelfcareManager.prototype);
+mgr.isIpsc = true;
+let current = { 1: [], 2: [] };
+mgr.getTimeslotValues = (table) => current[table] || [];
+const saved = [];
+mgr.setGeneratedOptions = (text) => { saved.push(text); };
+
+mgr.initialSlots = { 1: [], 2: [] };
+mgr.updateGeneratedText();
+
+mgr.initialSlots = { 1: ["235"], 2: [] };
+mgr.updateGeneratedText();
+
+current = { 1: ["91"], 2: [] };
+mgr.initialSlots = { 1: [], 2: [] };
+mgr.updateGeneratedText();
+
+const expected = ["ALIAS=1;", "TS1=;ALIAS=1;", "TS1=91;ALIAS=1;"];
+if (JSON.stringify(saved) !== JSON.stringify(expected)) {
+  console.error(JSON.stringify(saved));
+  process.exit(1);
+}
+"""
+    path = tmp_path / "alias-save.js"
+    path.write_text(harness, encoding="utf-8")
+    subprocess.check_call([NODE, str(path)])
 
 
 @pytest.mark.skipif(PHP is None, reason="PHP CLI is not installed")
