@@ -97,6 +97,7 @@ $voiceValue = getDeviceOption($devDetails['options'], 'VOICE', '-1');
 $langValue = getDeviceOption($devDetails['options'], 'LANG', 'en_GB');
 $singleValue = getDeviceOption($devDetails['options'], 'SINGLE', '-1');
 $stickyValue = getDeviceOption($devDetails['options'], 'STICKY', '-1');
+$aliasValue = normalizeAliasOption(getDeviceOption($devDetails['options'], 'ALIAS', '-1'));
 $timerValue = getDeviceOption($devDetails['options'], 'TIMER', 0);
 $ts1Values = getDeviceOption($devDetails['options'], 'TS1', []);
 $ts2Values = getDeviceOption($devDetails['options'], 'TS2', []);
@@ -333,7 +334,6 @@ $csrfToken = generateCSRFToken();
                                                 </div>
                                             </div>
                                         </div>
-                                    <?php if (!$isRepeaterDevice): ?>
                                         <div class="row justify-content-center">
                                             <div class="col-8">
                                                 <table class="table table-sm border align-middle mt-4">
@@ -343,6 +343,7 @@ $csrfToken = generateCSRFToken();
                                                         </tr>
                                                     </thead>
                                                     <tbody>
+                                                        <?php if (!$isRepeaterDevice): ?>
                                                         <tr>
                                                             <td class="align-middle text-nowrap"><span id="calc_dialtg"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpdtg"></i></td>
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="dialTGInput" value="<?php echo $dialValue; ?>" oninput="window.selfcare.toggleTimeslot2(this.value)"></td>
@@ -407,15 +408,35 @@ $csrfToken = generateCSRFToken();
                                                                 </select>
                                                             </td>
                                                         </tr>
+                                                        <?php endif; ?>
+                                                        <tr>
+                                                            <td class="align-middle text-nowrap">
+                                                                <span id="calc_alias"></span>&nbsp;&nbsp;&nbsp;
+                                                                <i class="far fa-question-circle"
+                                                                   data-bs-toggle="tooltip"
+                                                                   data-bs-placement="top"
+                                                                   data-bs-html="true"
+                                                                   title=""
+                                                                   id="calchlpalias"></i>
+                                                            </td>
+                                                            <td>
+                                                                <select class="form-control form-control-sm" id="aliasSelect">
+                                                                    <option value="-1" <?php if ($aliasValue=='-1') { echo "selected"; }; ?> id="calc_aliassrv"></option>
+                                                                    <option value="0" <?php if ($aliasValue=='0') { echo "selected"; }; ?> id="calc_aliasoff"></option>
+                                                                    <option value="1" <?php if ($aliasValue=='1') { echo "selected"; }; ?> id="calc_aliason"></option>
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                        <?php if (!$isRepeaterDevice): ?>
                                                         <tr>
                                                             <td class="align-middle text-nowrap"><span id="calc_tgto"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpstgto"></i></td>
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="timeoutInput" value="<?php echo $timerValue; ?>"></td>
                                                         </tr>
+                                                        <?php endif; ?>
                                                     </tbody>
                                                 </table>
                                             </div>
                                         </div>
-                                        <?php endif; ?>
                                     </div>
                                     <div class="spinner text-center mb-5" style="display: <?php echo $devDetails['modified'] === '1' ? 'block' : 'none'; ?>">
                                         <i class="fas fa-2x fa-sync-alt fa-spin"></i><br><br>

@@ -53,6 +53,40 @@ function getDeviceOption($optionsString, $key, $default = null) {
 }
 
 /**
+ * Map a stored ALIAS value onto the selfcare switch.
+ *
+ * Server default is -1 and is omitted from the options string.
+ * 1 and 0 are explicit on and off for this hotspot or repeater.
+ *
+ * @param mixed $value
+ * @return string '-1', '0', or '1'
+ */
+function normalizeAliasOption($value) {
+    $norm = strtolower(trim((string) $value));
+    if (in_array($norm, ['1', 'true', 'yes'], true)) {
+        return '1';
+    }
+    if (in_array($norm, ['0', 'false', 'no'], true)) {
+        return '0';
+    }
+    return '-1';
+}
+
+/**
+ * ALIAS= fragment, empty when the switch is server default.
+ *
+ * @param mixed $value
+ * @return string
+ */
+function aliasOptionFragment($value) {
+    $norm = normalizeAliasOption($value);
+    if ($norm === '0' || $norm === '1') {
+        return 'ALIAS=' . $norm . ';';
+    }
+    return '';
+}
+
+/**
  * Handle device selection from session and POST data
  * 
  * Validates and authorizes device selection to ensure users can only
@@ -127,7 +161,7 @@ function sanitizeOptions($options) {
     }
     
     // Parse and validate individual keys
-    $allowedKeys = ['TS1', 'TS2', 'DIAL', 'VOICE', 'LANG', 'SINGLE', 'TIMER', 'STICKY', 'PASS', 'DISC'];
+    $allowedKeys = ['TS1', 'TS2', 'DIAL', 'VOICE', 'LANG', 'SINGLE', 'TIMER', 'STICKY', 'ALIAS', 'PASS', 'DISC'];
     $pairs = explode(';', trim($options, ';'));
     
     foreach ($pairs as $pair) {
@@ -153,6 +187,10 @@ function sanitizeOptions($options) {
             return false;
         }
 
+        if ($key === 'ALIAS' && !in_array($value, ['0', '1'], true)) {
+            return false;
+        }
+
         if ($key === 'TS1' || $key === 'TS2') {
             if ($value !== '' && !preg_match('/^[0-9,]+$/', $value)) {
                 return false;
@@ -164,7 +202,7 @@ function sanitizeOptions($options) {
 }
 
 /**
- * Sanitize repeater options for IPSC and Hytera (TS1/TS2 only).
+ * Sanitize repeater options for IPSC and Hytera (TS1/TS2 and ALIAS).
  *
  * @param string $options Raw options string
  * @return string|false Sanitized options string, empty string when no selfcare override, or false if invalid
@@ -182,7 +220,7 @@ function sanitizeIpscOptions($options)
         return false;
     }
 
-    $allowedKeys = ['TS1', 'TS2'];
+    $allowedKeys = ['TS1', 'TS2', 'ALIAS'];
     $pairs = explode(';', trim($options, ';'));
 
     foreach ($pairs as $pair) {
@@ -197,6 +235,10 @@ function sanitizeIpscOptions($options)
         list($key, $value) = explode('=', $pair, 2);
 
         if (!in_array($key, $allowedKeys, true)) {
+            return false;
+        }
+
+        if ($key === 'ALIAS' && !in_array($value, ['0', '1'], true)) {
             return false;
         }
 
@@ -254,6 +296,8 @@ function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = fals
     if (isset($parsed['STICKY']) && (string) $parsed['STICKY'] !== '-1' && $parsed['STICKY'] !== '') {
         $genText .= 'STICKY=' . $parsed['STICKY'] . ';';
     }
+
+    $genText .= aliasOptionFragment($parsed['ALIAS'] ?? '-1');
 
     if (!empty($parsed['TIMER']) && (int) $parsed['TIMER'] > 0) {
         $genText .= 'TIMER=' . $parsed['TIMER'] . ';';

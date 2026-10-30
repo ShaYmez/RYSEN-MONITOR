@@ -222,6 +222,17 @@ class SelfcareManager {
     }
 
     /**
+     * ALIAS= fragment. Server default (-1) is omitted so the master flag applies.
+     */
+    aliasOptionFragment() {
+        const aliasSelect = document.getElementById('aliasSelect');
+        if (!aliasSelect || (aliasSelect.value !== '0' && aliasSelect.value !== '1')) {
+            return '';
+        }
+        return 'ALIAS=' + aliasSelect.value + ';';
+    }
+
+    /**
      * Persist generated options string for form POST (not shown in UI).
      */
     setGeneratedOptions(genText) {
@@ -251,6 +262,7 @@ class SelfcareManager {
             let genText = '';
             genText += this.formatTimeslotOption(1, timeslots1, true);
             genText += this.formatTimeslotOption(2, timeslots2, true);
+            genText += this.aliasOptionFragment();
             this.setGeneratedOptions(genText);
             return;
         }
@@ -295,6 +307,8 @@ class SelfcareManager {
         if (stickyValue !== '-1') {
             genText += 'STICKY=' + stickyValue + ';';
         }
+
+        genText += this.aliasOptionFragment();
 
         if (parseInt(timeoutValue, 10) > 0) {
             genText += 'TIMER=' + timeoutValue + ';';

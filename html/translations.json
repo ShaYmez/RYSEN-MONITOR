@@ -1707,6 +1707,62 @@
         "zh": "Enabled",
         "el": "Ενεργό"
     },
+    "calc_alias": {
+        "en": "Talker Alias:",
+        "pt": "Alias do operador:",
+        "es": "Alias del operador:",
+        "fr": "Alias de l'opérateur :",
+        "it": "Alias dell'operatore:",
+        "nl": "Talker Alias:",
+        "de": "Talker Alias:",
+        "ru": "Talker Alias:",
+        "ja": "Talker Alias:",
+        "ar": "Talker Alias:",
+        "zh": "Talker Alias:",
+        "el": "Talker Alias:"
+    },
+    "calc_aliassrv": {
+        "en": "Server Default",
+        "pt": "Predefinição do servidor",
+        "es": "Predeterminado del servidor",
+        "fr": "Serveur par défaut",
+        "it": "Predefinito del server",
+        "nl": "Standaardserver",
+        "de": "Standardserver",
+        "ru": "Server Default",
+        "ja": "Server Default",
+        "ar": "Server Default",
+        "zh": "Server Default",
+        "el": "Προεπιλογή διακομιστή"
+    },
+    "calc_aliasoff": {
+        "en": "Disabled",
+        "pt": "Desativado",
+        "es": "Deshabilitado",
+        "fr": "Désactivé",
+        "it": "Disabilitato",
+        "nl": "Uitgeschakeld",
+        "de": "Deaktiviert",
+        "ru": "Disabled",
+        "ja": "Disabled",
+        "ar": "Disabled",
+        "zh": "Disabled",
+        "el": "Ανενεργό"
+    },
+    "calc_aliason": {
+        "en": "Enabled",
+        "pt": "Ativado",
+        "es": "Habilitado",
+        "fr": "Activé",
+        "it": "Abilitato",
+        "nl": "Ingeschakeld",
+        "de": "Aktiviert",
+        "ru": "Enabled",
+        "ja": "Enabled",
+        "ar": "Enabled",
+        "zh": "Enabled",
+        "el": "Ενεργό"
+    },
     "calc_tgto": {
         "en": "Talkgroup Timer (min):",
         "pt": "Lim. Tempo TG (min):",
@@ -2168,6 +2224,20 @@
         "ar": "Return to dashboard",
         "zh": "Return to dashboard",
         "el": "Επιστροφή στον πίνακα"
+    },
+    "calchlpalias": {
+        "en": "Talker alias shows the transmitting callsign on radios using this device. Server default follows the master setting. Enabled sends the alias. Disabled leaves this device on talkgroup signalling.",
+        "pt": "O alias do operador mostra o indicativo de quem transmite nos rádios deste dispositivo. A predefinição do servidor segue a configuração do master. Ativado envia o alias. Desativado mantém este dispositivo na sinalização do grupo de conversa.",
+        "es": "El alias del operador muestra el indicativo de quien transmite en las radios de este dispositivo. El valor del servidor sigue el ajuste del master. Activado envía el alias. Desactivado deja este dispositivo en la señalización del grupo.",
+        "fr": "L'alias de l'opérateur affiche l'indicatif de la station qui émet sur les radios de cet appareil. Le réglage du serveur suit le master. Activé envoie l'alias. Désactivé laisse cet appareil sur la signalisation du groupe.",
+        "it": "L'alias dell'operatore mostra il nominativo di chi trasmette sulle radio di questo dispositivo. Il valore del server segue l'impostazione del master. Attivo invia l'alias. Disattivo lascia questo dispositivo sulla segnalazione del gruppo.",
+        "nl": "Talker alias toont de roepletters van de zender op radio's van dit apparaat. Serverstandaard volgt de masterinstelling. Ingeschakeld stuurt de alias. Uitgeschakeld laat dit apparaat op talkgroup-signalering.",
+        "de": "Talker Alias zeigt das Rufzeichen der sendenden Station auf Funkgeräten dieses Geräts. Serverstandard folgt der Master-Einstellung. Aktiviert sendet den Alias. Deaktiviert belässt dieses Gerät bei der Gesprächsgruppen-Signalisierung.",
+        "ru": "Talker alias shows the transmitting callsign on radios using this device. Server default follows the master setting. Enabled sends the alias. Disabled leaves this device on talkgroup signalling.",
+        "ja": "Talker alias shows the transmitting callsign on radios using this device. Server default follows the master setting. Enabled sends the alias. Disabled leaves this device on talkgroup signalling.",
+        "ar": "Talker alias shows the transmitting callsign on radios using this device. Server default follows the master setting. Enabled sends the alias. Disabled leaves this device on talkgroup signalling.",
+        "zh": "Talker alias shows the transmitting callsign on radios using this device. Server default follows the master setting. Enabled sends the alias. Disabled leaves this device on talkgroup signalling.",
+        "el": "Το talker alias δείχνει το διακριτικό του σταθμού που εκπέμπει στις συσκευές αυτού του σημείου. Η προεπιλογή διακομιστή ακολουθεί τη ρύθμιση του master. Ενεργό στέλνει το alias. Ανενεργό αφήνει αυτό το σημείο στη σηματοδοσία ομάδας."
     },
     "calchlpsticky": {
         "en": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",

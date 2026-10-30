@@ -149,6 +149,24 @@
                                         </td>
                                     </tr>
                                     <tr>
+                                        <td class="align-middle text-nowrap">
+                                            <span id="calc_alias"></span>&nbsp;&nbsp;&nbsp;
+                                            <i class="far fa-question-circle"
+                                               data-bs-toggle="tooltip"
+                                               data-bs-placement="top"
+                                               data-bs-html="true"
+                                               title=""
+                                               id="calchlpalias"></i>
+                                        </td>
+                                        <td>
+                                            <select class="form-control form-control-sm" id="aliasSelect" onchange="updateGeneratedText()">
+                                                <option value="-1" id="calc_aliassrv" selected></option>
+                                                <option value="0" id="calc_aliasoff"></option>
+                                                <option value="1" id="calc_aliason"></option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
                                         <td class="align-middle text-nowrap"><span
                                                 id="calc_smode"></span>&nbsp;&nbsp;&nbsp;<i
                                                 class="far fa-question-circle" data-bs-toggle="tooltip"
@@ -311,6 +329,7 @@
         var languageSelect = document.getElementById('languageselect');
         var singleModeSelect = document.getElementById('singleModeSelect');
         var stickySelect = document.getElementById('stickySelect');
+        var aliasSelect = document.getElementById('aliasSelect');
         var timeoutInput = document.getElementById('timeoutInput');
         var modeSelector = document.getElementById('modeSelector');
         var timeslots1 = [];
@@ -334,6 +353,7 @@
         var languageValue = languageSelect.value;
         var singleModeValue = singleModeSelect.value;
         var stickyValue = stickySelect ? stickySelect.value : '-1';
+        var aliasValue = aliasSelect ? aliasSelect.value : '-1';
         var timeoutValue = timeoutInput.value;
         var modeSelectorValue = modeSelector ? modeSelector.value : 'Duplex';
         var generatedTextWithQuotes = 'Options="';
@@ -357,6 +377,9 @@
         }
         if (stickyValue !== '-1') {
             generatedTextWithQuotes += 'STICKY=' + stickyValue + ';';
+        }
+        if (aliasValue === '0' || aliasValue === '1') {
+            generatedTextWithQuotes += 'ALIAS=' + aliasValue + ';';
         }
         if (timeoutValue > 0) {
             generatedTextWithQuotes += 'TIMER=' + timeoutValue + ';';
@@ -383,6 +406,9 @@
         }
         if (stickyValue !== '-1') {
             generatedTextWithoutQuotes += 'STICKY=' + stickyValue + ';';
+        }
+        if (aliasValue === '0' || aliasValue === '1') {
+            generatedTextWithoutQuotes += 'ALIAS=' + aliasValue + ';';
         }
         if (timeoutValue > 0) {
             generatedTextWithoutQuotes += 'TIMER=' + timeoutValue + ';';
