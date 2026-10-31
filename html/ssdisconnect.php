@@ -7,6 +7,12 @@ require_once 'include/functions.php';
 
 header('Content-Type: application/json');
 
+if (!selfcareRequestIsHttps()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'HTTPS is required']);
+    exit();
+}
+
 initSecureSession();
 session_start();
 

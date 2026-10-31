@@ -404,7 +404,7 @@ function explainIpscClaimFailureByLogin($username)
         if (!isStoredPasswordEmpty($ipscLoggedIn[0]['psswd'])) {
             return null;
         }
-        return null;
+        return "This repeater is online and has no selfcare password yet. Sign in with the callsign or radio ID and leave the password blank to set one.";
     }
 
     $anyRows = findClientsByLogin($username, false);
@@ -431,7 +431,7 @@ function explainIpscClaimFailureByLogin($username)
         return "Device is not online. Connect it to the network, then sign in with callsign or radio ID and leave the password blank to set up selfcare.";
     }
 
-    return null;
+    return "This repeater is online and has no selfcare password yet. Sign in with the callsign or radio ID and leave the password blank to set one.";
 }
 
 /**
@@ -636,8 +636,7 @@ function initSecureSession()
     }
 
     $lifetime = SESSION_TIMEOUT_SECONDS;
-    $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-                || (! empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+    $isSecure = selfcareRequestIsHttps();
 
     session_set_cookie_params([
         'lifetime' => $lifetime,

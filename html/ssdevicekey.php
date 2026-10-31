@@ -52,9 +52,7 @@ if (isIpscSession() || isIpscDeviceMode($device['mode'])) {
     deviceKeyResponse(['success' => false, 'error' => 'Device API keys are for hotspots only'], 403);
 }
 
-$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-    || (!empty($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
-if (!$secure) {
+if (!selfcareRequestIsHttps()) {
     deviceKeyResponse(['success' => false, 'error' => 'HTTPS is required'], 403);
 }
 
