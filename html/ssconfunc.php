@@ -89,14 +89,17 @@ function isStoredPasswordEmpty($storedPassword)
 }
 
 /**
- * Hash a selfcare password for storage (PBKDF2-SHA256; same as selfcare-admin.sh / php-cli).
+ * Hash a selfcare password for storage.
+ *
+ * New passwords use password_hash(), which has a unique salt. Existing
+ * PBKDF2 digests that used the fixed salt "RYSEN" still verify.
  *
  * @param string $password Plain-text password
- * @return string Hex PBKDF2-SHA256 digest
+ * @return string Password hash
  */
 function hashPasswordForStorage($password)
 {
-    return hash_pbkdf2("sha256", $password, "RYSEN", 2000);
+    return password_hash($password, PASSWORD_DEFAULT);
 }
 
 /**
@@ -362,6 +365,7 @@ function establishIpscSession($row)
     $_SESSION['int_ids'] = [(int) $row['int_id']];
     $_SESSION['is_ipsc'] = true;
     $_SESSION['last_activity'] = time();
+    unset($_SESSION['pending_claim_int_id']);
     session_regenerate_id(true);
 }
 
@@ -400,7 +404,7 @@ function explainIpscClaimFailureByLogin($username)
         if (!isStoredPasswordEmpty($ipscLoggedIn[0]['psswd'])) {
             return null;
         }
-        return null;
+        return "This repeater is online and has no selfcare password yet. Sign in with the callsign or radio ID and leave the password blank to set one.";
     }
 
     $anyRows = findClientsByLogin($username, false);
@@ -427,7 +431,7 @@ function explainIpscClaimFailureByLogin($username)
         return "Device is not online. Connect it to the network, then sign in with callsign or radio ID and leave the password blank to set up selfcare.";
     }
 
-    return null;
+    return "This repeater is online and has no selfcare password yet. Sign in with the callsign or radio ID and leave the password blank to set one.";
 }
 
 /**
@@ -455,6 +459,7 @@ function establishMmdvmSession(array $rows)
     );
     $_SESSION['is_ipsc'] = false;
     $_SESSION['last_activity'] = time();
+    unset($_SESSION['pending_claim_int_id']);
     session_regenerate_id(true);
 }
 
@@ -556,14 +561,14 @@ function authenticateUser($username, $password)
         return true;
     }
 
-    if (count($ipscRows) === 1) {
-        establishIpscSession($ipscRows[0]);
-        try {
-            logLoginSuccess($username);
-        } catch (Exception $e) {
-            error_log("Login audit logging failed: " . $e->getMessage());
-        }
-        return true;
+    if ($ipscRows && $mmdvmRows) {
+        logLoginFailure($username, 'ambiguous_login');
+        return 'That password matches both a repeater and a hotspot. Log in with the radio ID of the device you want.';
+    }
+
+    if (count($ipscRows) > 1) {
+        logLoginFailure($username, 'ambiguous_login');
+        return 'That password matches more than one repeater. Log in with the radio ID of the repeater you want.';
     }
 
     logLoginFailure($username, 'ambiguous_login');
@@ -636,8 +641,7 @@ function initSecureSession()
     }
 
     $lifetime = SESSION_TIMEOUT_SECONDS;
-    $isSecure = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-                || (! empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+    $isSecure = selfcareRequestIsHttps();
 
     session_set_cookie_params([
         'lifetime' => $lifetime,
@@ -659,14 +663,59 @@ function initSecureSession()
  * 
  * @return void
  */
-function enforceHttps()
+function selfcareForwardedClientProto()
 {
-    if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
-        if (!headers_sent()) {
-            header("Location: https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-            exit();
+    $xfp = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+    if ($xfp !== '') {
+        return trim(explode(',', $xfp)[0]);
+    }
+
+    $forwarded = trim((string) ($_SERVER['HTTP_FORWARDED'] ?? ''));
+    if ($forwarded !== '') {
+        $elements = preg_split('/,(?=(?:[^"]*"[^"]*")*[^"]*$)/', $forwarded);
+        $first = trim((string) ($elements[0] ?? ''));
+        if (preg_match('/(?:^|;)\s*proto\s*=\s*(?:"([^"]+)"|([A-Za-z0-9.+-]+))/i', $first, $match)) {
+            return strtolower($match[1] !== '' ? $match[1] : $match[2]);
         }
     }
+
+    $ssl = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '')));
+    if ($ssl !== '') {
+        $token = trim(explode(',', $ssl)[0]);
+        if ($token === 'on' || $token === '1') {
+            return 'https';
+        }
+    }
+
+    return '';
+}
+
+function selfcareRequestIsHttps()
+{
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        return true;
+    }
+    if (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
+        return true;
+    }
+    if (strtolower((string) ($_SERVER['REQUEST_SCHEME'] ?? '')) === 'https') {
+        return true;
+    }
+    return selfcareForwardedClientProto() === 'https';
+}
+
+function enforceHttps()
+{
+    if (selfcareRequestIsHttps() || headers_sent()) {
+        return;
+    }
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+    if ($host === '' || preg_match('/[\r\n]/', $host)) {
+        return;
+    }
+    $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    header('Location: https://' . $host . $uri);
+    exit();
 }
 
 

@@ -2,8 +2,6 @@
 // Initialize secure session settings before starting session
 require_once "ssconfunc.php";
 require_once "include/functions.php";
-initSecureSession();
-session_start();
 
 /**
  * @param array<string, string> $payload
@@ -15,6 +13,17 @@ function sscheckJsonResponse(array $payload, $httpCode = 200)
     echo json_encode($payload);
     exit();
 }
+
+if (!selfcareRequestIsHttps()) {
+    sscheckJsonResponse([
+        'modified' => '0',
+        'logged_in' => '0',
+        'error' => 'HTTPS is required',
+    ], 403);
+}
+
+initSecureSession();
+session_start();
 
 $wantsJson = isset($_GET['full']) && $_GET['full'] === '1';
 

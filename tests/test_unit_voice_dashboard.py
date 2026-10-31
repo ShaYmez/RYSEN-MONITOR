@@ -66,7 +66,7 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         untouched = monitor.CTABLE["MASTERS"]["MASTER-A"]["PEERS"][112][1]
         self.assertEqual(origin["TRX"], "UNIT_TX")
         self.assertEqual(origin["CALL"], "M0CALL")
-        self.assertEqual(origin["TG"], "PC&nbsp;G0DEST")
+        self.assertEqual(origin["TG"], "PC\u00a0G0DEST")
         self.assertFalse(untouched["TS"])
 
         monitor.rts_update(_event("TO START", "MASTER-B", 222, slot="2", trx="TX"))
@@ -74,7 +74,7 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         other = monitor.CTABLE["MASTERS"]["MASTER-B"]["PEERS"][223][2]
         self.assertEqual(delivery["TRX"], "UNIT_RX")
         self.assertEqual(delivery["CALL"], "G0DEST")
-        self.assertEqual(delivery["TG"], "PC&nbsp;M0CALL")
+        self.assertEqual(delivery["TG"], "PC\u00a0M0CALL")
         self.assertFalse(other["TS"])
         self.assertEqual(push.call_count, 2)
 
@@ -124,7 +124,7 @@ class TestUnitVoiceDashboard(unittest.TestCase):
         self.assertIn("TX", activity)
         self.assertIn("RX", activity)
         self.assertIn(
-            'class="text-xs text-dark">PC&nbsp;G0DEST', activity)
+            'class="text-xs text-dark">PC\u00a0G0DEST', activity)
         self.assertNotIn(".badge-unit-tx .text-dark", css)
         self.assertIn("background-color: #28a745 !important;", css)
         self.assertNotIn(".badge-unit-rx .text-dark", css)

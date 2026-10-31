@@ -16,10 +16,10 @@
                 <tbody>
                   <tr>
                     <td rowspan="2">{% if _cdata[1]['TRX'] == 'UNIT_RX' %}RX{% else %}TX{% endif %} |</td>
-                    <td>{{ _cdata[1]['CALL']|safe }}</td>
+                    <td>{{ _cdata[1]['CALL'] }}</td>
                   </tr>
                   <tr>
-                    <td class="text-xs text-dark">{{ _cdata[1]['TG']|safe }}</td>
+                    <td class="text-xs text-dark">{{ _cdata[1]['TG'] }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -33,10 +33,10 @@
                 <tbody>
                   <tr>
                     <td rowspan="2">{% if _cdata[2]['TRX'] == 'UNIT_RX' %}RX{% else %}TX{% endif %} |</td>
-                    <td>{{ _cdata[2]['CALL']|safe}}</td>
+                    <td>{{ _cdata[2]['CALL']}}</td>
                   </tr>
                   <tr>
-                    <td class="text-xs text-dark">{{_cdata[2]['TG']|safe}}</td>
+                    <td class="text-xs text-dark">{{_cdata[2]['TG']}}</td>
                   </tr>
                 </tbody>
               </table>
@@ -55,10 +55,10 @@
                 <tbody>
                   <tr>
                     <td rowspan="2">{% if _pdata[1]['TRX'] == 'UNIT_RX' %}RX{% else %}TX{% endif %} |</td>
-                    <td>{{ _pdata[1]['CALL']|safe }}</td>
+                    <td>{{ _pdata[1]['CALL'] }}</td>
                   </tr>
                   <tr>
-                    <td class="text-xs text-dark">{{ _pdata[1]['TG']|safe }}</td>
+                    <td class="text-xs text-dark">{{ _pdata[1]['TG'] }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -72,10 +72,10 @@
                 <tbody>
                   <tr>
                     <td rowspan="2">{% if _pdata[2]['TRX'] == 'UNIT_RX' %}RX{% else %}TX{% endif %} |</td>
-                    <td>{{ _pdata[2]['CALL']|safe }}</td>
+                    <td>{{ _pdata[2]['CALL'] }}</td>
                   </tr>
                   <tr>
-                    <td class="text-xs text-dark">{{ _pdata[2]['TG']|safe }}</td>
+                    <td class="text-xs text-dark">{{ _pdata[2]['TG'] }}</td>
                   </tr>
                 </tbody>
               </table>

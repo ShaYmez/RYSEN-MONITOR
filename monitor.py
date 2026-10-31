@@ -412,8 +412,8 @@ def get_alias(_id, _dict, *args):
             retValue = []
             for _item in args:
                 try:
-                    retValue.append(_dict[_id][_item])
-                except TypeError:
+                    retValue.append(_dict[_id].get(_item))
+                except (AttributeError, TypeError):
                     return _dict[_id]
             return retValue
         else:
@@ -421,38 +421,36 @@ def get_alias(_id, _dict, *args):
     return _id
 
 
+def _alias_parts(alias):
+    """Drop empty alias fields without skipping the item that shifts into a popped slot."""
+    if not isinstance(alias, list):
+        return None
+    return [item for item in alias if item is not None and str(item).strip() != ""]
+
+
 # Alias string processor
 def alias_string(_id, _dict):
     alias = get_alias(_id, _dict, "CALLSIGN", "CITY", "STATE")
-    if type(alias) == list:
-        for x,item in enumerate(alias):
-            if item == None:
-                alias.pop(x)
-        return ", ".join(alias)
-    else:
+    parts = _alias_parts(alias)
+    if parts is None:
         return alias
+    return ", ".join(parts)
 
 
 def alias_short(_id, _dict):
     alias = get_alias(_id, _dict, "CALLSIGN", "NAME")
-    if type(alias) == list:
-        for x,item in enumerate(alias):
-            if item == None:
-                alias.pop(x)
-        return ", ".join(alias)
-    else:
+    parts = _alias_parts(alias)
+    if parts is None:
         return str(alias)
+    return ", ".join(parts)
 
 
 def alias_call(_id, _dict):
     alias = get_alias(_id, _dict, "CALLSIGN")
-    if type(alias) == list:
-        for x,item in enumerate(alias):
-            if item == None:
-                alias.pop(x)
-        return ", ".join(alias)
-    else:
+    parts = _alias_parts(alias)
+    if parts is None:
         return str(alias)
+    return ", ".join(parts)
 
 
 def alias_tgid(_id, _dict):
@@ -810,6 +808,26 @@ def _hb_field_str(value):
     return str(value).rstrip("\x00").strip()
 
 
+def _hb_peer_slots(peer_conf):
+    """Homebrew slot label for the repeater tooltip.
+
+    0 = none, 1 or 2 = that timeslot, 3 = duplex, anything else = simplex.
+    IPSC and Hytera repeaters are duplex radios. Hytera leaves SLOTS empty,
+    which this map would call simplex. IPSC stores an enabled-slot count
+    ('1' or '2') rather than the duplex code '3'.
+    """
+    if peer_conf.get("PROTOCOL") in ("IPSC", "HYTERA"):
+        return "Duplex"
+    slots = _hb_field_str(peer_conf.get("SLOTS", ""))
+    if slots == "0":
+        return "NONE"
+    if slots in ("1", "2"):
+        return slots
+    if slots == "3":
+        return "Duplex"
+    return "Simplex"
+
+
 def _alias_location(radio_id):
     try:
         rid = int(radio_id)
@@ -873,6 +891,7 @@ def refresh_hb_peer(_peer_conf, _ctable_peer, _peer):
     _ctable_peer["CONNECTED"] = time_str(_peer_conf["CONNECTED"], "since")
     _ctable_peer["IP"] = _peer_conf["IP"]
     _ctable_peer["PORT"] = _peer_conf["PORT"]
+    _ctable_peer["SLOTS"] = _hb_peer_slots(_peer_conf)
     if _peer_conf.get("PROTOCOL") == "IPSC":
         _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
     elif _peer_conf.get("PROTOCOL") == "HYTERA":
@@ -934,18 +953,9 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer["TX_FREQ"] = "N/A"
         _ctable_peer["RX_FREQ"] = "N/A"
 
-    # timeslots are kinda complicated too. 0 = none, 1 or 2 mean that one slot,
-    # 3 is both, and anything else it considered DMO Slots
-    # (0, 1=1, 2=2, 1&2=3 Duplex, 4=Simplex)
-    # see https://wiki.brandmeister.network/index.php/Homebrew/example/php2
-    if _peer_conf["SLOTS"] == b"0":
-        _ctable_peer["SLOTS"] = "NONE"
-    elif _peer_conf["SLOTS"] == b"1" or _peer_conf["SLOTS"] == b"2":
-        _ctable_peer["SLOTS"] = _peer_conf["SLOTS"].decode("utf-8")
-    elif _peer_conf["SLOTS"] == b"3":
-        _ctable_peer["SLOTS"] = "Duplex"
-    else:
-        _ctable_peer["SLOTS"] = "Simplex"
+    # Homebrew: 0 = none, 1 or 2 = that slot, 3 = duplex, else simplex.
+    # https://wiki.brandmeister.network/index.php/Homebrew/example/php2
+    _ctable_peer["SLOTS"] = _hb_peer_slots(_peer_conf)
 
     # Simple translation items
     _ctable_peer["PACKAGE_ID"] = _hb_field_str(_peer_conf.get("PACKAGE_ID", ""))
@@ -1626,7 +1636,7 @@ def _set_unit_slot(slot, role, stream_id, source_sub, destination, timeout, part
     slot["CALL"] = actor_call
     slot["SRC"] = actor_id
     slot["DEST"] = f"PC {other_call} ({other_id})"
-    slot["TG"] = f"PC&nbsp;{other_call}"
+    slot["TG"] = f"PC\u00a0{other_call}"
     slot["TRX"] = "UNIT_TX" if is_origin else "UNIT_RX"
     slot["SID"] = stream_id
     slot["RSSI"] = _event_rssi(parts) if is_origin else ""
@@ -1721,22 +1731,27 @@ def unit_rts_update(parts):
 
 
 def rts_update(p):
+    if len(p) < 9:
+        return
     callType = p[0]
     if callType == "UNIT VOICE":
         unit_rts_update(p)
         return
-    action = p[1]
-    trx = p[2]
-    system = p[3]
-    streamId = p[4]
-    sourcePeer = int(p[5])
-    sourceSub = int(p[6])
-    timeSlot = int(p[7])
-    destination = int(p[8])
+    try:
+        action = p[1]
+        trx = p[2]
+        system = p[3]
+        streamId = p[4]
+        sourcePeer = int(p[5])
+        sourceSub = int(p[6])
+        timeSlot = int(p[7])
+        destination = int(p[8])
+    except (TypeError, ValueError, IndexError):
+        return
     timeout = time()
     changed = False
     call_label = f"{alias_call(sourceSub, subscriber_ids)}"
-    tg_label = f"TG&nbsp;{destination}"
+    tg_label = f"TG\u00a0{destination}"
     if system in CTABLE["MASTERS"]:
         for peer in CTABLE["MASTERS"][system]["PEERS"]:
             slot = CTABLE["MASTERS"][system]["PEERS"][peer][timeSlot]
@@ -1753,7 +1768,7 @@ def rts_update(p):
                 slot["CALL"] = call_label
                 slot["SRC"] = peer
                 slot["DEST"] = (
-                    f"TG {destination}&nbsp;&nbsp;&nbsp;&nbsp;{alias_tgid(destination,talkgroup_ids)}")
+                    f"TG {destination}\u00a0\u00a0\u00a0\u00a0{alias_tgid(destination,talkgroup_ids)}")
                 slot["TG"] = tg_label
                 slot["TRX"] = crxstatus
                 slot["SID"] = streamId
@@ -1794,7 +1809,7 @@ def rts_update(p):
             slot["CALL"] = call_label
             slot["SRC"] = sourcePeer
             slot["DEST"] = (
-                f"TG {destination}&nbsp;&nbsp;&nbsp;&nbsp;{alias_tgid(destination,talkgroup_ids)}")
+                f"TG {destination}\u00a0\u00a0\u00a0\u00a0{alias_tgid(destination,talkgroup_ids)}")
             slot["TG"] = tg_label
             slot["TRX"] = prxstatus
             slot["SID"] = streamId
@@ -1862,18 +1877,28 @@ def process_message(_bmessage):
     elif opcode == OPCODE["BRDG_EVENT"]:
         logger.debug(f"BRIDGE EVENT: {_message[1:]}")
         p = _message[1:].split(",")
+        if len(p) < 9:
+            logger.debug("BRIDGE EVENT ignored, short line: %s", _message[1:])
+            return None
         if p[0] in ("GROUP VOICE", "UNIT VOICE"):
             rts_update(p)
         if len(p) > 8:
-            db2dict(int(p[6]), "subscriber_ids")
-            if p[0] == "GROUP VOICE":
-                db2dict(int(p[8]), "talkgroup_ids")
-            elif p[0] == "UNIT VOICE" or p[0] in UNIT_DATA_LASTHEARD_TYPES:
-                db2dict(int(p[8]), "subscriber_ids")
+            try:
+                db2dict(int(p[6]), "subscriber_ids")
+                if p[0] == "GROUP VOICE":
+                    db2dict(int(p[8]), "talkgroup_ids")
+                elif p[0] == "UNIT VOICE" or p[0] in UNIT_DATA_LASTHEARD_TYPES:
+                    db2dict(int(p[8]), "subscriber_ids")
+            except (TypeError, ValueError):
+                logger.debug("BRIDGE EVENT ignored, bad id: %s", _message[1:])
+                return None
         if p[0] == "GROUP VOICE":
             if p[1] == "RSSI":
                 return None
             if p[2] == "TX" or p[5] in CONF["OPB_FLTR"]["OPB_FILTER"]:
+                return None
+            if p[1] == "END" and len(p) < 10:
+                logger.debug("BRIDGE EVENT ignored, END missing duration: %s", _message[1:])
                 return None
 
             if p[1] == "END" and p[4] in sys_dict and sys_dict[p[4]]["sys"] == p[3]:
@@ -1942,6 +1967,9 @@ def process_message(_bmessage):
             if p[1] == "START":
                 unit_sys_dict[unit_key] = {"timeST": time()}
             elif p[1] == "END" and unit_key in unit_sys_dict:
+                if len(p) < 10:
+                    logger.debug("BRIDGE EVENT ignored, END missing duration: %s", _message[1:])
+                    return None
                 del unit_sys_dict[unit_key]
                 if CONF["GLOBAL"]["LH_INC"]:
                     db_conn.ins_lstheard_log(p[9], p[0], p[3], p[8], p[6])
@@ -1992,7 +2020,10 @@ class report(NetstringReceiver):
         pass
 
     def stringReceived(self, data):
-        process_message(data)
+        try:
+            process_message(data)
+        except Exception as exc:
+            logger.warning("Ignored malformed report message: %s", exc)
 
 
 class reportClientFactory(ReconnectingClientFactory):

@@ -67,8 +67,7 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                   <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                   <td class="table-active align-middle text-center"><span
                       class="badge badge-pill badge-success">TS1</span></td>
-                  <td class="table-active align-middle"><span class="badge badge-success">{{
-                      _cdata['TS1_STATIC']|join('</span> <span class="badge badge-success">')|safe }}</span></td>
+                  <td class="table-active align-middle">{% for _tg in _cdata['TS1_STATIC']|default([], true) %}<span class="badge badge-success">{{ _tg }}</span> {% endfor %}</td>
                   <td class="table-active align-middle text-center"><span class="badge badge-warning">{{
                       _cdata['SINGLE_TS1']['TGID'] if 'SINGLE_TS1' in _cdata else '' }}</span></td>
                   <td class="table-active align-middle text-center">{{ _cdata['SINGLE_TS1']['TO'] if 'SINGLE_TS1' in
@@ -76,8 +75,7 @@ Hardware: {% if _cdata.get('PROTOCOL') == 'HYTERA' %}{{ _cdata.get('HYTERA_SERIA
                 <tr>
                   <td class="peer-loc-cell align-middle text-center">{{_cdata['LOCATION']}}</td>
                   <td class="align-middle text-center"><span class="badge badge-pill badge-danger">TS2</span></td>
-                  <td class="align-middle"><span class="badge badge-danger">{{ _cdata['TS2_STATIC']|join('</span> <span
-                      class="badge badge-danger">')|safe }}</span></td>
+                  <td class="align-middle">{% for _tg in _cdata['TS2_STATIC']|default([], true) %}<span class="badge badge-danger">{{ _tg }}</span> {% endfor %}</td>
                   <td class="align-middle text-center"><span class="badge badge-warning">{{ _cdata['SINGLE_TS2']['TGID']
                       if 'SINGLE_TS2' in _cdata else '' }}</span></td>
                   <td class="align-middle text-center">{{ _cdata['SINGLE_TS2']['TO'] if 'SINGLE_TS2' in _cdata else ''
@@ -149,8 +147,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                 <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                 <td class="table-active align-middle text-center"><span
                     class="badge badge-pill badge-success">TS1</span></td>
-                <td class="table-active align-middle"><span class="badge badge-success">{{
-                    _cdata['TS1_STATIC']|join('</span> <span class="badge badge-success">')|safe }}</span></td>
+                <td class="table-active align-middle">{% for _tg in _cdata['TS1_STATIC']|default([], true) %}<span class="badge badge-success">{{ _tg }}</span> {% endfor %}</td>
                 <td class="table-active align-middle text-center"><span class="badge badge-warning">{{
                     _cdata['SINGLE_TS1']['TGID'] if 'SINGLE_TS1' in _cdata else '' }}</span></td>
                 <td class="table-active align-middle text-center">{{ _cdata['SINGLE_TS1']['TO'] if 'SINGLE_TS1' in
@@ -158,8 +155,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
               <tr>
                 <td class="p-0 align-middle text-center">{{_cdata['LOCATION']}}</td>
                 <td class="align-middle text-center"><span class="badge badge-pill badge-danger">TS2</span></td>
-                <td class="align-middle"><span class="badge badge-danger">{{ _cdata['TS2_STATIC']|join('</span> <span
-                    class="badge badge-danger">')|safe }}</span></td>
+                <td class="align-middle">{% for _tg in _cdata['TS2_STATIC']|default([], true) %}<span class="badge badge-danger">{{ _tg }}</span> {% endfor %}</td>
                 <td class="align-middle text-center"><span class="badge badge-warning">{{ _cdata['SINGLE_TS2']['TGID']
                     if 'SINGLE_TS2' in _cdata else '' }}</span></td>
                 <td class="align-middle text-center">{{ _cdata['SINGLE_TS2']['TO'] if 'SINGLE_TS2' in _cdata else '' }}
@@ -222,8 +218,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
                 <td rowspan="2" class="bg-success align-middle text-center">{{ _cdata['CONNECTED'] }}</td>
                 <td class="table-active align-middle text-center"><span
                     class="badge badge-pill badge-success">TS1</span></td>
-                <td class="table-active align-middle"><span class="badge badge-success">{{
-                    _cdata['TS1_STATIC']|join('</span> <span class="badge badge-success">')|safe }}</span></td>
+                <td class="table-active align-middle">{% for _tg in _cdata['TS1_STATIC']|default([], true) %}<span class="badge badge-success">{{ _tg }}</span> {% endfor %}</td>
                 <td class="table-active align-middle text-center"><span class="badge badge-warning">{{
                     _cdata['SINGLE_TS1']['TGID'] if 'SINGLE_TS1' in _cdata else '' }}</span></td>
                 <td class="table-active align-middle text-center">{{ _cdata['SINGLE_TS1']['TO'] if 'SINGLE_TS1' in
@@ -231,8 +226,7 @@ Hardware: {{_cdata['PACKAGE_ID'] }}">{{ _cdata['CALLSIGN']}}</a></strong>&nbsp;
               <tr>
                 <td class="p-0 align-middle text-center">{{_cdata['LOCATION']}}</td>
                 <td class="align-middle text-center"><span class="badge badge-pill badge-danger">TS2</span></td>
-                <td class="align-middle"><span class="badge badge-danger">{{ _cdata['TS2_STATIC']|join('</span> <span
-                    class="badge badge-danger">')|safe }}</span></td>
+                <td class="align-middle">{% for _tg in _cdata['TS2_STATIC']|default([], true) %}<span class="badge badge-danger">{{ _tg }}</span> {% endfor %}</td>
                 <td class="align-middle text-center"><span class="badge badge-warning">{{ _cdata['SINGLE_TS2']['TGID']
                     if 'SINGLE_TS2' in _cdata else '' }}</span></td>
                 <td class="align-middle text-center">{{ _cdata['SINGLE_TS2']['TO'] if 'SINGLE_TS2' in _cdata else '' }}

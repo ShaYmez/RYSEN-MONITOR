@@ -2,6 +2,7 @@
 require_once "ssconfunc.php";
 require_once "include/functions.php";
 require_once "include/ui-mode.php";
+enforceHttps();
 initSecureSession();
 session_start();
 checkSessionTimeout();

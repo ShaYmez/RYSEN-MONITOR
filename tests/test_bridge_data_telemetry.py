@@ -34,6 +34,16 @@ class TestBridgeDataTelemetry(unittest.TestCase):
     def tearDown(self):
         monitor._unit_sms_lh_recent.clear()
 
+    def test_short_bridge_event_is_ignored(self):
+        monitor.process_message((BRDG + "GROUP VOICE,END").encode())
+        monitor.db_conn.ins_lstheard_log.assert_not_called()
+
+    def test_alias_keeps_later_fields_when_an_earlier_one_is_empty(self):
+        table = {1: {"CALLSIGN": "M0VUB", "CITY": None, "STATE": "UK", "NAME": "Shane"}}
+        self.assertEqual(monitor.alias_string(1, table), "M0VUB, UK")
+        missing_call = {2: {"CALLSIGN": None, "NAME": "Shane"}}
+        self.assertEqual(monitor.alias_short(2, missing_call), "Shane")
+
     @patch("monitor.ensureDeferred")
     def test_unit_csbk_records_lastheard(self, deferred):
         line = _quadnet_payload()[0]

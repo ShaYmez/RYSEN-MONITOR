@@ -9,7 +9,6 @@
             <div class="p-3 mt-0 wwtg-wrap">
    <!-- JSON API SYSTEM X DMR GLOBAL
 	================================================== --> 
-<body>     
 <?php
 require_once __DIR__ . '/api-config.php';
 require_once __DIR__ . '/copyright.php';
@@ -68,7 +67,9 @@ if (count($tgDataArray)) {
         }
         echo "</tr></thead>\n<tbody>\n";
 
-        sort($tgDataArray);
+        usort($tgDataArray, static function ($a, $b) {
+            return ((int) ($a['tgid'] ?? 0)) <=> ((int) ($b['tgid'] ?? 0));
+        });
 
         foreach ( $tgDataArray as $tgData ) {
                 $tgNrRaw = (string) ($tgData['tgid'] ?? '');
@@ -110,7 +111,7 @@ else {
 </div>
 
 <!-- FOOTER BEGIN -->
-<p style="text-align: center; font-size:12px;"><span style="text-align: center;"><br>API Version 1.2 <a data-bs-toggle="tooltip" title="<?php echo htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8'); ?> DMR Global Talkgroup API (JSON &amp; CSV Format)" target="_blank" href="<?php echo htmlspecialchars(API_TG_JSON_URL, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8'); ?> API</a> M0VUB. &copy; All Rights Reserved 2021-<?php echo SYSTEMX_COPYRIGHT_YEAR; ?><br>Contribution <a data-bs-toggle="tooltip" title="The Legend - Creator of Pi-Star" target="_blank" href=http://pistar.uk/>Andy Taylor MW0MWZ</a> &copy; All Rights Reserved<br>API X <a data-bs-toggle="tooltip" title="RYSEN-MONITOR / System X" href="mailto:shane@freestar.network">Shane Daley</a> M0VUB &lt;shane@freestar.network&gt;. &copy; All Rights Reserved<br><?php echo htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8'); ?> &copy; <a data-bs-toggle="tooltip" title="<?php echo htmlspecialchars(API_NETWORK_LABEL, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" href="<?php echo htmlspecialchars(API_TG_JSON_URL, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8'); ?></a> Network<br><?php echo SYSTEMX_COPYRIGHT_YEAR; ?> &copy;<br><br></span>
+<p style="text-align: center; font-size:12px;"><span style="text-align: center;"><br>API Version <?php echo htmlspecialchars(SYSTEMX_API_VERSION, ENT_QUOTES, 'UTF-8'); ?> <a data-bs-toggle="tooltip" title="<?php echo htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8'); ?> DMR Global Talkgroup API (JSON &amp; CSV Format)" target="_blank" href="<?php echo htmlspecialchars(API_TG_JSON_URL, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8'); ?> API</a> M0VUB. &copy; All Rights Reserved 2021-<?php echo SYSTEMX_COPYRIGHT_YEAR; ?><br>Contribution <a data-bs-toggle="tooltip" title="The Legend - Creator of Pi-Star" target="_blank" href=http://pistar.uk/>Andy Taylor MW0MWZ</a> &copy; All Rights Reserved<br>API X <a data-bs-toggle="tooltip" title="RYSEN-MONITOR / System X" href="mailto:shane@freestar.network">Shane Daley</a> M0VUB &lt;shane@freestar.network&gt;. &copy; All Rights Reserved<br><?php echo htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8'); ?> &copy; <a data-bs-toggle="tooltip" title="<?php echo htmlspecialchars(API_NETWORK_LABEL, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" href="<?php echo htmlspecialchars(API_TG_JSON_URL, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(API_NETWORK_NAME, ENT_QUOTES, 'UTF-8'); ?></a> Network<br><?php echo SYSTEMX_COPYRIGHT_YEAR; ?> &copy;<br><br></span>
     <!-- <?php echo SYSTEMX_COPYRIGHT_LINE; ?> -->
     <!-- THIS COPYRIGHT NOTICE MUST BE DISPLAYED AS A CONDITION OF THE LICENCE GRANT FOR THIS SOFTWARE. ALL DERIVATEIVES WORKS MUST CARRY THIS NOTICE -->
     <!-- This is version of System X API M0VUB 2021-2022 (v1.1)-->   						

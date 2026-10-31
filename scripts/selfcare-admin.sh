@@ -125,12 +125,13 @@ run_sql_table() {
 }
 
 # ---------------------------------------------------------------------------
-# Password hashing (same as html/ssconfunc.php)
+# Password hashing. PHP password_hash matches hashPasswordForStorage().
+# The openssl fallback is the legacy PBKDF2 digest, which still verifies.
 # ---------------------------------------------------------------------------
 hash_selfcare_password() {
   local pass="$1"
   if command -v php >/dev/null 2>&1; then
-    php -r 'echo hash_pbkdf2("sha256", $argv[1], "RYSEN", 2000);' "$pass"
+    php -r 'echo password_hash($argv[1], PASSWORD_DEFAULT);' "$pass"
     return 0
   fi
   if command -v openssl >/dev/null 2>&1 && openssl kdf -help 2>&1 | grep -q PBKDF2; then

@@ -17,6 +17,10 @@ if (!defined('SYSTEMX_COPYRIGHT_YEAR')) {
     define('SYSTEMX_COPYRIGHT_YEAR', date('Y'));
 }
 
+if (!defined('SYSTEMX_API_VERSION')) {
+    define('SYSTEMX_API_VERSION', '1.3');
+}
+
 if (!defined('SYSTEMX_COPYRIGHT_LINE')) {
     define(
         'SYSTEMX_COPYRIGHT_LINE',

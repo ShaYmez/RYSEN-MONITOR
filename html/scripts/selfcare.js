@@ -640,6 +640,7 @@ class SelfcareManager {
         }
 
         this.stopStatusPolling();
+        this.stopDeviceRuntimePolling();
 
         this.disconnectInProgress = true;
         this.setSaveButtonDisabled(true);
@@ -660,6 +661,10 @@ class SelfcareManager {
                 this.setSaveButtonDisabled(this.isModified);
                 this.setDisconnectButtonDisabled(false);
                 this.setWaitMessage('calc_wait');
+                if (document.getElementById('device-runtime-panel')) {
+                    this.refreshDeviceRuntime();
+                    this.startDeviceRuntimePolling();
+                }
                 alert(error.message || 'Disconnect failed. Please try again.');
             })
             .finally(() => {
@@ -1043,14 +1048,14 @@ class SelfcareManager {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     const modeStatus = document.getElementById('mode-status');
-    const ipscDevice = document.getElementById('ipsc-device');
+    const repeaterDevice = document.getElementById('repeater-device');
     const deviceId = document.getElementById('device-id');
     const deviceModified = document.getElementById('device-modified');
     
     if (modeStatus && deviceId) {
         window.selfcare = new SelfcareManager({
             deviceMode: parseInt(modeStatus.value, 10),
-            isIpsc: ipscDevice ? ipscDevice.value === '1' : false,
+            isIpsc: repeaterDevice ? repeaterDevice.value === '1' : false,
             deviceId: parseInt(deviceId.value, 10),
             isModified: deviceModified ? deviceModified.value === '1' : false
         });
