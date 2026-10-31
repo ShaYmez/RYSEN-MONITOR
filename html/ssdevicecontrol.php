@@ -32,6 +32,10 @@ function deviceControlErrorMessage($code)
     return 'Runtime controls are unavailable';
 }
 
+if (!selfcareRequestIsHttps()) {
+    deviceControlResponse(['success' => false, 'error' => 'HTTPS is required'], 403);
+}
+
 initSecureSession();
 session_start();
 
@@ -63,10 +67,6 @@ if (!$device) {
 }
 if (isIpscSession() || isIpscDeviceMode($device['mode'])) {
     deviceControlResponse(['success' => false, 'error' => 'Runtime controls are for hotspots only'], 403);
-}
-
-if (!selfcareRequestIsHttps()) {
-    deviceControlResponse(['success' => false, 'error' => 'HTTPS is required'], 403);
 }
 
 $config = dashboardDeviceControlConfig();

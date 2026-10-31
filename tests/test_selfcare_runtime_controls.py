@@ -22,6 +22,10 @@ def test_gateway_enforces_session_ownership_https_csrf_and_hotspot():
         "dashboardDeviceControlConfig()",
     ):
         assert required in source
+    assert source.index("selfcareRequestIsHttps()") < source.index("session_start()")
+
+    key = _read("html/ssdevicekey.php")
+    assert key.index("selfcareRequestIsHttps()") < key.index("session_start()")
 
 
 def test_gateway_whitelists_actions_and_forwards_exact_selected_id():

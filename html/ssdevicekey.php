@@ -18,6 +18,10 @@ function deviceKeyResponse($body, $code = 200)
     exit();
 }
 
+if (!selfcareRequestIsHttps()) {
+    deviceKeyResponse(['success' => false, 'error' => 'HTTPS is required'], 403);
+}
+
 initSecureSession();
 session_start();
 
@@ -50,10 +54,6 @@ if (!$device) {
 }
 if (isIpscSession() || isIpscDeviceMode($device['mode'])) {
     deviceKeyResponse(['success' => false, 'error' => 'Device API keys are for hotspots only'], 403);
-}
-
-if (!selfcareRequestIsHttps()) {
-    deviceKeyResponse(['success' => false, 'error' => 'HTTPS is required'], 403);
 }
 
 $issuer = dashboardDeviceKeyIssuerConfig();

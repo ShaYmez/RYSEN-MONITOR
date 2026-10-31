@@ -566,6 +566,11 @@ function authenticateUser($username, $password)
         return 'That password matches both a repeater and a hotspot. Log in with the radio ID of the device you want.';
     }
 
+    if (count($ipscRows) > 1) {
+        logLoginFailure($username, 'ambiguous_login');
+        return 'That password matches more than one repeater. Log in with the radio ID of the repeater you want.';
+    }
+
     logLoginFailure($username, 'ambiguous_login');
     return false;
 }
@@ -667,7 +672,8 @@ function selfcareRequestIsHttps()
         return true;
     }
     $forwarded = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
-    return $forwarded === 'https';
+    $clientProto = trim(explode(',', $forwarded)[0]);
+    return $clientProto === 'https';
 }
 
 function enforceHttps()
