@@ -663,6 +663,33 @@ function initSecureSession()
  * 
  * @return void
  */
+function selfcareForwardedClientProto()
+{
+    $xfp = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+    if ($xfp !== '') {
+        return trim(explode(',', $xfp)[0]);
+    }
+
+    $forwarded = trim((string) ($_SERVER['HTTP_FORWARDED'] ?? ''));
+    if ($forwarded !== '') {
+        $elements = preg_split('/,(?=(?:[^"]*"[^"]*")*[^"]*$)/', $forwarded);
+        $first = trim((string) ($elements[0] ?? ''));
+        if (preg_match('/(?:^|;)\s*proto\s*=\s*(?:"([^"]+)"|([A-Za-z0-9.+-]+))/i', $first, $match)) {
+            return strtolower($match[1] !== '' ? $match[1] : $match[2]);
+        }
+    }
+
+    $ssl = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '')));
+    if ($ssl !== '') {
+        $token = trim(explode(',', $ssl)[0]);
+        if ($token === 'on' || $token === '1') {
+            return 'https';
+        }
+    }
+
+    return '';
+}
+
 function selfcareRequestIsHttps()
 {
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
@@ -671,9 +698,10 @@ function selfcareRequestIsHttps()
     if (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
         return true;
     }
-    $forwarded = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
-    $clientProto = trim(explode(',', $forwarded)[0]);
-    return $clientProto === 'https';
+    if (strtolower((string) ($_SERVER['REQUEST_SCHEME'] ?? '')) === 'https') {
+        return true;
+    }
+    return selfcareForwardedClientProto() === 'https';
 }
 
 function enforceHttps()

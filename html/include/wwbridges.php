@@ -41,23 +41,24 @@ if (count($brDataArray)) {
         });
 
         foreach ( $brDataArray as $brData ) {
-                $brTGID   = $brData['tgid'];
-                $brName = $brData['name'];
-                $brDMRplus = $brData['dmrplus'];
-                $brTGIF = $brData['tgif'];
-                $brQRM = $brData['qrm'];
-                $brQNET = $brData['qnet'];
-                $brYSF = $brData['ysf'];
-                $brDSTAR = $brData['dstar'];
-                $brP25 = $brData['p25'];
-                $brNXDN = $brData['nxdn'];
-                $brM17 = $brData['m17'];
-                $brPEANUT = $brData['peanut'];
-                $brASL = $brData['asl'];
-                $brECHOLINK = $brData['echolink'];
+                $brName = (string) ($brData['name'] ?? '');
                 if (strlen($brName) > 40) {
                         $brName = substr($brName, 0, 37) . '...';
                 }
+                $brTGID = htmlspecialchars((string) ($brData['tgid'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brName = htmlspecialchars($brName, ENT_QUOTES, 'UTF-8');
+                $brDMRplus = htmlspecialchars((string) ($brData['dmrplus'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brTGIF = htmlspecialchars((string) ($brData['tgif'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brQRM = htmlspecialchars((string) ($brData['qrm'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brQNET = htmlspecialchars((string) ($brData['qnet'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brYSF = htmlspecialchars((string) ($brData['ysf'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brDSTAR = htmlspecialchars((string) ($brData['dstar'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brP25 = htmlspecialchars((string) ($brData['p25'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brNXDN = htmlspecialchars((string) ($brData['nxdn'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brM17 = htmlspecialchars((string) ($brData['m17'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brPEANUT = htmlspecialchars((string) ($brData['peanut'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brASL = htmlspecialchars((string) ($brData['asl'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $brECHOLINK = htmlspecialchars((string) ($brData['echolink'] ?? ''), ENT_QUOTES, 'UTF-8');
                 echo "  <tr class=\"boxfull\"><td align=\"center\">$brTGID</td><td align=\"left\">$brName</td><td align=\"left\">$brDMRplus</td><td align=\"left\">$brTGIF</td><td align=\"left\">$brQRM</td><td align=\"left\">$brQNET</td><td align=\"left\">$brYSF</td><td align=\"left\">$brDSTAR</td><td align=\"left\">$brP25</td><td align=\"left\">$brNXDN</td><td align=\"left\">$brM17</td><td align=\"left\">$brPEANUT</td><td align=\"left\">$brASL</td><td align=\"left\">$brECHOLINK</td></tr>\n";
         }
 
