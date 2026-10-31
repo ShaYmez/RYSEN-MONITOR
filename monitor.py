@@ -810,6 +810,26 @@ def _hb_field_str(value):
     return str(value).rstrip("\x00").strip()
 
 
+def _hb_peer_slots(peer_conf):
+    """Homebrew slot label for the repeater tooltip.
+
+    0 = none, 1 or 2 = that timeslot, 3 = duplex, anything else = simplex.
+    IPSC and Hytera repeaters are duplex radios. Hytera leaves SLOTS empty,
+    which this map would call simplex. IPSC stores an enabled-slot count
+    ('1' or '2') rather than the duplex code '3'.
+    """
+    if peer_conf.get("PROTOCOL") in ("IPSC", "HYTERA"):
+        return "Duplex"
+    slots = _hb_field_str(peer_conf.get("SLOTS", ""))
+    if slots == "0":
+        return "NONE"
+    if slots in ("1", "2"):
+        return slots
+    if slots == "3":
+        return "Duplex"
+    return "Simplex"
+
+
 def _alias_location(radio_id):
     try:
         rid = int(radio_id)
@@ -873,6 +893,7 @@ def refresh_hb_peer(_peer_conf, _ctable_peer, _peer):
     _ctable_peer["CONNECTED"] = time_str(_peer_conf["CONNECTED"], "since")
     _ctable_peer["IP"] = _peer_conf["IP"]
     _ctable_peer["PORT"] = _peer_conf["PORT"]
+    _ctable_peer["SLOTS"] = _hb_peer_slots(_peer_conf)
     if _peer_conf.get("PROTOCOL") == "IPSC":
         _apply_ipsc_peer_fields(_peer_conf, _ctable_peer, _peer)
     elif _peer_conf.get("PROTOCOL") == "HYTERA":
@@ -934,18 +955,9 @@ def add_hb_peer(_peer_conf, _ctable_loc, _peer):
         _ctable_peer["TX_FREQ"] = "N/A"
         _ctable_peer["RX_FREQ"] = "N/A"
 
-    # timeslots are kinda complicated too. 0 = none, 1 or 2 mean that one slot,
-    # 3 is both, and anything else it considered DMO Slots
-    # (0, 1=1, 2=2, 1&2=3 Duplex, 4=Simplex)
-    # see https://wiki.brandmeister.network/index.php/Homebrew/example/php2
-    if _peer_conf["SLOTS"] == b"0":
-        _ctable_peer["SLOTS"] = "NONE"
-    elif _peer_conf["SLOTS"] == b"1" or _peer_conf["SLOTS"] == b"2":
-        _ctable_peer["SLOTS"] = _peer_conf["SLOTS"].decode("utf-8")
-    elif _peer_conf["SLOTS"] == b"3":
-        _ctable_peer["SLOTS"] = "Duplex"
-    else:
-        _ctable_peer["SLOTS"] = "Simplex"
+    # Homebrew: 0 = none, 1 or 2 = that slot, 3 = duplex, else simplex.
+    # https://wiki.brandmeister.network/index.php/Homebrew/example/php2
+    _ctable_peer["SLOTS"] = _hb_peer_slots(_peer_conf)
 
     # Simple translation items
     _ctable_peer["PACKAGE_ID"] = _hb_field_str(_peer_conf.get("PACKAGE_ID", ""))

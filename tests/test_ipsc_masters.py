@@ -75,6 +75,22 @@ def test_ipsc_system_in_masters():
     assert peer["LOCATION"] == ""
     assert peer["TX_FREQ"] == "N/A"
     assert peer["RX_FREQ"] == "N/A"
+    assert peer["SLOTS"] == "Duplex"
+
+
+def test_ipsc_slot_count_is_still_duplex():
+    """IPSC SLOTS is an enabled-slot count (b'2'), not the Homebrew duplex code."""
+    peers = {}
+    conf = _ipsc_peer()
+    conf["SLOTS"] = b"2"
+    add_hb_peer(conf, peers, b"\x00\x00\x03\x97")
+    peer = peers[int_id(b"\x00\x00\x03\x97")]
+    assert peer["SLOTS"] == "Duplex"
+
+    conf["SLOTS"] = ""
+    peer["SLOTS"] = "Simplex"
+    refresh_hb_peer(conf, peer, b"\x00\x00\x03\x97")
+    assert peer["SLOTS"] == "Duplex"
 
 
 def test_ipsc_location_from_config():
@@ -176,5 +192,14 @@ def test_non_ipsc_peer_unchanged():
     add_hb_peer(peer_conf, peers, b"\x00\x12\xd6\x87")
     peer = peers[1234567]
     assert peer["CALLSIGN"] == "TEST1"
+    assert peer["SLOTS"] == "2"
     assert "PROTOCOL" not in peer
     assert "RADIO_ID" not in peer
+
+    peer_conf["SLOTS"] = b"3"
+    add_hb_peer(peer_conf, peers, b"\x00\x12\xd6\x88")
+    assert peers[int_id(b"\x00\x12\xd6\x88")]["SLOTS"] == "Duplex"
+
+    peer_conf["SLOTS"] = b"4"
+    add_hb_peer(peer_conf, peers, b"\x00\x12\xd6\x89")
+    assert peers[int_id(b"\x00\x12\xd6\x89")]["SLOTS"] == "Simplex"
