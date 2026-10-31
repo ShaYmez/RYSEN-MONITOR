@@ -4,6 +4,7 @@ require_once "error_handler.php";
 require_once "ssconfunc.php";
 require_once "include/functions.php";
 require_once "include/ui-mode.php";
+enforceHttps();
 initSecureSession();
 session_start();
 
@@ -42,15 +43,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $waitMinutes = ceil($rateCheck['wait_time'] / 60);
         $errorMsg = "<span>Too many failed attempts. Please try again in {$waitMinutes} minutes.</span>";
         error_log("Login attempt blocked for IP $clientIP - rate limited");
+    } elseif (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+        $errorMsg = "<span>Session expired. Please try again.</span>";
     } elseif ($action === 'ipsc_claim') {
         $claimRadioId = (int) ($_POST['claim_int_id'] ?? 0);
         $password = $_POST['password'] ?? '';
         $passwordConfirm = $_POST['password_confirm'] ?? '';
+        $pendingClaim = (int) ($_SESSION['pending_claim_int_id'] ?? 0);
 
-        if ($claimRadioId < 1) {
+        if ($claimRadioId < 1 || $pendingClaim !== $claimRadioId) {
+            unset($_SESSION['pending_claim_int_id']);
             $errorMsg = "<span>Invalid device. Please start again from the login screen.</span>";
-        } elseif (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
-            $errorMsg = "<span>Session expired. Please try again.</span>";
         } elseif ($password !== $passwordConfirm) {
             $showClaimForm = true;
             $claimRow = getIpscClaimRowByLogin((string) $claimRadioId);
@@ -96,6 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $showClaimForm = true;
                 $claimRadioId = (int) $claimRow['int_id'];
                 $claimCallsign = trim($claimRow['callsign']);
+                $_SESSION['pending_claim_int_id'] = $claimRadioId;
             } else {
                 $hint = explainIpscClaimFailureByLogin($username);
                 if ($hint) {
@@ -221,6 +225,7 @@ $csrfToken = generateCSRFToken();
                     </form>
                     <?php else: ?>
                     <form action="sslogin.php" method="post">
+                      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                       <div class="input-group mb-3 mt-4">
                         <input type="text" class="form-control" name="callsign" placeholder="" id="sslog_call" required
                           autocapitalize="characters" spellcheck="false" autocomplete="username">

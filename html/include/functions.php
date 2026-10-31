@@ -90,26 +90,23 @@ function aliasOptionFragment($value) {
  * Handle device selection from session and POST data
  * 
  * Validates and authorizes device selection to ensure users can only
- * access devices they own. CSRF token optional for device selection (lenient for hotspot users).
+ * access devices they own. A missing or invalid CSRF token leaves the current device selected.
  * 
  * @return int|null Selected device int_id
  */
 function handleDeviceSelection() {
     // Handle form submission
     if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['int_id'])) {
-        // CSRF token check is lenient - warn but allow if missing (device selection is low risk)
-        $csrfValid = isset($_POST['csrf_token']) && verifyCSRFToken($_POST['csrf_token']);
-        if (!$csrfValid) {
-            error_log("Device selection without valid CSRF token - allowing for compatibility");
-        }
-        
-        $int_id = filter_var($_POST['int_id'], FILTER_VALIDATE_INT);
-        
-        // Verify the device belongs to the user
-        if ($int_id !== false && !empty($int_id) && verifyDeviceOwnership($int_id)) {
-            $_SESSION['selected_int_id'] = $int_id;
-            return $int_id;
+        if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+            error_log("Device selection rejected: invalid CSRF token");
         } else {
+            $int_id = filter_var($_POST['int_id'], FILTER_VALIDATE_INT);
+
+            if ($int_id !== false && !empty($int_id) && verifyDeviceOwnership($int_id)) {
+                $_SESSION['selected_int_id'] = $int_id;
+                return $int_id;
+            }
+
             error_log("Invalid device selection attempt: int_id=$int_id");
         }
     }
@@ -324,9 +321,60 @@ function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = fals
  */
 function buildDisconnectRequest($optionsString, $isIpsc, $dialActive = false) {
     $parsed = parseDeviceOptions($optionsString ?? '');
+    if ($isIpsc) {
+        $parsed = array_intersect_key($parsed, array_flip(['TS1', 'TS2', 'ALIAS']));
+    }
     $parsed['DISC'] = '1';
 
     return buildOptionsStringFromParsed($parsed, $isIpsc, $dialActive);
+}
+
+/**
+ * Validate a repeater disconnect string (TS1/TS2, ALIAS, and DISC).
+ *
+ * @param string $options Built disconnect request
+ * @return string|false
+ */
+function sanitizeRepeaterDisconnectOptions($options)
+{
+    $options = strip_tags((string) $options);
+    $options = str_replace("\0", "", $options);
+
+    if ($options === '') {
+        return '';
+    }
+
+    if (!preg_match('/^([A-Z0-9]+=[A-Za-z0-9_,]*;?)+$/', $options)) {
+        return false;
+    }
+
+    $allowedKeys = ['TS1', 'TS2', 'ALIAS', 'DISC'];
+    $pairs = explode(';', trim($options, ';'));
+
+    foreach ($pairs as $pair) {
+        if (empty($pair)) {
+            continue;
+        }
+        if (strpos($pair, '=') === false) {
+            return false;
+        }
+
+        list($key, $value) = explode('=', $pair, 2);
+        if (!in_array($key, $allowedKeys, true)) {
+            return false;
+        }
+        if ($key === 'DISC' && !in_array($value, ['0', '1'], true)) {
+            return false;
+        }
+        if ($key === 'ALIAS' && !in_array($value, ['0', '1'], true)) {
+            return false;
+        }
+        if (($key === 'TS1' || $key === 'TS2') && $value !== '' && !preg_match('/^[0-9,]+$/', $value)) {
+            return false;
+        }
+    }
+
+    return $options;
 }
 
 /**

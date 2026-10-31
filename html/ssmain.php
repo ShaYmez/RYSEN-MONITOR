@@ -1,6 +1,7 @@
 <?php
 // Initialize secure session settings before starting session
 require_once "ssconfunc.php";
+enforceHttps();
 initSecureSession();
 session_start();
 
@@ -223,7 +224,7 @@ $csrfToken = generateCSRFToken();
                                 <div class="card-body p-0">
                                     <?php if (isset($errorMsg)): ?>
                                         <p>
-                                            <?php echo $errorMsg; ?>
+                                            <?php echo escapeHtml($errorMsg); ?>
                                         </p>
                                     <?php endif; ?>
                                     <div class="blur-content">
@@ -236,7 +237,7 @@ $csrfToken = generateCSRFToken();
                                         
                                         <!-- Hidden Configuration Inputs -->
                                         <input type="hidden" id="mode-status" value="<?php echo escapeHtml($devDetails['mode']); ?>">
-                                        <input type="hidden" id="ipsc-device" value="<?php echo $isRepeaterDevice ? '1' : '0'; ?>">
+                                        <input type="hidden" id="repeater-device" value="<?php echo $isRepeaterDevice ? '1' : '0'; ?>">
                                         <input type="hidden" id="device-id" value="<?php echo escapeHtml($selint_id); ?>">
                                         <input type="hidden" id="device-modified" value="<?php echo escapeHtml($devDetails['modified']); ?>">
                                         

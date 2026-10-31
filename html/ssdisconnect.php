@@ -10,11 +10,21 @@ header('Content-Type: application/json');
 initSecureSession();
 session_start();
 
+if (isset($_SESSION['last_activity'])
+    && time() - (int) $_SESSION['last_activity'] > SESSION_TIMEOUT_SECONDS) {
+    session_unset();
+    session_destroy();
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Session expired']);
+    exit();
+}
+
 if (!isSelfcareLoggedIn() || !isset($_SESSION['selected_int_id'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Not authenticated']);
     exit();
 }
+$_SESSION['last_activity'] = time();
 
 $intId = (int) $_SESSION['selected_int_id'];
 
@@ -61,7 +71,9 @@ if ($action === 'request') {
     ];
 
     $request = buildDisconnectRequest($original, $isIpsc, $dialActive);
-    $sanitized = sanitizeOptions($request);
+    $sanitized = $isIpsc
+        ? sanitizeRepeaterDisconnectOptions($request)
+        : sanitizeOptions($request);
 
     if ($sanitized === false) {
         unset($_SESSION[$sessionKey][$intId]);

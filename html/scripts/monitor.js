@@ -621,7 +621,10 @@ function Tmsg(_msg) {
 
 
 function log(_msg) {
-    ellog.innerHTML += _msg + '\n';
+    if (!ellog) {
+        return;
+    }
+    ellog.appendChild(document.createTextNode(_msg + '\n'));
     ellog.scrollTop = ellog.scrollHeight;
 };
 

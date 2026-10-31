@@ -89,14 +89,17 @@ function isStoredPasswordEmpty($storedPassword)
 }
 
 /**
- * Hash a selfcare password for storage (PBKDF2-SHA256; same as selfcare-admin.sh / php-cli).
+ * Hash a selfcare password for storage.
+ *
+ * New passwords use password_hash(), which has a unique salt. Existing
+ * PBKDF2 digests that used the fixed salt "RYSEN" still verify.
  *
  * @param string $password Plain-text password
- * @return string Hex PBKDF2-SHA256 digest
+ * @return string Password hash
  */
 function hashPasswordForStorage($password)
 {
-    return hash_pbkdf2("sha256", $password, "RYSEN", 2000);
+    return password_hash($password, PASSWORD_DEFAULT);
 }
 
 /**
@@ -362,6 +365,7 @@ function establishIpscSession($row)
     $_SESSION['int_ids'] = [(int) $row['int_id']];
     $_SESSION['is_ipsc'] = true;
     $_SESSION['last_activity'] = time();
+    unset($_SESSION['pending_claim_int_id']);
     session_regenerate_id(true);
 }
 
@@ -455,6 +459,7 @@ function establishMmdvmSession(array $rows)
     );
     $_SESSION['is_ipsc'] = false;
     $_SESSION['last_activity'] = time();
+    unset($_SESSION['pending_claim_int_id']);
     session_regenerate_id(true);
 }
 
@@ -556,14 +561,9 @@ function authenticateUser($username, $password)
         return true;
     }
 
-    if (count($ipscRows) === 1) {
-        establishIpscSession($ipscRows[0]);
-        try {
-            logLoginSuccess($username);
-        } catch (Exception $e) {
-            error_log("Login audit logging failed: " . $e->getMessage());
-        }
-        return true;
+    if ($ipscRows && $mmdvmRows) {
+        logLoginFailure($username, 'ambiguous_login');
+        return 'That password matches both a repeater and a hotspot. Log in with the radio ID of the device you want.';
     }
 
     logLoginFailure($username, 'ambiguous_login');
@@ -659,14 +659,30 @@ function initSecureSession()
  * 
  * @return void
  */
+function selfcareRequestIsHttps()
+{
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        return true;
+    }
+    if (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
+        return true;
+    }
+    $forwarded = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+    return $forwarded === 'https';
+}
+
 function enforceHttps()
 {
-    if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
-        if (!headers_sent()) {
-            header("Location: https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-            exit();
-        }
+    if (selfcareRequestIsHttps() || headers_sent()) {
+        return;
     }
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+    if ($host === '' || preg_match('/[\r\n]/', $host)) {
+        return;
+    }
+    $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    header('Location: https://' . $host . $uri);
+    exit();
 }
 
 

@@ -32,8 +32,8 @@
                     <td>
                         {% set ctrynum = itm[0]|flag_code %}
                         <img src="./flags/{{ ctrynum }}.png" onerror="this.src='./flags/world.png'" alt="Country {{ ctrynum }}">
-                        <strong>&nbsp;{{ itm[1]|safe }}&nbsp;</strong>
-                        {% set tgname = itm[1]|safe %}
+                        <strong>&nbsp;{{ itm[1] or '' }}&nbsp;</strong>
+                        {% set tgname = itm[1] or '' %}
                         {% if 'fcs' in tgname.lower() or 'ysf' in tgname.lower() or 'wiresx' in tgname.lower() %}
                         <img src="./flags/yaesu.png" alt="Yaesu System Fusion">
                         {% endif %}

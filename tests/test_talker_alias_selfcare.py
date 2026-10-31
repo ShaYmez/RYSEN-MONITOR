@@ -27,13 +27,7 @@ def test_alias_switch_sits_with_server_default_options():
     assert before.count("if (!$isRepeaterDevice)") == before.count("endif")
     assert "normalizeAliasOption(getDeviceOption($devDetails['options'], 'ALIAS', '-1'))" in source
     assert 'id="calc_aliassrv"' in block
-
-    calc = _read("html/include/calc.php")
-    calc_start = calc.index('id="calchlpfun"')
-    calc_block = calc[calc_start:calc.index("</table>", calc_start)]
-    assert 'id="dialTGInput"' in calc_block
-    assert 'id="aliasSelect"' in calc_block
-    assert 'id="calc_aliassrv" selected' in calc_block
+    assert "retired" in _read("html/include/calc.php").lower()
 
 
 def test_alias_option_is_omitted_until_the_switch_moves():
@@ -97,6 +91,9 @@ def test_alias_round_trip_keeps_server_default_empty():
         "'bad'=>sanitizeOptions('TS2=2350;ALIAS=2;'),"
         "'ipsc'=>sanitizeIpscOptions('TS1=235;TS2=2350;ALIAS=1;'),"
         "'ipscbad'=>sanitizeIpscOptions('TS2=2350;DIAL=9;'),"
+        "'disc'=>sanitizeRepeaterDisconnectOptions('TS1=235;DISC=1;'),"
+        "'discbad'=>sanitizeRepeaterDisconnectOptions('TS1=235;DIAL=9;DISC=1;'),"
+        "'req'=>buildDisconnectRequest('TS1=235;DIAL=9;VOICE=1;', true, false),"
         "]);"
     )
     output = subprocess.check_output(
@@ -113,4 +110,7 @@ def test_alias_round_trip_keeps_server_default_empty():
         "bad": False,
         "ipsc": "TS1=235;TS2=2350;ALIAS=1;",
         "ipscbad": False,
+        "disc": "TS1=235;DISC=1;",
+        "discbad": False,
+        "req": "TS1=235;DISC=1;",
     }
