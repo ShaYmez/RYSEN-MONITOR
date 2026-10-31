@@ -132,3 +132,81 @@ def test_config_refresh_rebuilds_static_talkgroups(monkeypatch):
     monkeypatch.setattr(monitor, "build_time", 0)
     monitor.build_stats()
     assert monitor.CTABLE["MASTERS"]["MASTER-1"]["PEERS"][peer]["TS2_STATIC"] == ["121", "116"]
+
+
+def test_peer_ua_is_per_hotspot_and_shows_sticky(monkeypatch):
+    peer_a = 234587501
+    peer_b = 235653502
+    monkeypatch.setattr(monitor, "CONFIG", {
+        "MASTER-1": {
+            "MODE": "MASTER",
+            "STICKY_TG": True,
+            "PEERS": {
+                bytes_4(peer_a): {
+                    "OPTIONS": "TS1=;TS2=;STICKY=1;",
+                    "UA": {2: {"TGID": 91, "EXPIRES": None}},
+                },
+                bytes_4(peer_b): {
+                    "OPTIONS": "TS2=2350;",
+                    "UA": {2: {"TGID": 23516, "EXPIRES": 2000000000}},
+                },
+            },
+        }
+    })
+    monkeypatch.setattr(monitor, "CTABLE", _ctable(peer_a, peer_b))
+    monkeypatch.setattr(monitor, "BRIDGES", {
+        "91": [{
+            "SYSTEM": "MASTER-1",
+            "TS": 2,
+            "TGID": bytes_4(91)[-3:],
+            "ACTIVE": True,
+            "TO_TYPE": "ON",
+            "TIMER": 2000000000,
+        }],
+    })
+
+    monitor.build_tgstats()
+
+    peers = monitor.CTABLE["MASTERS"]["MASTER-1"]["PEERS"]
+    assert peers[peer_a]["SINGLE_TS2"] == {"TGID": 91, "TO": "Sticky"}
+    assert peers[peer_b]["SINGLE_TS2"]["TGID"] == 23516
+    assert peers[peer_b]["SINGLE_TS2"]["TO"] != "Sticky"
+    assert peers[peer_a]["SINGLE_TS1"] == {"TGID": "", "TO": ""}
+
+
+def test_missing_ua_falls_back_to_shared_bridge_but_labels_sticky(monkeypatch):
+    peer = 234587501
+    monkeypatch.setattr(monitor, "CONFIG", {
+        "MASTER-1": {
+            "MODE": "MASTER",
+            "STICKY_TG": True,
+            "PEERS": {bytes_4(peer): {"OPTIONS": "TS1=;TS2=;"}},
+        }
+    })
+    monkeypatch.setattr(monitor, "CTABLE", _ctable(peer))
+    monkeypatch.setattr(monitor, "BRIDGES", {
+        "91": [{
+            "SYSTEM": "MASTER-1",
+            "TS": 2,
+            "TGID": bytes_4(91)[-3:],
+            "ACTIVE": True,
+            "TO_TYPE": "ON",
+            "TIMER": 2000000000,
+        }],
+    })
+
+    monitor.build_tgstats()
+
+    shown = monitor.CTABLE["MASTERS"]["MASTER-1"]["PEERS"][peer]
+    assert shown["SINGLE_TS2"]["TGID"] == 91
+    assert shown["SINGLE_TS2"]["TO"] == "Sticky"
+
+
+def test_sticky_flag_and_statics():
+    assert monitor.sticky_flag_from_options("STICKY=1;") is True
+    assert monitor.sticky_flag_from_options(b"STICKY=0;") is False
+    assert monitor.sticky_flag_from_options("TS2=2350;") is None
+    assert monitor.peer_sticky_enabled(
+        {"STICKY_TG": True}, {"STICKY": True}, ["91"], []) is False
+    assert monitor.peer_sticky_enabled(
+        {"STICKY_TG": True}, {"OPTIONS": "STICKY=0;"}, [], []) is False

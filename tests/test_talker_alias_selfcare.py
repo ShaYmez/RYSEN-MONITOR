@@ -34,6 +34,9 @@ def test_alias_option_is_omitted_until_the_switch_moves():
     script = _read("html/scripts/selfcare.js")
     assert "aliasOptionFragment" in script
     assert "Server default" in script or "aliasSelect.value !== '0'" in script
+    assert "hasStaticTalkgroups" in script
+    assert "syncStickyControl" in script
+    assert "!hasStatics && stickyValue !== '-1'" in script
 
 
 @pytest.mark.skipif(NODE is None, reason="Node is not installed")
@@ -77,12 +80,61 @@ if (JSON.stringify(saved) !== JSON.stringify(expected)) {
     subprocess.check_call([NODE, str(path)])
 
 
+@pytest.mark.skipif(NODE is None, reason="Node is not installed")
+def test_statics_omit_sticky_from_generated_options(tmp_path):
+    script = _read("html/scripts/selfcare.js")
+    script = script.split("// Initialize when DOM is ready", 1)[0]
+    harness = script + r"""
+const sticky = { value: "1", disabled: false, title: "" };
+global.document = {
+  getElementById(id) {
+    if (id === "timeslotTable") return 1;
+    if (id === "timeslotTable2") return 2;
+    if (id === "dialTGInput") return { value: "0" };
+    if (id === "voiceSelect") return { value: "-1" };
+    if (id === "languageselect") return { value: "en_GB" };
+    if (id === "singleModeSelect") return { value: "-1" };
+    if (id === "stickySelect") return sticky;
+    if (id === "timeoutInput") return { value: "0" };
+    return null;
+  }
+};
+const mgr = Object.create(SelfcareManager.prototype);
+mgr.isIpsc = false;
+mgr.aliasOptionFragment = () => "";
+let current = { 1: [], 2: [] };
+mgr.getTimeslotValues = (table) => current[table] || [];
+const saved = [];
+mgr.setGeneratedOptions = (text) => { saved.push(text); };
+
+mgr.updateGeneratedText();
+if (sticky.disabled) { console.error("disabled without statics"); process.exit(1); }
+current = { 1: [], 2: ["2350"] };
+mgr.updateGeneratedText();
+if (!sticky.disabled) { console.error("enabled with statics"); process.exit(1); }
+current = { 1: [], 2: [] };
+mgr.updateGeneratedText();
+if (sticky.disabled) { console.error("stayed disabled"); process.exit(1); }
+
+const expected = ["STICKY=1;", "TS2=2350;", "STICKY=1;"];
+if (JSON.stringify(saved) !== JSON.stringify(expected)) {
+  console.error(JSON.stringify(saved));
+  process.exit(1);
+}
+"""
+    path = tmp_path / "sticky-static.js"
+    path.write_text(harness, encoding="utf-8")
+    subprocess.check_call([NODE, str(path)])
+
+
 @pytest.mark.skipif(PHP is None, reason="PHP CLI is not installed")
 def test_alias_round_trip_keeps_server_default_empty():
     code = (
         "require $argv[1];"
         "echo json_encode(["
         "'omit'=>buildOptionsStringFromParsed(['TS2'=>'2350','ALIAS'=>'-1','STICKY'=>'-1'], false, false),"
+        "'staticsticky'=>buildOptionsStringFromParsed(['TS2'=>'2350','STICKY'=>'1'], false, false),"
+        "'emptysticky'=>buildOptionsStringFromParsed(['TS1'=>'','TS2'=>'','STICKY'=>'1'], false, false),"
         "'on'=>buildOptionsStringFromParsed(['ALIAS'=>'1'], false, false),"
         "'off'=>buildOptionsStringFromParsed(['ALIAS'=>'0','TS1'=>'235'], true, false),"
         "'yes'=>normalizeAliasOption('yes'),"
@@ -102,6 +154,8 @@ def test_alias_round_trip_keeps_server_default_empty():
     )
     assert json.loads(output) == {
         "omit": "TS2=2350;",
+        "staticsticky": "TS2=2350;",
+        "emptysticky": "TS1=;TS2=;STICKY=1;",
         "on": "ALIAS=1;",
         "off": "TS1=235;ALIAS=0;",
         "yes": "1",

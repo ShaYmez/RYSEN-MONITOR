@@ -250,6 +250,26 @@ function sanitizeIpscOptions($options)
 }
 
 /**
+ * True when TS1 or TS2 lists a numbered static talkgroup.
+ * Empty TS1=;TS2=; is not statics (same rule as RYSEN sticky).
+ *
+ * @param array $parsed
+ * @return bool
+ */
+function parsedHasStaticTalkgroups(array $parsed) {
+    foreach (['TS1', 'TS2'] as $key) {
+        if (!isset($parsed[$key])) {
+            continue;
+        }
+        $value = is_array($parsed[$key]) ? implode(',', $parsed[$key]) : (string) $parsed[$key];
+        if (trim($value, ", \t\n\r\0\x0B") !== '') {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Build an options string from a parsed options array (hotspot function keys).
  *
  * @param array $parsed
@@ -290,7 +310,8 @@ function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = fals
         $genText .= 'SINGLE=' . $parsed['SINGLE'] . ';';
     }
 
-    if (isset($parsed['STICKY']) && (string) $parsed['STICKY'] !== '-1' && $parsed['STICKY'] !== '') {
+    if (!parsedHasStaticTalkgroups($parsed)
+        && isset($parsed['STICKY']) && (string) $parsed['STICKY'] !== '-1' && $parsed['STICKY'] !== '') {
         $genText .= 'STICKY=' . $parsed['STICKY'] . ';';
     }
 

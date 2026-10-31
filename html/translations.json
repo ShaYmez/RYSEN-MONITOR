@@ -2240,18 +2240,18 @@
         "el": "Το talker alias δείχνει το διακριτικό του σταθμού που εκπέμπει στις συσκευές αυτού του σημείου. Η προεπιλογή διακομιστή ακολουθεί τη ρύθμιση του master. Ενεργό στέλνει το alias. Ανενεργό αφήνει αυτό το σημείο στη σηματοδοσία ομάδας."
     },
     "calchlpsticky": {
-        "en": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",
-        "pt": "Grupo de conversa fixo: quando ativado, o rádio permanece no TG em que você transmitiu até mudar manualmente. Quando desativado, o TG volta ao padrão após o tempo limite.",
-        "es": "Grupo de conversación fijo: cuando está activado, la radio permanece en el TG en el que transmites hasta que cambies manualmente. Cuando está desactivado, el TG vuelve al valor predeterminado tras el tiempo de espera.",
-        "fr": "Groupe de discussion persistant : lorsqu'il est activé, votre radio reste sur le TG sur lequel vous avez émis jusqu'à un changement manuel. Lorsqu'il est désactivé, le TG revient à la valeur par défaut après le délai d'expiration.",
-        "it": "Gruppo di conversazione persistente: se attivo, la radio resta sul TG su cui hai trasmesso finché non cambi manualmente. Se disattivo, il TG torna al valore predefinito dopo il timeout.",
-        "nl": "Vaste praatgroep: indien ingeschakeld blijft uw radio op de TG waarop u zendt totdat u handmatig wisselt. Indien uitgeschakeld keert de TG na de time-out terug naar de standaard.",
-        "de": "Sticky-Gesprächsgruppe: Wenn aktiviert, bleibt Ihr Funkgerät auf der TG, auf der Sie gesendet haben, bis Sie manuell wechseln. Wenn deaktiviert, kehrt die TG nach dem Timeout zur Standardeinstellung zurück.",
-        "ru": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",
-        "ja": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",
-        "ar": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",
-        "zh": "Sticky Talkgroup: When enabled, your radio stays on the TG you key up on until you manually switch. When disabled, TG returns to default after timeout.",
-        "el": "Sticky Talkgroup: Όταν είναι ενεργό, το ραδιόφωνο μένει στο TG που εκπέμπετε μέχρι να αλλάξετε χειροκίνητα. Όταν είναι ανενεργό, το TG επιστρέφει στην προεπιλογή μετά το timeout."
+        "en": "Sticky Talkgroup: When enabled and you have no static TGs, your radio stays on the last TG you key until you switch or dial 4000. Static TGs (TS1/TS2) disable sticky — unique TGs then time out. When disabled, TG returns to default after timeout.",
+        "pt": "Grupo de conversa fixo: quando ativado e sem TGs estáticos, o rádio permanece no último TG até mudar ou discar 4000. TGs estáticos (TS1/TS2) desativam o sticky — TGs únicos então expiram. Quando desativado, o TG volta ao padrão após o tempo limite.",
+        "es": "Grupo de conversación fijo: cuando está activado y no hay TGs estáticos, la radio permanece en el último TG hasta que cambies o marques 4000. Los TGs estáticos (TS1/TS2) desactivan sticky — los TGs únicos entonces caducan. Cuando está desactivado, el TG vuelve al valor predeterminado tras el tiempo de espera.",
+        "fr": "Groupe de discussion persistant : activé sans TG statiques, votre radio reste sur le dernier TG jusqu'à un changement ou 4000. Les TG statiques (TS1/TS2) désactivent le sticky — les TG uniques expirent alors. Désactivé, le TG revient à la valeur par défaut après le délai.",
+        "it": "Gruppo di conversazione persistente: se attivo e senza TG statici, la radio resta sull'ultimo TG finché non cambi o digiti 4000. I TG statici (TS1/TS2) disattivano lo sticky — i TG unici allora scadono. Se disattivo, il TG torna al valore predefinito dopo il timeout.",
+        "nl": "Vaste praatgroep: ingeschakeld zonder statische TG's blijft uw radio op de laatste TG tot u wisselt of 4000 belt. Statische TG's (TS1/TS2) zetten sticky uit — unieke TG's time-outen dan. Uitgeschakeld keert de TG na de time-out terug naar de standaard.",
+        "de": "Sticky-Gesprächsgruppe: Aktiviert und ohne statische TGs bleibt Ihr Funkgerät auf der letzten TG, bis Sie wechseln oder 4000 wählen. Statische TGs (TS1/TS2) schalten Sticky aus — Unique-TGs laufen dann ab. Deaktiviert kehrt die TG nach dem Timeout zur Standardeinstellung zurück.",
+        "ru": "Sticky Talkgroup: When enabled and you have no static TGs, your radio stays on the last TG you key until you switch or dial 4000. Static TGs (TS1/TS2) disable sticky — unique TGs then time out. When disabled, TG returns to default after timeout.",
+        "ja": "Sticky Talkgroup: When enabled and you have no static TGs, your radio stays on the last TG you key until you switch or dial 4000. Static TGs (TS1/TS2) disable sticky — unique TGs then time out. When disabled, TG returns to default after timeout.",
+        "ar": "Sticky Talkgroup: When enabled and you have no static TGs, your radio stays on the last TG you key until you switch or dial 4000. Static TGs (TS1/TS2) disable sticky — unique TGs then time out. When disabled, TG returns to default after timeout.",
+        "zh": "Sticky Talkgroup: When enabled and you have no static TGs, your radio stays on the last TG you key until you switch or dial 4000. Static TGs (TS1/TS2) disable sticky — unique TGs then time out. When disabled, TG returns to default after timeout.",
+        "el": "Sticky Talkgroup: Όταν είναι ενεργό χωρίς στατικά TG, το ραδιόφωνο μένει στο τελευταίο TG μέχρι να αλλάξετε ή να καλέσετε 4000. Τα στατικά TG (TS1/TS2) απενεργοποιούν το sticky — τα μοναδικά TG τότε λήγουν. Όταν είναι ανενεργό, το TG επιστρέφει στην προεπιλογή μετά το timeout."
     },
     "runtime_drop_call": {
         "en": "Drop QSO", "pt": "Terminar QSO", "es": "Finalizar QSO", "fr": "Couper le QSO",

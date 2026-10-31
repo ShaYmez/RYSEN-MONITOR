@@ -1477,6 +1477,77 @@ def comma_tg_list(value):
     return out
 
 
+def sticky_flag_from_options(options_value):
+    """True/False if STICKY= is present and valid, else None."""
+    if not options_value:
+        return None
+    if isinstance(options_value, bytes):
+        text = options_value.decode("utf-8", errors="ignore")
+    else:
+        text = str(options_value)
+    for part in text.rstrip("\x00").split(";"):
+        part = part.strip().strip("\x00")
+        if not part or "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        if key.strip().upper() != "STICKY":
+            continue
+        low = value.strip().lower()
+        if low in ("1", "true", "yes"):
+            return True
+        if low in ("0", "false", "no"):
+            return False
+        return None
+    return None
+
+
+def peer_sticky_enabled(syscfg, peer_conf=None, ts1_static=None, ts2_static=None):
+    """Same rule as RYSEN: statics disable sticky; peer STICKY overrides system."""
+    if ts1_static or ts2_static:
+        return False
+    flag = sticky_flag_from_options((peer_conf or {}).get("OPTIONS"))
+    if flag is not None:
+        return flag
+    if peer_conf is not None and "STICKY" in peer_conf:
+        return bool(peer_conf["STICKY"])
+    return bool((syscfg or {}).get("STICKY_TG", False))
+
+
+def peer_ua_map(peer_conf):
+    """Per-slot UA from CONFIG_SND, or None when this master does not publish it."""
+    if not peer_conf or "UA" not in peer_conf:
+        return None
+    ua = peer_conf.get("UA")
+    if not isinstance(ua, dict):
+        return {}
+    out = {}
+    for key, row in ua.items():
+        try:
+            slot = int(key)
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(row, dict):
+            continue
+        tgid = row.get("TGID")
+        if tgid in (None, "", 0):
+            continue
+        try:
+            out[slot] = {"TGID": int(tgid), "EXPIRES": row.get("EXPIRES")}
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def unique_tg_display(row, sticky=False):
+    """Unique-TG cell: TG number plus Sticky or remaining RelinkTime."""
+    if not row:
+        return {"TGID": "", "TO": ""}
+    expires = row.get("EXPIRES")
+    if expires is None or sticky:
+        return {"TGID": row["TGID"], "TO": "Sticky"}
+    return {"TGID": row["TGID"], "TO": time_str(expires, "to")}
+
+
 def ts_lists_from_options(options_value):
     """Parse this peer's selfcare, legacy, or DMR+ static TG OPTIONS."""
     ts1, ts2 = [], []
@@ -1553,11 +1624,20 @@ def build_tgstats():
             for peer in CTABLE["MASTERS"][system]["PEERS"]:
                 CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS1"] = {"TGID": "", "TO": ""}
                 CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS2"] = {"TGID": "", "TO": ""}
+                peer_conf = (CONFIG[system].get("PEERS") or {}).get(bytes_4(peer)) or {}
                 options = peer_own_options(CONFIG[system], bytes_4(peer))
                 ts1_static, ts2_static = ts_lists_from_options(options)
                 CTABLE["MASTERS"][system]["PEERS"][peer]["TS1_STATIC"] = ts1_static
                 CTABLE["MASTERS"][system]["PEERS"][peer]["TS2_STATIC"] = ts2_static
-    # Find Single TG
+                sticky = peer_sticky_enabled(
+                    CONFIG[system], peer_conf, ts1_static, ts2_static)
+                ua_map = peer_ua_map(peer_conf)
+                if ua_map is None:
+                    continue
+                for slot in (1, 2):
+                    CTABLE["MASTERS"][system]["PEERS"][peer]["SINGLE_TS" + str(slot)] = (
+                        unique_tg_display(ua_map.get(slot), sticky=sticky))
+    # Find Single TG on masters that do not yet publish per-peer UA
     if CTABLE and BRIDGES and tmp_dict:
         for bridge in BRIDGES:
             for system in BRIDGES[bridge]:
@@ -1565,9 +1645,18 @@ def build_tgstats():
                     continue
                 if system["SYSTEM"] not in tmp_dict:
                     continue
+                syscfg = CONFIG.get(system["SYSTEM"]) or {}
                 for peer in CTABLE["MASTERS"][system["SYSTEM"]]["PEERS"]:
-                    CTABLE["MASTERS"][system["SYSTEM"]]["PEERS"][peer]["SINGLE_TS"+str(system["TS"])] = {
-                        "TGID": int_id(system["TGID"]), "TO": time_str(system["TIMER"],"to")}
+                    peer_conf = (syscfg.get("PEERS") or {}).get(bytes_4(peer)) or {}
+                    if peer_ua_map(peer_conf) is not None:
+                        continue
+                    shown = CTABLE["MASTERS"][system["SYSTEM"]]["PEERS"][peer]
+                    sticky = peer_sticky_enabled(
+                        syscfg, peer_conf,
+                        shown.get("TS1_STATIC"), shown.get("TS2_STATIC"))
+                    shown["SINGLE_TS" + str(system["TS"])] = unique_tg_display(
+                        {"TGID": int_id(system["TGID"]), "EXPIRES": system["TIMER"]},
+                        sticky=sticky)
 
 
 def timeout_clients():

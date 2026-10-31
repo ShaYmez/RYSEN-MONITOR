@@ -268,6 +268,8 @@ class SelfcareManager {
 
         const timeslots1 = this.getTimeslotValues(timeslotTable);
         const timeslots2 = this.getTimeslotValues(timeslotTable2);
+        const hasStatics = this.hasStaticTalkgroups(timeslots1, timeslots2);
+        this.syncStickyControl(hasStatics);
 
         if (this.isIpsc) {
             let genText = '';
@@ -315,7 +317,7 @@ class SelfcareManager {
             genText += 'SINGLE=' + singleModeValue + ';';
         }
 
-        if (stickyValue !== '-1') {
+        if (!hasStatics && stickyValue !== '-1') {
             genText += 'STICKY=' + stickyValue + ';';
         }
 
@@ -326,6 +328,27 @@ class SelfcareManager {
         }
 
         this.setGeneratedOptions(genText);
+    }
+
+    /**
+     * Numbered statics on either slot disable last-TG sticky.
+     */
+    hasStaticTalkgroups(timeslots1, timeslots2) {
+        return (timeslots1 && timeslots1.length > 0) || (timeslots2 && timeslots2.length > 0);
+    }
+
+    /**
+     * Grey out Sticky when static TGs are set — RYSEN will ignore STICKY=1.
+     */
+    syncStickyControl(hasStatics) {
+        const stickySelect = document.getElementById('stickySelect');
+        if (!stickySelect) {
+            return;
+        }
+        stickySelect.disabled = !!hasStatics;
+        stickySelect.title = hasStatics
+            ? 'Static talkgroups disable sticky; unique TGs time out.'
+            : '';
     }
 
     /**
