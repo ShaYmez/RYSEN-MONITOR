@@ -640,6 +640,7 @@ class SelfcareManager {
         }
 
         this.stopStatusPolling();
+        this.stopDeviceRuntimePolling();
 
         this.disconnectInProgress = true;
         this.setSaveButtonDisabled(true);
@@ -660,6 +661,10 @@ class SelfcareManager {
                 this.setSaveButtonDisabled(this.isModified);
                 this.setDisconnectButtonDisabled(false);
                 this.setWaitMessage('calc_wait');
+                if (document.getElementById('device-runtime-panel')) {
+                    this.refreshDeviceRuntime();
+                    this.startDeviceRuntimePolling();
+                }
                 alert(error.message || 'Disconnect failed. Please try again.');
             })
             .finally(() => {

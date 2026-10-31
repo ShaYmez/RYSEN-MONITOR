@@ -396,6 +396,7 @@ function updateTbody(tbodyId, html) {
     if (!el || el.innerHTML === html) {
         return;
     }
+    prepareDomSwapCleanup();
     el.innerHTML = html;
 }
 
