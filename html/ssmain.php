@@ -4,6 +4,8 @@ require_once "ssconfunc.php";
 enforceHttps();
 initSecureSession();
 session_start();
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
 
 include_once "include/functions.php";
 require_once "include/ui-mode.php";
@@ -449,6 +451,14 @@ $csrfToken = generateCSRFToken();
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="timeoutInput" value="<?php echo $timerValue; ?>"></td>
                                                         </tr>
                                                         <?php endif; ?>
+                                                        <tr>
+                                                            <td colspan="2" class="text-center py-2">
+                                                                <button type="button"
+                                                                    class="btn btn-outline-secondary btn-sm"
+                                                                    onclick="window.selfcare && window.selfcare.resetFunctionsToServerDefaults()"
+                                                                    id="calc_reset_defaults"></button>
+                                                            </td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -470,10 +480,6 @@ $csrfToken = generateCSRFToken();
                                         <div class="col-6">
                                             <div class="row justify-content-center align-items-center mt-2 mb-4 selfcare-action-row">
                                                 <button type="button" class="btn btn-primary" onclick="window.selfcare && window.selfcare.saveChanges()" id="calc_save"></button>
-                                                <button type="button"
-                                                    class="btn btn-outline-secondary btn-sm"
-                                                    onclick="window.selfcare && window.selfcare.resetFunctionsToServerDefaults()"
-                                                    id="calc_reset_defaults"></button>
                                                 <button type="button"
                                                     class="btn btn-outline-secondary btn-sm selfcare-disconnect-btn"
                                                     id="calchlpdisconnect"
@@ -615,8 +621,8 @@ $csrfToken = generateCSRFToken();
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="scripts/mode.js?v=<?php echo filemtime(__DIR__ . '/scripts/mode.js'); ?>"></script>
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
-    <script src="scripts/monitor.js"></script>
-    <script src="scripts/selfcare.js"></script>
+    <script src="scripts/monitor.js?v=<?php echo filemtime(__DIR__ . '/scripts/monitor.js'); ?>"></script>
+    <script src="scripts/selfcare.js?v=<?php echo filemtime(__DIR__ . '/scripts/selfcare.js'); ?>"></script>
 </body>
 
 </html>

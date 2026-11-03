@@ -310,6 +310,7 @@ function loadTranslations() {
             .then(data => {
                 translationsCache = data;
                 persistTranslations(data);
+                applyPageTranslations(getPageLanguage());
                 return data;
             })
             .catch(err => {

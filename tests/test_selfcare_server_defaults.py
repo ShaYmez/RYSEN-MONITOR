@@ -24,7 +24,19 @@ def test_function_controls_show_effective_values_only():
     assert 'id="calc_smodesrv"' not in page
     assert 'id="calc_stickysrv"' not in page
     assert 'id="calc_aliassrv"' not in page
-    assert 'id="calc_reset_defaults"' in page
+    timer_at = page.index('id="timeoutInput"')
+    table_end = page.index("</tbody>", timer_at)
+    reset_at = page.index('id="calc_reset_defaults"', timer_at)
+    assert timer_at < reset_at < table_end
+    assert 'id="calc_reset_defaults"' not in page[table_end:]
+    assert "Cache-Control: no-store, no-cache, must-revalidate" in page
+    assert "scripts/monitor.js?v=" in page
+    assert "scripts/selfcare.js?v=" in page
+    script = _read("html/scripts/monitor.js")
+    fetch_at = script.index("fetch('translations.json'")
+    assert script.index("applyPageTranslations(getPageLanguage())", fetch_at) < script.index(
+        "return data;", fetch_at
+    )
 
 
 @pytest.mark.skipif(PHP is None, reason="PHP CLI is not installed")
