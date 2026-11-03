@@ -1819,6 +1819,20 @@
         "zh": "Save Changes",
         "el": "Αποθήκευση"
     },
+    "calc_reset_defaults": {
+        "en": "Reset Functions to Server Defaults",
+        "pt": "Repor funções para as predefinições do servidor",
+        "es": "Restablecer funciones a los valores del servidor",
+        "fr": "Réinitialiser les fonctions aux valeurs du serveur",
+        "it": "Ripristina funzioni ai valori del server",
+        "nl": "Functies herstellen naar serverstandaarden",
+        "de": "Funktionen auf Serverstandards zurücksetzen",
+        "ru": "Reset Functions to Server Defaults",
+        "ja": "Reset Functions to Server Defaults",
+        "ar": "Reset Functions to Server Defaults",
+        "zh": "Reset Functions to Server Defaults",
+        "el": "Επαναφορά λειτουργιών στις προεπιλογές διακομιστή"
+    },
     "calc_wait": {
         "en": "Applying settings ...",
         "pt": "Aplicando configurações ...",

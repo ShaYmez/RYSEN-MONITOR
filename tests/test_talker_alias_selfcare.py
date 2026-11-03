@@ -1,4 +1,4 @@
-"""Talker alias selfcare switch stays on server default until chosen."""
+"""Talker alias selfcare switch and generated OPTIONS behaviour."""
 import json
 import shutil
 import subprocess
@@ -16,7 +16,7 @@ def _read(relative):
     return (ROOT / relative).read_text(encoding="utf-8")
 
 
-def test_alias_switch_sits_with_server_default_options():
+def test_alias_switch_sits_with_function_options():
     source = _read("html/ssmain.php")
     start = source.index('id="calchlpfun"')
     block = source[start:source.index("</table>", start)]
@@ -25,8 +25,10 @@ def test_alias_switch_sits_with_server_default_options():
     alias_at = block.index('id="aliasSelect"')
     before = block[:alias_at]
     assert before.count("if (!$isRepeaterDevice)") == before.count("endif")
-    assert "normalizeAliasOption(getDeviceOption($devDetails['options'], 'ALIAS', '-1'))" in source
-    assert 'id="calc_aliassrv"' in block
+    assert "effectiveBooleanOption(" in source
+    assert 'id="calc_aliassrv"' not in block
+    assert 'id="calc_aliasoff"' in block
+    assert 'id="calc_aliason"' in block
     assert "retired" in _read("html/include/calc.php").lower()
 
 
