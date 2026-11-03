@@ -91,15 +91,28 @@ if (!$devDetails) {
 
 // Parse device options
 $options = parseDeviceOptions($devDetails['options']);
+$serverDefaults = loadRysenFunctionDefaults($devDetails['mode']);
 
-// Extract individual options with defaults
+// Show effective values: a missing override inherits the current server config.
 $dialValue = getDeviceOption($devDetails['options'], 'DIAL', 0);
-$voiceValue = getDeviceOption($devDetails['options'], 'VOICE', '-1');
-$langValue = getDeviceOption($devDetails['options'], 'LANG', 'en_GB');
-$singleValue = getDeviceOption($devDetails['options'], 'SINGLE', '-1');
-$stickyValue = getDeviceOption($devDetails['options'], 'STICKY', '-1');
-$aliasValue = normalizeAliasOption(getDeviceOption($devDetails['options'], 'ALIAS', '-1'));
-$timerValue = getDeviceOption($devDetails['options'], 'TIMER', 0);
+$voiceValue = effectiveBooleanOption(
+    getDeviceOption($devDetails['options'], 'VOICE', null),
+    $serverDefaults['voice']
+);
+$langValue = getDeviceOption($devDetails['options'], 'LANG', $serverDefaults['language']);
+$singleValue = effectiveBooleanOption(
+    getDeviceOption($devDetails['options'], 'SINGLE', null),
+    $serverDefaults['single']
+);
+$stickyValue = effectiveBooleanOption(
+    getDeviceOption($devDetails['options'], 'STICKY', null),
+    $serverDefaults['sticky']
+);
+$aliasValue = effectiveBooleanOption(
+    getDeviceOption($devDetails['options'], 'ALIAS', null),
+    $serverDefaults['alias']
+);
+$timerValue = getDeviceOption($devDetails['options'], 'TIMER', $serverDefaults['timer']);
 $ts1Values = getDeviceOption($devDetails['options'], 'TS1', []);
 $ts2Values = getDeviceOption($devDetails['options'], 'TS2', []);
 
@@ -240,6 +253,12 @@ $csrfToken = generateCSRFToken();
                                         <input type="hidden" id="repeater-device" value="<?php echo $isRepeaterDevice ? '1' : '0'; ?>">
                                         <input type="hidden" id="device-id" value="<?php echo escapeHtml($selint_id); ?>">
                                         <input type="hidden" id="device-modified" value="<?php echo escapeHtml($devDetails['modified']); ?>">
+                                        <input type="hidden" id="server-default-voice" value="<?php echo $serverDefaults['voice'] ? '1' : '0'; ?>">
+                                        <input type="hidden" id="server-default-language" value="<?php echo escapeHtml($serverDefaults['language']); ?>">
+                                        <input type="hidden" id="server-default-single" value="<?php echo $serverDefaults['single'] ? '1' : '0'; ?>">
+                                        <input type="hidden" id="server-default-sticky" value="<?php echo $serverDefaults['sticky'] ? '1' : '0'; ?>">
+                                        <input type="hidden" id="server-default-alias" value="<?php echo $serverDefaults['alias'] ? '1' : '0'; ?>">
+                                        <input type="hidden" id="server-default-timer" value="<?php echo escapeHtml($serverDefaults['timer']); ?>">
                                         
                                         <div class="row justify-content-center">
                                             <div class="form-group col-2">
@@ -353,7 +372,6 @@ $csrfToken = generateCSRFToken();
                                                             <td class="align-middle text-nowrap"><span id="calc_voice"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpvoice"></i></td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="voiceSelect">
-                                                                    <option value="-1" <?php if ($voiceValue=='-1' ) { echo "selected" ; }; ?> id="calc_voicesrv"></option>
                                                                     <option value="0" <?php if ($voiceValue=='0' ) { echo "selected" ; }; ?> id="calc_voiceoff"></option>
                                                                     <option value="1" <?php if ($voiceValue=='1' ) { echo "selected" ; }; ?> id="calc_voiceon"></option>
                                                                 </select>
@@ -385,7 +403,6 @@ $csrfToken = generateCSRFToken();
                                                                     id="calc_smode"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpsmode"></i></td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="singleModeSelect">
-                                                                    <option value="-1" <?php if ($singleValue=='-1' ) { echo "selected" ; }; ?> id="calc_smodesrv"></option>
                                                                     <option value="0" <?php if ($singleValue=='0' ) { echo "selected" ; }; ?> id="calc_smodeoff"></option>
                                                                     <option value="1" <?php if ($singleValue=='1' ) { echo "selected" ; }; ?> id="calc_smodeon"></option>
                                                                 </select>
@@ -403,7 +420,6 @@ $csrfToken = generateCSRFToken();
                                                             </td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="stickySelect">
-                                                                    <option value="-1" <?php if ($stickyValue=='-1') { echo "selected"; }; ?> id="calc_stickysrv"></option>
                                                                     <option value="0" <?php if ($stickyValue=='0') { echo "selected"; }; ?> id="calc_stickyoff"></option>
                                                                     <option value="1" <?php if ($stickyValue=='1') { echo "selected"; }; ?> id="calc_stickyon"></option>
                                                                 </select>
@@ -422,7 +438,6 @@ $csrfToken = generateCSRFToken();
                                                             </td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="aliasSelect">
-                                                                    <option value="-1" <?php if ($aliasValue=='-1') { echo "selected"; }; ?> id="calc_aliassrv"></option>
                                                                     <option value="0" <?php if ($aliasValue=='0') { echo "selected"; }; ?> id="calc_aliasoff"></option>
                                                                     <option value="1" <?php if ($aliasValue=='1') { echo "selected"; }; ?> id="calc_aliason"></option>
                                                                 </select>
@@ -455,6 +470,10 @@ $csrfToken = generateCSRFToken();
                                         <div class="col-6">
                                             <div class="row justify-content-center align-items-center mt-2 mb-4 selfcare-action-row">
                                                 <button type="button" class="btn btn-primary" onclick="window.selfcare && window.selfcare.saveChanges()" id="calc_save"></button>
+                                                <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm"
+                                                    onclick="window.selfcare && window.selfcare.resetFunctionsToServerDefaults()"
+                                                    id="calc_reset_defaults"></button>
                                                 <button type="button"
                                                     class="btn btn-outline-secondary btn-sm selfcare-disconnect-btn"
                                                     id="calchlpdisconnect"

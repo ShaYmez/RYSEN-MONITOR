@@ -233,7 +233,7 @@ class SelfcareManager {
     }
 
     /**
-     * ALIAS= fragment. Server default (-1) is omitted so the master flag applies.
+     * ALIAS= fragment.
      */
     aliasOptionFragment() {
         const aliasSelect = document.getElementById('aliasSelect');
@@ -496,6 +496,38 @@ class SelfcareManager {
     }
 
     /**
+     * Apply the current master defaults through the normal save path.
+     * Static talkgroups are deliberately left untouched.
+     */
+    resetFunctionsToServerDefaults() {
+        const defaultValue = (id, fallback) => {
+            const element = document.getElementById(id);
+            return element ? element.value : fallback;
+        };
+        const setValue = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.value = value;
+            }
+        };
+
+        setValue('dialTGInput', '0');
+        setValue('voiceSelect', defaultValue('server-default-voice', '0'));
+        setValue('languageselect', defaultValue('server-default-language', 'en_GB'));
+        setValue('singleModeSelect', defaultValue('server-default-single', '0'));
+        setValue('stickySelect', defaultValue('server-default-sticky', '0'));
+        setValue('aliasSelect', defaultValue('server-default-alias', '0'));
+        setValue('timeoutInput', defaultValue('server-default-timer', '0'));
+
+        const dialTGInput = document.getElementById('dialTGInput');
+        if (dialTGInput) {
+            this.toggleTimeslot2(dialTGInput.value);
+        }
+        this.toggleLanguageDropdown();
+        this.saveChanges();
+    }
+
+    /**
      * Update spinner status text by translation element id.
      */
     setWaitMessage(elementId) {
@@ -513,6 +545,10 @@ class SelfcareManager {
         const saveBtn = document.getElementById('calc_save');
         if (saveBtn) {
             saveBtn.disabled = disabled;
+        }
+        const resetBtn = document.getElementById('calc_reset_defaults');
+        if (resetBtn) {
+            resetBtn.disabled = disabled;
         }
     }
 

@@ -87,6 +87,22 @@ function aliasOptionFragment($value) {
 }
 
 /**
+ * Resolve an optional device boolean onto its effective server value.
+ *
+ * @param mixed $value
+ * @param bool $serverDefault
+ * @return string '0' or '1'
+ */
+function effectiveBooleanOption($value, $serverDefault)
+{
+    $normalized = normalizeAliasOption($value);
+    if ($normalized === '0' || $normalized === '1') {
+        return $normalized;
+    }
+    return $serverDefault ? '1' : '0';
+}
+
+/**
  * Handle device selection from session and POST data
  * 
  * Validates and authorizes device selection to ensure users can only
@@ -406,6 +422,150 @@ function sanitizeRepeaterDisconnectOptions($options)
  */
 function isEmptyDeviceOptions($optionsString) {
     return $optionsString === null || $optionsString === '';
+}
+
+/**
+ * Parse the colon-delimited RYSEN configuration without exposing unrelated
+ * values (the file also contains credentials).
+ *
+ * @param string $path
+ * @return array<string, array<string, string>>
+ */
+function parseRysenConfigSections($path = '/etc/rysen/rysen.cfg')
+{
+    if (!is_file($path) || !is_readable($path)) {
+        return [];
+    }
+
+    $handle = @fopen($path, 'r');
+    if ($handle === false) {
+        return [];
+    }
+
+    $sections = [];
+    $section = '';
+    while (($line = fgets($handle)) !== false) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#' || $line[0] === ';') {
+            continue;
+        }
+        if ($line[0] === '[' && substr($line, -1) === ']') {
+            $section = strtoupper(trim(substr($line, 1, -1)));
+            if ($section !== '' && !isset($sections[$section])) {
+                $sections[$section] = [];
+            }
+            continue;
+        }
+        if ($section === '') {
+            continue;
+        }
+
+        $colonAt = strpos($line, ':');
+        $equalsAt = strpos($line, '=');
+        if ($colonAt === false || ($equalsAt !== false && $equalsAt < $colonAt)) {
+            $separatorAt = $equalsAt;
+        } else {
+            $separatorAt = $colonAt;
+        }
+        if ($separatorAt === false) {
+            continue;
+        }
+
+        $key = strtoupper(trim(substr($line, 0, $separatorAt)));
+        if ($key !== '') {
+            $sections[$section][$key] = trim(substr($line, $separatorAt + 1));
+        }
+    }
+    fclose($handle);
+
+    return $sections;
+}
+
+/**
+ * RYSEN-style boolean value.
+ *
+ * @param mixed $value
+ * @param bool $fallback
+ * @return bool
+ */
+function rysenConfigBool($value, $fallback = false)
+{
+    $normalized = strtolower(trim((string) $value));
+    if (in_array($normalized, ['1', 'true', 'yes', 'on'], true)) {
+        return true;
+    }
+    if (in_array($normalized, ['0', 'false', 'no', 'off'], true)) {
+        return false;
+    }
+    return (bool) $fallback;
+}
+
+/**
+ * Effective function defaults for the selected client type.
+ *
+ * The dashboard and RYSEN run on the same master, so the local rysen.cfg is
+ * the source of truth. The first enabled stanza of the matching mode is used.
+ *
+ * @param mixed $deviceMode Clients.mode
+ * @param string $path
+ * @return array<string, mixed>
+ */
+function loadRysenFunctionDefaults($deviceMode, $path = '/etc/rysen/rysen.cfg')
+{
+    $mode = (int) $deviceMode;
+    $systemMode = $mode === 0 ? 'IPSC' : ($mode === -1 ? 'HYTERA' : 'MASTER');
+    $defaults = [
+        'voice' => false,
+        'language' => 'en_GB',
+        'single' => $systemMode === 'MASTER',
+        'sticky' => false,
+        'alias' => true,
+        'timer' => $systemMode === 'MASTER' ? 60 : 10,
+        'available' => false,
+    ];
+
+    $sections = parseRysenConfigSections($path);
+    if (empty($sections)) {
+        return $defaults;
+    }
+
+    $global = $sections['GLOBAL'] ?? [];
+    $defaults['alias'] = rysenConfigBool($global['TALKER_ALIAS'] ?? null, true);
+
+    $matching = null;
+    foreach ($sections as $name => $values) {
+        if ($name === 'GLOBAL' || strtoupper((string) ($values['MODE'] ?? '')) !== $systemMode) {
+            continue;
+        }
+        if ($matching === null) {
+            $matching = $values;
+        }
+        if (rysenConfigBool($values['ENABLED'] ?? null, false)) {
+            $matching = $values;
+            break;
+        }
+    }
+    if ($matching === null) {
+        return $defaults;
+    }
+
+    $defaults['voice'] = rysenConfigBool($matching['VOICE_IDENT'] ?? null, $defaults['voice']);
+    $defaults['single'] = rysenConfigBool($matching['SINGLE_MODE'] ?? null, $defaults['single']);
+    $defaults['sticky'] = rysenConfigBool($matching['STICKY_TG'] ?? null, $defaults['sticky']);
+    if (array_key_exists('ALIAS', $matching)) {
+        $defaults['alias'] = rysenConfigBool($matching['ALIAS'], $defaults['alias']);
+    }
+    $language = trim((string) ($matching['ANNOUNCEMENT_LANGUAGE'] ?? ''));
+    if ($language !== '') {
+        $defaults['language'] = $language;
+    }
+    $timer = filter_var($matching['DEFAULT_UA_TIMER'] ?? null, FILTER_VALIDATE_INT);
+    if ($timer !== false && $timer >= 0) {
+        $defaults['timer'] = $timer;
+    }
+    $defaults['available'] = true;
+
+    return $defaults;
 }
 
 /**
