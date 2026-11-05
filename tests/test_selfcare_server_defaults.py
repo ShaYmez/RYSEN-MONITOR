@@ -236,6 +236,88 @@ if (elements.voiceSelect.value !== "0" || elements.aliasSelect.value !== "0" || 
 
 
 @pytest.mark.skipif(NODE is None, reason="Node is not installed")
+def test_calculator_mode_switch_and_copy_feedback(tmp_path):
+    script = _read("html/scripts/selfcare.js")
+    script = script.split("// Initialize when DOM is ready", 1)[0]
+    page = _read("html/include/calc.php")
+    assert 'id="calc_copied"' in page
+    assert "window.alert" not in script[script.index("copyGeneratedText"):script.index("showCalculatorCopyFeedback")]
+    harness = script + r"""
+function field(hotspot, repeater, value) {
+  return {
+    value: value,
+    getAttribute(name) {
+      if (name === "data-hotspot") return hotspot;
+      if (name === "data-repeater") return repeater;
+      return "";
+    }
+  };
+}
+const available = field("0", "1", "0");
+const defaults = {
+  "server-default-voice": field("", "0", ""),
+  "server-default-language": field("", "en_GB", ""),
+  "server-default-single": field("", "0", ""),
+  "server-default-sticky": field("", "0", ""),
+  "server-default-alias": field("", "1", ""),
+  "server-default-timer": field("", "10", "")
+};
+const elements = Object.assign({
+  "server-defaults-available": available,
+  aliasSelect: { value: "" },
+  voiceSelect: { value: "1" },
+  languageselect: { value: "" },
+  singleModeSelect: { value: "" },
+  stickySelect: { value: "" },
+  timeoutInput: { value: "" },
+  "calc-defaults-warning": { style: { display: "" } },
+  timeslot2col: { style: { display: "" } },
+  calc_copy1: { id: "calc_copy1", textContent: "Copy to Clipboard", dataset: {} },
+  calc_copied: { textContent: "Copied!" },
+  generatedTextWithQuotes: { value: "TS2=2350;", focus() {}, select() {} }
+}, defaults);
+const tagged = [available].concat(Object.keys(defaults).map(id => defaults[id]));
+let alerted = false;
+global.document = {
+  getElementById(id) { return elements[id] || null; },
+  querySelectorAll(sel) {
+    if (sel === "[data-hotspot][data-repeater]") return tagged;
+    return [];
+  },
+  execCommand() { return true; }
+};
+global.window = { alert() { alerted = true; }, isSecureContext: false };
+const mgr = Object.create(SelfcareManager.prototype);
+mgr.copyFeedbackTimers = {};
+mgr.calculator = true;
+mgr.toggleTimeslot2 = () => {};
+mgr.toggleLanguageDropdown = () => {};
+mgr.toggleTimeslotTable = () => {};
+mgr.applyCalculatorKind("repeater");
+if (available.value !== "1" || elements.aliasSelect.value !== "1" || elements.voiceSelect.value !== "1" || elements.languageselect.value !== "en_GB" || elements["calc-defaults-warning"].style.display !== "none") {
+  console.error(JSON.stringify({
+    available: available.value,
+    alias: elements.aliasSelect.value,
+    voice: elements.voiceSelect.value,
+    lang: elements.languageselect.value,
+    warning: elements["calc-defaults-warning"].style.display
+  }));
+  process.exit(1);
+}
+mgr.copyGeneratedText("generatedTextWithQuotes");
+setTimeout(() => {
+  if (alerted || elements.calc_copy1.textContent !== "Copied!") {
+    console.error(JSON.stringify({ alerted, label: elements.calc_copy1.textContent }));
+    process.exit(1);
+  }
+}, 20);
+"""
+    path = tmp_path / "calculator-mode.js"
+    path.write_text(harness, encoding="utf-8")
+    subprocess.check_call([NODE, str(path)], cwd=tmp_path)
+
+
+@pytest.mark.skipif(NODE is None, reason="Node is not installed")
 def test_reset_submits_server_functions_and_keeps_static_talkgroups(tmp_path):
     script = _read("html/scripts/selfcare.js")
     script = script.split("// Initialize when DOM is ready", 1)[0]

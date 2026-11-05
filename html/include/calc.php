@@ -212,6 +212,8 @@ $languages = [
                                 <p class="mb-1"><b>DMR Gateway</b></p>
                             </div>
                             <textarea class="form-control text-sm form-control-sm" id="generatedTextWithQuotes" rows="2" readonly></textarea>
+                            <span class="d-none" id="calc_copied"></span>
+                            <span class="d-none" id="calc_copy_failed"></span>
                             <div class="row justify-content-center mt-4 mb-4">
                                 <button type="button" class="btn btn-primary mt-2" onclick="window.selfcare && window.selfcare.copyGeneratedText('generatedTextWithQuotes')" id="calc_copy1"></button>
                             </div>

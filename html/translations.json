@@ -1833,6 +1833,34 @@
         "zh": "Talkgroup Timer (min):",
         "el": "Χρονόμετρο TG:"
     },
+    "calc_copied": {
+        "en": "Copied!",
+        "pt": "Copiado!",
+        "es": "¡Copiado!",
+        "fr": "Copié !",
+        "it": "Copiato!",
+        "nl": "Gekopieerd!",
+        "de": "Kopiert!",
+        "ru": "Copied!",
+        "ja": "Copied!",
+        "ar": "Copied!",
+        "zh": "Copied!",
+        "el": "Αντιγράφηκε!"
+    },
+    "calc_copy_failed": {
+        "en": "Copy failed",
+        "pt": "A cópia falhou",
+        "es": "Error al copiar",
+        "fr": "La copie a échoué",
+        "it": "Copia non riuscita",
+        "nl": "Kopiëren mislukt",
+        "de": "Kopieren fehlgeschlagen",
+        "ru": "Copy failed",
+        "ja": "Copy failed",
+        "ar": "Copy failed",
+        "zh": "Copy failed",
+        "el": "Η αντιγραφή απέτυχε"
+    },
     "calc_copy1": {
         "en": "Copy to Clipboard",
         "pt": "Copiar",

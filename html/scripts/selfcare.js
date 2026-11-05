@@ -28,6 +28,7 @@ class SelfcareManager {
         this.runtimePollTimer = null;
         this.runtimeStatusInFlight = false;
         this.runtimeActionBusy = false;
+        this.copyFeedbackTimers = {};
         this.init();
     }
 
@@ -115,17 +116,11 @@ class SelfcareManager {
         this.isIpsc = normalized === 'repeater';
         this.deviceMode = normalized === 'simplex' ? 4 : (normalized === 'repeater' ? 0 : 1);
         const which = this.isIpsc ? 'repeater' : 'hotspot';
-        document.querySelectorAll('[data-hotspot][data-repeater]').forEach(element => {
-            element.value = element.getAttribute('data-' + which) || '';
-        });
+        this.applyCalculatorDefaults(which);
         document.querySelectorAll('.calc-hotspot-only').forEach(row => {
             row.style.display = this.isIpsc ? 'none' : '';
         });
-        const warning = document.getElementById('calc-defaults-warning');
-        const available = document.getElementById('server-defaults-available');
-        if (warning && available) {
-            warning.style.display = available.value === '1' ? 'none' : '';
-        }
+        this.syncCalculatorWarning();
         this.restoreMatchingDefaults(snapshot);
         if (this.isIpsc) {
             const timeslot2Col = document.getElementById('timeslot2col');
@@ -143,6 +138,31 @@ class SelfcareManager {
     }
 
     /**
+     * Copy the live defaults for hotspot or repeater, including whether that
+     * config could be read. Duplex and simplex share the hotspot set.
+     */
+    applyCalculatorDefaults(which) {
+        document.querySelectorAll('[data-hotspot][data-repeater]').forEach(element => {
+            element.value = element.getAttribute('data-' + which) || '';
+        });
+        const available = document.getElementById('server-defaults-available');
+        if (available) {
+            available.value = available.getAttribute('data-' + which) === '1' ? '1' : '0';
+        }
+    }
+
+    /**
+     * Show the unreadable-config warning only for the mode now selected.
+     */
+    syncCalculatorWarning() {
+        const warning = document.getElementById('calc-defaults-warning');
+        const available = document.getElementById('server-defaults-available');
+        if (warning && available) {
+            warning.style.display = available.value === '1' ? 'none' : '';
+        }
+    }
+
+    /**
      * Remember which function controls still equal the defaults before a mode change.
      */
     calculatorControlSnapshot() {
@@ -154,6 +174,8 @@ class SelfcareManager {
             aliasSelect: 'server-default-alias',
             timeoutInput: 'server-default-timer'
         };
+        const available = document.getElementById('server-defaults-available');
+        const defaultsLive = !!(available && available.value === '1');
         const snapshot = {};
         Object.keys(fields).forEach(id => {
             const element = document.getElementById(id);
@@ -163,6 +185,7 @@ class SelfcareManager {
             snapshot[id] = {
                 value: element.value,
                 matched: this.matchesServerDefault(fields[id], element.value),
+                inheritBlank: !defaultsLive && element.value === '',
                 defaultId: fields[id]
             };
         });
@@ -170,7 +193,8 @@ class SelfcareManager {
     }
 
     /**
-     * Keep a deliberate choice. A control still sitting on the old default follows the new mode.
+     * Keep a deliberate choice. A control still sitting on the old default,
+     * or left blank because that config could not be read, follows the new mode.
      */
     restoreMatchingDefaults(snapshot) {
         Object.keys(snapshot).forEach(id => {
@@ -179,7 +203,9 @@ class SelfcareManager {
             if (!element || !server) {
                 return;
             }
-            element.value = snapshot[id].matched ? server.value : snapshot[id].value;
+            element.value = (snapshot[id].matched || snapshot[id].inheritBlank)
+                ? server.value
+                : snapshot[id].value;
         });
     }
 
@@ -413,21 +439,50 @@ class SelfcareManager {
         if (!element) {
             return;
         }
-        const text = element.value;
-        const notify = () => {
-            window.alert(text);
+        const button = document.getElementById(
+            elementId === 'generatedTextWithQuotes' ? 'calc_copy1' : 'calc_copy2'
+        );
+        const finish = (ok) => this.showCalculatorCopyFeedback(button, ok);
+        const fallback = () => {
+            element.focus();
+            element.select();
+            let ok = false;
+            try {
+                ok = document.execCommand('copy');
+            } catch (error) {
+                ok = false;
+            }
+            finish(!!ok);
         };
-        element.focus();
-        element.select();
         if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(notify).catch(() => {
-                document.execCommand('copy');
-                notify();
-            });
+            navigator.clipboard.writeText(element.value).then(() => finish(true)).catch(fallback);
             return;
         }
-        document.execCommand('copy');
-        notify();
+        fallback();
+    }
+
+    /**
+     * Brief button label after copy. A successful copy does not open a dialog.
+     */
+    showCalculatorCopyFeedback(button, ok) {
+        if (!button) {
+            return;
+        }
+        if (!button.dataset.copyLabel) {
+            button.dataset.copyLabel = button.textContent;
+        }
+        const message = (id, fallback) => {
+            const element = document.getElementById(id);
+            const text = element ? element.textContent.trim() : '';
+            return text || fallback;
+        };
+        button.textContent = ok
+            ? message('calc_copied', 'Copied!')
+            : message('calc_copy_failed', 'Copy failed');
+        clearTimeout(this.copyFeedbackTimers[button.id]);
+        this.copyFeedbackTimers[button.id] = setTimeout(() => {
+            button.textContent = button.dataset.copyLabel;
+        }, 2000);
     }
 
     /**
