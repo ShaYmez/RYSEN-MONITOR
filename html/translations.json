@@ -1455,6 +1455,62 @@
         "zh": "Logout",
         "el": "Αποσύνδεση"
     },
+    "calc_blurb": {
+        "en": "Builds the options string for Pi-Star or WPSD. A value that matches this server is left out.",
+        "pt": "Gera a string de opções para o Pi-Star ou WPSD. Um valor igual ao deste servidor fica de fora.",
+        "es": "Genera la cadena de opciones para Pi-Star o WPSD. Un valor igual al de este servidor se omite.",
+        "fr": "Construit la chaîne d'options pour Pi-Star ou WPSD. Une valeur identique à ce serveur est omise.",
+        "it": "Crea la stringa opzioni per Pi-Star o WPSD. Un valore uguale a questo server viene omesso.",
+        "nl": "Maakt de optiestring voor Pi-Star of WPSD. Een waarde die overeenkomt met deze server blijft weg.",
+        "de": "Erzeugt die Optionszeichenfolge für Pi-Star oder WPSD. Ein Wert, der diesem Server entspricht, wird weggelassen.",
+        "ru": "Builds the options string for Pi-Star or WPSD. A value that matches this server is left out.",
+        "ja": "Builds the options string for Pi-Star or WPSD. A value that matches this server is left out.",
+        "ar": "Builds the options string for Pi-Star or WPSD. A value that matches this server is left out.",
+        "zh": "Builds the options string for Pi-Star or WPSD. A value that matches this server is left out.",
+        "el": "Φτιάχνει τη συμβολοσειρά επιλογών για Pi-Star ή WPSD. Μια τιμή ίδια με αυτόν τον διακομιστή παραλείπεται."
+    },
+    "calc_duplex": {
+        "en": "Duplex",
+        "pt": "Duplex",
+        "es": "Dúplex",
+        "fr": "Duplex",
+        "it": "Duplex",
+        "nl": "Duplex",
+        "de": "Duplex",
+        "ru": "Duplex",
+        "ja": "Duplex",
+        "ar": "Duplex",
+        "zh": "Duplex",
+        "el": "Duplex"
+    },
+    "calc_simplex": {
+        "en": "Simplex",
+        "pt": "Simplex",
+        "es": "Simplex",
+        "fr": "Simplex",
+        "it": "Simplex",
+        "nl": "Simplex",
+        "de": "Simplex",
+        "ru": "Simplex",
+        "ja": "Simplex",
+        "ar": "Simplex",
+        "zh": "Simplex",
+        "el": "Simplex"
+    },
+    "calc_repeater": {
+        "en": "Repeater",
+        "pt": "Repetidor",
+        "es": "Repetidor",
+        "fr": "Répéteur",
+        "it": "Ripetitore",
+        "nl": "Repeater",
+        "de": "Repeater",
+        "ru": "Repeater",
+        "ja": "Repeater",
+        "ar": "Repeater",
+        "zh": "Repeater",
+        "el": "Επαναλήπτης"
+    },
     "calc_type": {
         "en": "Select Type",
         "pt": "Selecione Tipo",
@@ -1818,6 +1874,20 @@
         "ar": "Save Changes",
         "zh": "Save Changes",
         "el": "Αποθήκευση"
+    },
+    "calc_defaults_unavailable": {
+        "en": "Server configuration could not be read. Saved choices are unchanged.",
+        "pt": "A configuração do servidor não pôde ser lida. As escolhas gravadas mantêm-se.",
+        "es": "No se pudo leer la configuración del servidor. Las opciones guardadas no cambian.",
+        "fr": "La configuration du serveur est illisible. Les choix enregistrés restent inchangés.",
+        "it": "Impossibile leggere la configurazione del server. Le scelte salvate restano invariate.",
+        "nl": "Serverconfiguratie kon niet worden gelezen. Opgeslagen keuzes blijven staan.",
+        "de": "Serverkonfiguration konnte nicht gelesen werden. Gespeicherte Auswahlen bleiben unverändert.",
+        "ru": "Server configuration could not be read. Saved choices are unchanged.",
+        "ja": "Server configuration could not be read. Saved choices are unchanged.",
+        "ar": "Server configuration could not be read. Saved choices are unchanged.",
+        "zh": "Server configuration could not be read. Saved choices are unchanged.",
+        "el": "Η ρύθμιση του διακομιστή δεν ήταν αναγνώσιμη. Οι αποθηκευμένες επιλογές μένουν ως έχουν."
     },
     "calc_reset_defaults": {
         "en": "Reset Functions to Server Defaults",

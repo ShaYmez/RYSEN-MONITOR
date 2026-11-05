@@ -44,7 +44,7 @@ if (!verifyDeviceOwnership($selint_id)) {
 // ============================================
 // Handle Configuration Update
 // ============================================
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['genText'])) {
+if ($_SERVER["REQUEST_METHOD"] === "POST" && (isset($_POST['genText']) || (isset($_POST['reset_functions']) && $_POST['reset_functions'] === '1'))) {
     // Verify CSRF token for configuration updates (still required for actual changes)
     if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
         error_log("CSRF token validation failed for configuration update");
@@ -52,13 +52,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['genText'])) {
     }
     
     $postDev = getDevDetails($selint_id);
-    $options = ($postDev && isRepeaterDeviceMode($postDev['mode']))
-        ? sanitizeIpscOptions($_POST['genText'])
-        : sanitizeOptions($_POST['genText']);
+    $isRepeaterPost = $postDev && isRepeaterDeviceMode($postDev['mode']);
+    if (!$postDev) {
+        $options = false;
+    } elseif (isset($_POST['reset_functions']) && $_POST['reset_functions'] === '1') {
+        $options = resetSelfcareFunctionOptions($postDev['options'] ?? '', $isRepeaterPost);
+    } else {
+        $options = $isRepeaterPost
+            ? sanitizeIpscOptions($_POST['genText'] ?? '')
+            : sanitizeOptions($_POST['genText'] ?? '');
+        if ($options !== false) {
+            $options = normalizeSelfcareOptions(
+                $options,
+                $postDev['options'] ?? '',
+                loadRysenFunctionDefaults($postDev['mode']),
+                $isRepeaterPost
+            );
+        }
+    }
     
     if ($options === false) {
         $errorMsg = "Invalid options format.";
-        error_log("Invalid options format submitted: " . substr($_POST['genText'], 0, 50));
+        error_log("Invalid options format submitted: " . substr($_POST['genText'] ?? '', 0, 50));
     } elseif ($options === '') {
         // No selfcare override — preserve server defaults (RYSEN skips empty options)
         $result = clearDevOptions($selint_id);
@@ -94,27 +109,40 @@ if (!$devDetails) {
 // Parse device options
 $options = parseDeviceOptions($devDetails['options']);
 $serverDefaults = loadRysenFunctionDefaults($devDetails['mode']);
+$defaultsAvailable = !empty($serverDefaults['available']);
 
-// Show effective values: a missing override inherits the current server config.
+// Show a saved choice, otherwise the live config. Never invent a default.
 $dialValue = getDeviceOption($devDetails['options'], 'DIAL', 0);
-$voiceValue = effectiveBooleanOption(
+$voiceValue = displayedBooleanOption(
     getDeviceOption($devDetails['options'], 'VOICE', null),
-    $serverDefaults['voice']
+    $serverDefaults,
+    'voice'
 );
-$langValue = getDeviceOption($devDetails['options'], 'LANG', $serverDefaults['language']);
-$singleValue = effectiveBooleanOption(
+$langValue = displayedScalarOption(
+    getDeviceOption($devDetails['options'], 'LANG', null),
+    $serverDefaults,
+    'language'
+);
+$singleValue = displayedBooleanOption(
     getDeviceOption($devDetails['options'], 'SINGLE', null),
-    $serverDefaults['single']
+    $serverDefaults,
+    'single'
 );
-$stickyValue = effectiveBooleanOption(
+$stickyValue = displayedBooleanOption(
     getDeviceOption($devDetails['options'], 'STICKY', null),
-    $serverDefaults['sticky']
+    $serverDefaults,
+    'sticky'
 );
-$aliasValue = effectiveBooleanOption(
+$aliasValue = displayedBooleanOption(
     getDeviceOption($devDetails['options'], 'ALIAS', null),
-    $serverDefaults['alias']
+    $serverDefaults,
+    'alias'
 );
-$timerValue = getDeviceOption($devDetails['options'], 'TIMER', $serverDefaults['timer']);
+$timerValue = displayedScalarOption(
+    getDeviceOption($devDetails['options'], 'TIMER', null),
+    $serverDefaults,
+    'timer'
+);
 $ts1Values = getDeviceOption($devDetails['options'], 'TS1', []);
 $ts2Values = getDeviceOption($devDetails['options'], 'TS2', []);
 
@@ -236,13 +264,13 @@ $csrfToken = generateCSRFToken();
                                         </a>
                                     </div>
                                 </div>
-                                <div class="card-body p-0">
+                                <div class="card-body options-card-body">
                                     <?php if (isset($errorMsg)): ?>
                                         <p>
                                             <?php echo escapeHtml($errorMsg); ?>
                                         </p>
                                     <?php endif; ?>
-                                    <div class="blur-content">
+                                    <div class="blur-content options-form">
                                         <div class="row justify-content-center">
                                             <div class="col-12 col-sm-auto text-center mb-4">
                                                 <h1 class="selfcare-page-heading">Selfcare</h1>
@@ -255,12 +283,13 @@ $csrfToken = generateCSRFToken();
                                         <input type="hidden" id="repeater-device" value="<?php echo $isRepeaterDevice ? '1' : '0'; ?>">
                                         <input type="hidden" id="device-id" value="<?php echo escapeHtml($selint_id); ?>">
                                         <input type="hidden" id="device-modified" value="<?php echo escapeHtml($devDetails['modified']); ?>">
-                                        <input type="hidden" id="server-default-voice" value="<?php echo $serverDefaults['voice'] ? '1' : '0'; ?>">
-                                        <input type="hidden" id="server-default-language" value="<?php echo escapeHtml($serverDefaults['language']); ?>">
-                                        <input type="hidden" id="server-default-single" value="<?php echo $serverDefaults['single'] ? '1' : '0'; ?>">
-                                        <input type="hidden" id="server-default-sticky" value="<?php echo $serverDefaults['sticky'] ? '1' : '0'; ?>">
-                                        <input type="hidden" id="server-default-alias" value="<?php echo $serverDefaults['alias'] ? '1' : '0'; ?>">
-                                        <input type="hidden" id="server-default-timer" value="<?php echo escapeHtml($serverDefaults['timer']); ?>">
+                                        <input type="hidden" id="server-defaults-available" value="<?php echo $defaultsAvailable ? '1' : '0'; ?>">
+                                        <input type="hidden" id="server-default-voice" value="<?php echo escapeHtml(serverDefaultAttribute($serverDefaults, 'voice', true)); ?>">
+                                        <input type="hidden" id="server-default-language" value="<?php echo escapeHtml(serverDefaultAttribute($serverDefaults, 'language')); ?>">
+                                        <input type="hidden" id="server-default-single" value="<?php echo escapeHtml(serverDefaultAttribute($serverDefaults, 'single', true)); ?>">
+                                        <input type="hidden" id="server-default-sticky" value="<?php echo escapeHtml(serverDefaultAttribute($serverDefaults, 'sticky', true)); ?>">
+                                        <input type="hidden" id="server-default-alias" value="<?php echo escapeHtml(serverDefaultAttribute($serverDefaults, 'alias', true)); ?>">
+                                        <input type="hidden" id="server-default-timer" value="<?php echo escapeHtml(serverDefaultAttribute($serverDefaults, 'timer')); ?>">
                                         
                                         <div class="row justify-content-center">
                                             <div class="form-group col-2">
@@ -313,7 +342,7 @@ $csrfToken = generateCSRFToken();
                                         <?php endif; ?>
 
                                         <div class="row justify-content-center">
-                                            <div id="timeslot1col" class="col-5">
+                                            <div id="timeslot1col" class="col-12 col-md-5 mb-3 mb-md-0">
                                                 <table class="table table-sm border align-middle">
                                                     <thead class="bg-danger">
                                                         <tr>
@@ -323,7 +352,7 @@ $csrfToken = generateCSRFToken();
                                                     <tbody id="timeslotTable">
                                                         <?php foreach ($ts1Values as $index => $value): ?>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap">TG <?php echo $index + 1; ?>:</td>
+                                                            <td class="align-middle text-md-nowrap">TG <?php echo $index + 1; ?>:</td>
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" value="<?php echo $value; ?>"></td>
                                                             <td><button class="btn" onclick="window.selfcare.removeRow(this)"><i class="fas fa-times text-danger"></i></button></td>
                                                         </tr>
@@ -334,7 +363,7 @@ $csrfToken = generateCSRFToken();
                                                     <button class="btn btn-primary btn-xs" onclick="window.selfcare.addRow('timeslotTable')" id="calc_addts1"></button>
                                                 </div>
                                             </div>
-                                            <div id="timeslot2col" class="col-5">
+                                            <div id="timeslot2col" class="col-12 col-md-5 mb-3 mb-md-0">
                                                 <table class="table table-sm border align-middle">
                                                     <thead class="bg-warning">
                                                         <tr>
@@ -344,7 +373,7 @@ $csrfToken = generateCSRFToken();
                                                     <tbody id="timeslotTable2">
                                                         <?php foreach ($ts2Values as $index => $value): ?>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap">TG <?php echo $index + 1; ?>:</td>
+                                                            <td class="align-middle text-md-nowrap">TG <?php echo $index + 1; ?>:</td>
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" value="<?php echo $value; ?>"></td>
                                                             <td><button class="btn" onclick="window.selfcare.removeRow(this)"><i class="fas fa-times text-danger"></i></button></td>
                                                         </tr>
@@ -357,7 +386,7 @@ $csrfToken = generateCSRFToken();
                                             </div>
                                         </div>
                                         <div class="row justify-content-center">
-                                            <div class="col-8">
+                                            <div class="col-12 col-lg-8">
                                                 <table class="table table-sm border align-middle mt-4">
                                                     <thead class="bg-success">
                                                         <tr>
@@ -365,24 +394,31 @@ $csrfToken = generateCSRFToken();
                                                         </tr>
                                                     </thead>
                                                     <tbody>
+                                                        <?php if (!$defaultsAvailable): ?>
+                                                        <tr>
+                                                            <td colspan="2" class="text-center text-warning py-2"><span id="calc_defaults_unavailable"></span></td>
+                                                        </tr>
+                                                        <?php endif; ?>
                                                         <?php if (!$isRepeaterDevice): ?>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap"><span id="calc_dialtg"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpdtg"></i></td>
+                                                            <td class="align-middle text-md-nowrap"><span id="calc_dialtg"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpdtg"></i></td>
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="dialTGInput" value="<?php echo $dialValue; ?>" oninput="window.selfcare.toggleTimeslot2(this.value)"></td>
                                                         </tr>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap"><span id="calc_voice"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpvoice"></i></td>
+                                                            <td class="align-middle text-md-nowrap"><span id="calc_voice"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpvoice"></i></td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="voiceSelect">
-                                                                    <option value="0" <?php if ($voiceValue=='0' ) { echo "selected" ; }; ?> id="calc_voiceoff"></option>
-                                                                    <option value="1" <?php if ($voiceValue=='1' ) { echo "selected" ; }; ?> id="calc_voiceon"></option>
+                                                                    <?php if ($voiceValue === ''): ?><option value="" selected>Unavailable</option><?php endif; ?>
+                                                                    <option value="0" <?php if ($voiceValue==='0' ) { echo "selected" ; }; ?> id="calc_voiceoff"></option>
+                                                                    <option value="1" <?php if ($voiceValue==='1' ) { echo "selected" ; }; ?> id="calc_voiceon"></option>
                                                                 </select>
                                                             </td>
                                                         </tr>
                                                         <tr id="languagerow">
-                                                            <td class="align-middle text-nowrap"><span id="calc_lang"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlplang"></i></td>
+                                                            <td class="align-middle text-md-nowrap"><span id="calc_lang"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlplang"></i></td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="languageselect">
+                                                                    <?php if ($langValue === ''): ?><option value="" selected>Unavailable</option><?php endif; ?>
                                                                     <option value="en_GB" <?php if ($langValue=='en_GB' ) { echo "selected" ; }; ?>>English (en_GB)</option>
                                                                     <option value="en_US" <?php if ($langValue=='en_US' ) { echo "selected" ; }; ?>>English (en_US)</option>
                                                                     <option value="es_ES" <?php if ($langValue=='es_ES' ) { echo "selected" ; }; ?>>Spanish (es_ES)</option>
@@ -401,17 +437,18 @@ $csrfToken = generateCSRFToken();
                                                             </td>
                                                         </tr>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap"><span 
+                                                            <td class="align-middle text-md-nowrap"><span 
                                                                     id="calc_smode"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpsmode"></i></td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="singleModeSelect">
-                                                                    <option value="0" <?php if ($singleValue=='0' ) { echo "selected" ; }; ?> id="calc_smodeoff"></option>
-                                                                    <option value="1" <?php if ($singleValue=='1' ) { echo "selected" ; }; ?> id="calc_smodeon"></option>
+                                                                    <?php if ($singleValue === ''): ?><option value="" selected>Unavailable</option><?php endif; ?>
+                                                                    <option value="0" <?php if ($singleValue==='0' ) { echo "selected" ; }; ?> id="calc_smodeoff"></option>
+                                                                    <option value="1" <?php if ($singleValue==='1' ) { echo "selected" ; }; ?> id="calc_smodeon"></option>
                                                                 </select>
                                                             </td>
                                                         </tr>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap">
+                                                            <td class="align-middle text-md-nowrap">
                                                                 <span id="calc_sticky"></span>&nbsp;&nbsp;&nbsp;
                                                                 <i class="far fa-question-circle" 
                                                                    data-bs-toggle="tooltip" 
@@ -422,14 +459,15 @@ $csrfToken = generateCSRFToken();
                                                             </td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="stickySelect">
-                                                                    <option value="0" <?php if ($stickyValue=='0') { echo "selected"; }; ?> id="calc_stickyoff"></option>
-                                                                    <option value="1" <?php if ($stickyValue=='1') { echo "selected"; }; ?> id="calc_stickyon"></option>
+                                                                    <?php if ($stickyValue === ''): ?><option value="" selected>Unavailable</option><?php endif; ?>
+                                                                    <option value="0" <?php if ($stickyValue==='0') { echo "selected"; }; ?> id="calc_stickyoff"></option>
+                                                                    <option value="1" <?php if ($stickyValue==='1') { echo "selected"; }; ?> id="calc_stickyon"></option>
                                                                 </select>
                                                             </td>
                                                         </tr>
                                                         <?php endif; ?>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap">
+                                                            <td class="align-middle text-md-nowrap">
                                                                 <span id="calc_alias"></span>&nbsp;&nbsp;&nbsp;
                                                                 <i class="far fa-question-circle"
                                                                    data-bs-toggle="tooltip"
@@ -440,14 +478,15 @@ $csrfToken = generateCSRFToken();
                                                             </td>
                                                             <td>
                                                                 <select class="form-control form-control-sm" id="aliasSelect">
-                                                                    <option value="0" <?php if ($aliasValue=='0') { echo "selected"; }; ?> id="calc_aliasoff"></option>
-                                                                    <option value="1" <?php if ($aliasValue=='1') { echo "selected"; }; ?> id="calc_aliason"></option>
+                                                                    <?php if ($aliasValue === ''): ?><option value="" selected>Unavailable</option><?php endif; ?>
+                                                                    <option value="0" <?php if ($aliasValue==='0') { echo "selected"; }; ?> id="calc_aliasoff"></option>
+                                                                    <option value="1" <?php if ($aliasValue==='1') { echo "selected"; }; ?> id="calc_aliason"></option>
                                                                 </select>
                                                             </td>
                                                         </tr>
                                                         <?php if (!$isRepeaterDevice): ?>
                                                         <tr>
-                                                            <td class="align-middle text-nowrap"><span id="calc_tgto"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpstgto"></i></td>
+                                                            <td class="align-middle text-md-nowrap"><span id="calc_tgto"></span>&nbsp;&nbsp;&nbsp;<i class="far fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="" id="calchlpstgto"></i></td>
                                                             <td><input type="number" class="form-control form-control-sm" min="0" step="1" id="timeoutInput" value="<?php echo $timerValue; ?>"></td>
                                                         </tr>
                                                         <?php endif; ?>
@@ -474,10 +513,11 @@ $csrfToken = generateCSRFToken();
                                     </div>
                                     <form method="post" id="saveChangesForm" style="display: none;">
                                         <input type="hidden" name="csrf_token" value="<?php echo escapeHtml($csrfToken); ?>">
+                                        <input type="hidden" name="reset_functions" id="resetFunctions" value="0">
                                         <textarea name="genText" id="genTextHidden"></textarea>
                                     </form>
                                     <div class="row justify-content-center mb-3 selfcare-action-row-wrapper">
-                                        <div class="col-6">
+                                        <div class="col-12 col-md-8">
                                             <div class="row justify-content-center align-items-center mt-2 mb-4 selfcare-action-row">
                                                 <button type="button" class="btn btn-primary" onclick="window.selfcare && window.selfcare.saveChanges()" id="calc_save"></button>
                                                 <button type="button"

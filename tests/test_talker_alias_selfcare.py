@@ -24,12 +24,16 @@ def test_alias_switch_sits_with_function_options():
     assert 'id="aliasSelect"' in block
     alias_at = block.index('id="aliasSelect"')
     before = block[:alias_at]
-    assert before.count("if (!$isRepeaterDevice)") == before.count("endif")
-    assert "effectiveBooleanOption(" in source
+    assert before.rfind("endif") > before.rfind("if (!$isRepeaterDevice)")
+    assert "displayedBooleanOption(" in source
     assert 'id="calc_aliassrv"' not in block
     assert 'id="calc_aliasoff"' in block
     assert 'id="calc_aliason"' in block
-    assert "retired" in _read("html/include/calc.php").lower()
+    calc = _read("html/include/calc.php")
+    assert "http_response_code(410)" not in calc
+    assert "calcOnOff('aliasSelect'" in calc
+    assert 'id="generatedTextWithQuotes"' in calc
+    assert 'id="generatedTextWithoutQuotes"' in calc
 
 
 def test_alias_option_is_omitted_until_the_switch_moves():
@@ -38,7 +42,8 @@ def test_alias_option_is_omitted_until_the_switch_moves():
     assert "Server default" in script or "aliasSelect.value !== '0'" in script
     assert "hasStaticTalkgroups" in script
     assert "syncStickyControl" in script
-    assert "!hasStatics && stickyValue !== '-1'" in script
+    assert "if (!hasStatics)" in script
+    assert "functionOption('STICKY'" in script
 
 
 @pytest.mark.skipif(NODE is None, reason="Node is not installed")

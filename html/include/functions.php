@@ -103,6 +103,61 @@ function effectiveBooleanOption($value, $serverDefault)
 }
 
 /**
+ * Show a saved choice, otherwise the live server value.
+ * An unreadable config has no live value, so the control stays blank.
+ *
+ * @param mixed $value
+ * @param array $defaults
+ * @param string $defaultKey
+ * @return string
+ */
+function displayedBooleanOption($value, array $defaults, $defaultKey)
+{
+    $normalized = normalizeAliasOption($value);
+    if ($normalized === '0' || $normalized === '1') {
+        return $normalized;
+    }
+    if (empty($defaults['available'])) {
+        return '';
+    }
+    return !empty($defaults[$defaultKey]) ? '1' : '0';
+}
+
+/**
+ * @param mixed $value
+ * @param array $defaults
+ * @param string $defaultKey
+ * @return string
+ */
+function displayedScalarOption($value, array $defaults, $defaultKey)
+{
+    if ($value !== null && $value !== '') {
+        return (string) $value;
+    }
+    if (empty($defaults['available'])) {
+        return '';
+    }
+    return (string) ($defaults[$defaultKey] ?? '');
+}
+
+/**
+ * @param array $defaults
+ * @param string $key
+ * @param bool $boolean
+ * @return string
+ */
+function serverDefaultAttribute(array $defaults, $key, $boolean = false)
+{
+    if (empty($defaults['available'])) {
+        return '';
+    }
+    if ($boolean) {
+        return !empty($defaults[$key]) ? '1' : '0';
+    }
+    return (string) ($defaults[$key] ?? '');
+}
+
+/**
  * Handle device selection from session and POST data
  * 
  * Validates and authorizes device selection to ensure users can only
@@ -318,7 +373,7 @@ function buildOptionsStringFromParsed(array $parsed, $isIpsc, $dialActive = fals
         $genText .= 'VOICE=' . $parsed['VOICE'] . ';';
     }
 
-    if (isset($parsed['VOICE']) && (string) $parsed['VOICE'] === '1' && !empty($parsed['LANG'])) {
+    if (!empty($parsed['LANG']) && (!isset($parsed['VOICE']) || (string) $parsed['VOICE'] === '1')) {
         $genText .= 'LANG=' . $parsed['LANG'] . ';';
     }
 
@@ -537,15 +592,14 @@ function loadRysenFunctionDefaults($deviceMode, $path = '/etc/rysen/rysen.cfg')
         if ($name === 'GLOBAL' || strtoupper((string) ($values['MODE'] ?? '')) !== $systemMode) {
             continue;
         }
-        if ($matching === null) {
-            $matching = $values;
+        if (!rysenConfigBool($values['ENABLED'] ?? null, false)) {
+            continue;
         }
-        if (rysenConfigBool($values['ENABLED'] ?? null, false)) {
-            $matching = $values;
-            break;
-        }
+        $matching = $values;
+        break;
     }
     if ($matching === null) {
+        $defaults['available'] = false;
         return $defaults;
     }
 
@@ -566,6 +620,86 @@ function loadRysenFunctionDefaults($deviceMode, $path = '/etc/rysen/rysen.cfg')
     $defaults['available'] = true;
 
     return $defaults;
+}
+
+/**
+ * Function keys a device can override. Repeaters only have talker alias here.
+ *
+ * @param bool $isRepeater
+ * @return string[]
+ */
+function selfcareFunctionKeys($isRepeater)
+{
+    return $isRepeater
+        ? ['ALIAS']
+        : ['DIAL', 'VOICE', 'LANG', 'SINGLE', 'STICKY', 'ALIAS', 'TIMER'];
+}
+
+/**
+ * Remove saved function overrides so the device follows the master again.
+ * Static talkgroups and the selfcare password stay in place.
+ *
+ * @param string|null $optionsString
+ * @param bool $isRepeater
+ * @return string
+ */
+function resetSelfcareFunctionOptions($optionsString, $isRepeater)
+{
+    $parsed = parseDeviceOptions($optionsString ?? '');
+    foreach (selfcareFunctionKeys($isRepeater) as $key) {
+        unset($parsed[$key]);
+    }
+    unset($parsed['DISC']);
+
+    return buildOptionsStringFromParsed($parsed, $isRepeater, false);
+}
+
+/**
+ * Drop posted function values that already match the freshly read config.
+ * When the config cannot be read, keep saved function values instead of
+ * replacing them with built-in guesses.
+ *
+ * @param string|null $postedOptions
+ * @param string|null $existingOptions
+ * @param array $defaults
+ * @param bool $isRepeater
+ * @return string
+ */
+function normalizeSelfcareOptions($postedOptions, $existingOptions, array $defaults, $isRepeater)
+{
+    $posted = parseDeviceOptions($postedOptions ?? '');
+    if (empty($defaults['available'])) {
+        $existing = parseDeviceOptions($existingOptions ?? '');
+        foreach (selfcareFunctionKeys($isRepeater) as $key) {
+            if (!array_key_exists($key, $posted) && array_key_exists($key, $existing)) {
+                $posted[$key] = $existing[$key];
+            }
+        }
+    } else {
+        $serverBit = function ($key) use ($defaults) {
+            return !empty($defaults[$key]) ? '1' : '0';
+        };
+        foreach (['VOICE' => 'voice', 'SINGLE' => 'single', 'STICKY' => 'sticky', 'ALIAS' => 'alias'] as $option => $key) {
+            if (isset($posted[$option]) && (string) $posted[$option] === $serverBit($key)) {
+                unset($posted[$option]);
+            }
+        }
+        if (isset($posted['TIMER']) && (int) $posted['TIMER'] === (int) ($defaults['timer'] ?? 0)) {
+            unset($posted['TIMER']);
+        }
+        $voiceOn = array_key_exists('VOICE', $posted)
+            ? (string) $posted['VOICE'] === '1'
+            : !empty($defaults['voice']);
+        if (!$voiceOn || (isset($posted['LANG']) && (string) $posted['LANG'] === (string) ($defaults['language'] ?? ''))) {
+            unset($posted['LANG']);
+        }
+        if (isset($posted['DIAL']) && (int) $posted['DIAL'] <= 0) {
+            unset($posted['DIAL']);
+        }
+    }
+
+    $dialActive = !empty($posted['DIAL']) && (int) $posted['DIAL'] > 0;
+    return buildOptionsStringFromParsed($posted, $isRepeater, $dialActive);
 }
 
 /**

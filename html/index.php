@@ -95,5 +95,8 @@ if (!isset($_SESSION['preloader_displayed'])) {
     <script src="plugins/adminlte/js/adminlte.min.js"></script>
     <script src="scripts/dashboard-watch.js"></script>
     <script src="scripts/monitor.js"></script>
+    <?php if (isset($page) && $page === 'calc'): ?>
+    <script src="scripts/selfcare.js?v=<?php echo filemtime(__DIR__ . '/scripts/selfcare.js'); ?>"></script>
+    <?php endif; ?>
   </body>
 </html>

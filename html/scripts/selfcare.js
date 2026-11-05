@@ -16,6 +16,7 @@ const DEVICE_RUNTIME_POLL_MS = 15000;
 
 class SelfcareManager {
     constructor(config) {
+        this.calculator = !!config.calculator;
         this.deviceMode = config.deviceMode;
         this.isIpsc = config.isIpsc;
         this.deviceId = config.deviceId;
@@ -39,6 +40,11 @@ class SelfcareManager {
             2: this.getTimeslotValues(document.getElementById('timeslotTable2')),
         };
         this.attachEventListeners();
+        if (this.calculator) {
+            const modeSelector = document.getElementById('modeSelector');
+            this.applyCalculatorKind(modeSelector ? modeSelector.value : 'duplex');
+            return;
+        }
         this.toggleTimeslotTable();
         const dialTGInput = document.getElementById('dialTGInput');
         if (dialTGInput) {
@@ -77,6 +83,11 @@ class SelfcareManager {
     attachEventListeners() {
         const inputs = document.querySelectorAll('input, select');
         inputs.forEach(input => {
+            if (input.id === 'modeSelector'
+                || input.id === 'generatedTextWithQuotes'
+                || input.id === 'generatedTextWithoutQuotes') {
+                return;
+            }
             if (input.type === 'number' && input.closest('#timeslotTable, #timeslotTable2')) {
                 this.bindTalkgroupInput(input);
             } else {
@@ -87,6 +98,113 @@ class SelfcareManager {
         const voiceSelect = document.getElementById('voiceSelect');
         if (voiceSelect) {
             voiceSelect.addEventListener('change', () => this.toggleLanguageDropdown());
+        }
+
+        const modeSelector = document.getElementById('modeSelector');
+        if (modeSelector) {
+            modeSelector.addEventListener('change', () => this.applyCalculatorKind(modeSelector.value));
+        }
+    }
+
+    /**
+     * Public calculator: duplex, simplex, or repeater, using that mode's live defaults.
+     */
+    applyCalculatorKind(kind) {
+        const normalized = kind === 'simplex' || kind === 'repeater' ? kind : 'duplex';
+        const snapshot = this.calculatorControlSnapshot();
+        this.isIpsc = normalized === 'repeater';
+        this.deviceMode = normalized === 'simplex' ? 4 : (normalized === 'repeater' ? 0 : 1);
+        const which = this.isIpsc ? 'repeater' : 'hotspot';
+        document.querySelectorAll('[data-hotspot][data-repeater]').forEach(element => {
+            element.value = element.getAttribute('data-' + which) || '';
+        });
+        document.querySelectorAll('.calc-hotspot-only').forEach(row => {
+            row.style.display = this.isIpsc ? 'none' : '';
+        });
+        const warning = document.getElementById('calc-defaults-warning');
+        const available = document.getElementById('server-defaults-available');
+        if (warning && available) {
+            warning.style.display = available.value === '1' ? 'none' : '';
+        }
+        this.restoreMatchingDefaults(snapshot);
+        if (this.isIpsc) {
+            const timeslot2Col = document.getElementById('timeslot2col');
+            if (timeslot2Col) {
+                timeslot2Col.style.display = 'block';
+            }
+        } else {
+            const dialTGInput = document.getElementById('dialTGInput');
+            if (dialTGInput) {
+                this.toggleTimeslot2(dialTGInput.value);
+            }
+            this.toggleLanguageDropdown();
+        }
+        this.toggleTimeslotTable();
+    }
+
+    /**
+     * Remember which function controls still equal the defaults before a mode change.
+     */
+    calculatorControlSnapshot() {
+        const fields = {
+            voiceSelect: 'server-default-voice',
+            languageselect: 'server-default-language',
+            singleModeSelect: 'server-default-single',
+            stickySelect: 'server-default-sticky',
+            aliasSelect: 'server-default-alias',
+            timeoutInput: 'server-default-timer'
+        };
+        const snapshot = {};
+        Object.keys(fields).forEach(id => {
+            const element = document.getElementById(id);
+            if (!element) {
+                return;
+            }
+            snapshot[id] = {
+                value: element.value,
+                matched: this.matchesServerDefault(fields[id], element.value),
+                defaultId: fields[id]
+            };
+        });
+        return snapshot;
+    }
+
+    /**
+     * Keep a deliberate choice. A control still sitting on the old default follows the new mode.
+     */
+    restoreMatchingDefaults(snapshot) {
+        Object.keys(snapshot).forEach(id => {
+            const element = document.getElementById(id);
+            const server = document.getElementById(snapshot[id].defaultId);
+            if (!element || !server) {
+                return;
+            }
+            element.value = snapshot[id].matched ? server.value : snapshot[id].value;
+        });
+    }
+
+    /**
+     * Put function controls back on the defaults for the selected calculator mode.
+     */
+    applyServerDefaultsToControls() {
+        const fields = {
+            voiceSelect: 'server-default-voice',
+            languageselect: 'server-default-language',
+            singleModeSelect: 'server-default-single',
+            stickySelect: 'server-default-sticky',
+            aliasSelect: 'server-default-alias',
+            timeoutInput: 'server-default-timer'
+        };
+        Object.keys(fields).forEach(id => {
+            const element = document.getElementById(id);
+            const server = document.getElementById(fields[id]);
+            if (element && server) {
+                element.value = server.value;
+            }
+        });
+        const dialTGInput = document.getElementById('dialTGInput');
+        if (dialTGInput) {
+            dialTGInput.value = '0';
         }
     }
 
@@ -141,7 +259,7 @@ class SelfcareManager {
         const removeCell = row.insertCell(2);
         
         tgCell.innerHTML = `TG ${rowCount + 1}:`;
-        tgCell.classList.add('align-middle', 'text-nowrap');
+        tgCell.classList.add('align-middle', 'text-md-nowrap');
         
         // Create input element
         const input = document.createElement('input');
@@ -233,6 +351,32 @@ class SelfcareManager {
     }
 
     /**
+     * True when this control still matches the config read for this page.
+     * A missing or unreadable config never counts as a match.
+     */
+    matchesServerDefault(defaultId, value) {
+        const available = document.getElementById('server-defaults-available');
+        const server = document.getElementById(defaultId);
+        if (!available || available.value !== '1' || !server || server.value === '') {
+            return false;
+        }
+        return String(server.value) === String(value);
+    }
+
+    /**
+     * Omit a function key that still equals the live server value.
+     */
+    functionOption(key, value, defaultId) {
+        if (value === '' || value === '-1' || value == null) {
+            return '';
+        }
+        if (this.matchesServerDefault(defaultId, value)) {
+            return '';
+        }
+        return key + '=' + value + ';';
+    }
+
+    /**
      * ALIAS= fragment.
      */
     aliasOptionFragment() {
@@ -240,7 +384,7 @@ class SelfcareManager {
         if (!aliasSelect || (aliasSelect.value !== '0' && aliasSelect.value !== '1')) {
             return '';
         }
-        return 'ALIAS=' + aliasSelect.value + ';';
+        return this.functionOption('ALIAS', aliasSelect.value, 'server-default-alias');
     }
 
     /**
@@ -251,6 +395,39 @@ class SelfcareManager {
         if (genTextHidden) {
             genTextHidden.value = genText;
         }
+        const plain = document.getElementById('generatedTextWithoutQuotes');
+        const quoted = document.getElementById('generatedTextWithQuotes');
+        if (plain) {
+            plain.value = genText;
+        }
+        if (quoted) {
+            quoted.value = 'Options="' + genText + '"';
+        }
+    }
+
+    /**
+     * Copy a generated calculator string. Falls back when the clipboard API is blocked.
+     */
+    copyGeneratedText(elementId) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            return;
+        }
+        const text = element.value;
+        const notify = () => {
+            window.alert(text);
+        };
+        element.focus();
+        element.select();
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(notify).catch(() => {
+                document.execCommand('copy');
+                notify();
+            });
+            return;
+        }
+        document.execCommand('copy');
+        notify();
     }
 
     /**
@@ -268,7 +445,9 @@ class SelfcareManager {
 
         const timeslots1 = this.getTimeslotValues(timeslotTable);
         const timeslots2 = this.getTimeslotValues(timeslotTable2);
-        const hasStatics = this.hasStaticTalkgroups(timeslots1, timeslots2);
+
+        const includeSlot1 = !(this.calculator && this.deviceMode === 4);
+        const hasStatics = this.hasStaticTalkgroups(includeSlot1 ? timeslots1 : [], timeslots2);
         this.syncStickyControl(hasStatics);
 
         if (this.isIpsc) {
@@ -293,11 +472,11 @@ class SelfcareManager {
 
         let genText = '';
 
-        // Always send both TS1 and TS2 when static talkgroups apply (incl. simplex)
+        // Logged-in simplex still sends a stored TS1. The public calculator omits TS1.
         const staticTgsApplicable = parseInt(dialTGValue, 10) <= 0;
 
         if (staticTgsApplicable) {
-            genText += this.formatTimeslotOption(1, timeslots1, true);
+            genText += this.formatTimeslotOption(1, timeslots1, includeSlot1);
             genText += this.formatTimeslotOption(2, timeslots2, true);
         }
 
@@ -305,25 +484,23 @@ class SelfcareManager {
             genText += 'DIAL=' + dialTGValue + ';';
         }
 
-        if (voiceValue !== '-1') {
-            genText += 'VOICE=' + voiceValue + ';';
-        }
+        genText += this.functionOption('VOICE', voiceValue, 'server-default-voice');
 
-        if (voiceValue === '1' && languageSelect) {
+        if (voiceValue === '1' && languageSelect && languageValue !== ''
+            && !this.matchesServerDefault('server-default-language', languageValue)) {
             genText += 'LANG=' + languageValue + ';';
         }
 
-        if (singleModeValue !== '-1') {
-            genText += 'SINGLE=' + singleModeValue + ';';
-        }
+        genText += this.functionOption('SINGLE', singleModeValue, 'server-default-single');
 
-        if (!hasStatics && stickyValue !== '-1') {
-            genText += 'STICKY=' + stickyValue + ';';
+        if (!hasStatics) {
+            genText += this.functionOption('STICKY', stickyValue, 'server-default-sticky');
         }
 
         genText += this.aliasOptionFragment();
 
-        if (parseInt(timeoutValue, 10) > 0) {
+        if (parseInt(timeoutValue, 10) > 0
+            && !this.matchesServerDefault('server-default-timer', timeoutValue)) {
             genText += 'TIMER=' + timeoutValue + ';';
         }
 
@@ -496,35 +673,27 @@ class SelfcareManager {
     }
 
     /**
-     * Apply the current master defaults through the normal save path.
-     * Static talkgroups are deliberately left untouched.
+     * Ask the server to drop function overrides. It re-reads nothing from this
+     * page, so a stale tab cannot save an old snapshot or a guessed fallback.
+     * Static talkgroups stay stored.
      */
     resetFunctionsToServerDefaults() {
-        const defaultValue = (id, fallback) => {
-            const element = document.getElementById(id);
-            return element ? element.value : fallback;
-        };
-        const setValue = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.value = value;
+        if (this.calculator) {
+            this.applyServerDefaultsToControls();
+            if (!this.isIpsc) {
+                this.toggleTimeslot2('0');
+                this.toggleLanguageDropdown();
             }
-        };
-
-        setValue('dialTGInput', '0');
-        setValue('voiceSelect', defaultValue('server-default-voice', '0'));
-        setValue('languageselect', defaultValue('server-default-language', 'en_GB'));
-        setValue('singleModeSelect', defaultValue('server-default-single', '0'));
-        setValue('stickySelect', defaultValue('server-default-sticky', '0'));
-        setValue('aliasSelect', defaultValue('server-default-alias', '0'));
-        setValue('timeoutInput', defaultValue('server-default-timer', '0'));
-
-        const dialTGInput = document.getElementById('dialTGInput');
-        if (dialTGInput) {
-            this.toggleTimeslot2(dialTGInput.value);
+            this.updateGeneratedText();
+            return;
         }
-        this.toggleLanguageDropdown();
-        this.saveChanges();
+        const flag = document.getElementById('resetFunctions');
+        const form = document.getElementById('saveChangesForm');
+        if (!flag || !form) {
+            return;
+        }
+        flag.value = '1';
+        form.submit();
     }
 
     /**
@@ -1111,6 +1280,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const deviceId = document.getElementById('device-id');
     const deviceModified = document.getElementById('device-modified');
     
+    if (document.getElementById('options-calculator')) {
+        window.selfcare = new SelfcareManager({
+            calculator: true,
+            deviceMode: 1,
+            isIpsc: false,
+            deviceId: 0,
+            isModified: false
+        });
+        return;
+    }
+
     if (modeStatus && deviceId) {
         window.selfcare = new SelfcareManager({
             deviceMode: parseInt(modeStatus.value, 10),

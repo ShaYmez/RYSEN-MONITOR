@@ -17,7 +17,7 @@ def _read(relative):
 def test_hytera_save_uses_repeater_sanitizer():
     source = _read("html/ssmain.php")
     assert "isRepeaterDeviceMode($postDev['mode'])" in source
-    assert "sanitizeIpscOptions($_POST['genText'])" in source
+    assert "sanitizeIpscOptions($_POST['genText'] ?? '')" in source
     assert "isIpscDeviceMode($postDev['mode'])" not in source
 
 
