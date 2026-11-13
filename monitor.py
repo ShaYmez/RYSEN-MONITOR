@@ -133,11 +133,25 @@ subscriber_ids = {}
 talkgroup_ids = {}
 
 
+# Exact talkgroup ids that use a shipped custom flag instead of the MCC prefix.
+CUSTOM_TALKGROUP_FLAGS = {
+    "31959": "31959",
+}
+
+
 def country_flag_code(value):
-    """Extract a leading 3-digit flag code, returning "world" when unavailable or "000"."""
+    """Extract a leading 3-digit flag code, returning "world" when unavailable or "000".
+
+    An exact talkgroup id in CUSTOM_TALKGROUP_FLAGS uses that flag file.
+    Radio ids and other talkgroups still use the first three digits.
+    """
     if value is None:
         return "world"
-    match = re.match(r"^(\d{3})", str(value))
+    text = str(value).strip()
+    custom = CUSTOM_TALKGROUP_FLAGS.get(text)
+    if custom:
+        return custom
+    match = re.match(r"^(\d{3})", text)
     if not match:
         return "world"
     code = match.group(1)

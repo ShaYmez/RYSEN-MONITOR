@@ -305,6 +305,21 @@ function dashboardCanonicalFlagCode($flagCode)
 }
 
 /**
+ * Custom flag stem for one talkgroup. Empty when the talkgroup uses its MCC flag.
+ *
+ * @param mixed $tgid
+ * @return string
+ */
+function dashboardCustomTalkgroupFlag($tgid)
+{
+    $id = preg_replace('/\D/', '', (string) $tgid);
+    $flags = [
+        '31959' => '31959',
+    ];
+    return $flags[$id] ?? '';
+}
+
+/**
  * Flag file stem for a talkgroup row.
  * Prefer MCC when the API sends it; otherwise keep legacy callsign flag HTML.
  * Missing MCC (QuadNet) stays world.

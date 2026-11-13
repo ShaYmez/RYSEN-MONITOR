@@ -37,6 +37,11 @@ def _event(action, system, peer, slot="1", trx="RX", stream="900"):
 
 
 class TestUnitVoiceDashboard(unittest.TestCase):
+    def test_talkgroup_31959_uses_custom_flag(self):
+        self.assertEqual(monitor.country_flag_code(31959), "31959")
+        self.assertEqual(monitor.country_flag_code("31959"), "31959")
+        self.assertEqual(monitor.country_flag_code("319"), "319")
+        self.assertEqual(monitor.country_flag_code("3190001"), "319")
     def setUp(self):
         monitor.CTABLE["MASTERS"].clear()
         monitor.CTABLE["PEERS"].clear()

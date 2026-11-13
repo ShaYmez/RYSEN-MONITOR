@@ -73,7 +73,7 @@ def test_page_omits_legacy_column_headers():
     assert "if ($showMcc)" in source
     assert "API_NETWORK_NAME" in source
     assert "dashboardIsFreestarApiHost" not in source
-    assert "renderDashboardTalkgroupName($tgData['callsign'] ?? '', $tgData['mcc'] ?? '')" in source
+    assert "renderDashboardTalkgroupName($tgData['callsign'] ?? '', $tgData['mcc'] ?? '', $tgNrRaw)" in source
 
 
 def test_search_sits_outside_table_scroll():
@@ -84,6 +84,23 @@ def test_search_sits_outside_table_scroll():
     scroll = source.find("wwtg-table-scroll")
     table = source.find('id=\\"wwtg-table\\"', scroll)
     assert 0 < toolbar < scroll < table
+
+
+def test_custom_talkgroup_flag_is_exact_id_only():
+    code = (
+        "require $argv[1];"
+        "echo dashboardCustomTalkgroupFlag($argv[2]);"
+    )
+    got = subprocess.check_output(
+        [PHP, "-r", code, str(CONFIG), "31959"],
+        text=True,
+    ).strip()
+    other = subprocess.check_output(
+        [PHP, "-r", code, str(CONFIG), "319"],
+        text=True,
+    ).strip()
+    assert got == "31959"
+    assert other == ""
 
 
 def test_mcc_selects_country_flag_and_legacy_stays_world():

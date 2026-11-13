@@ -13,9 +13,15 @@
 require_once __DIR__ . '/api-config.php';
 require_once __DIR__ . '/copyright.php';
 
-function renderDashboardTalkgroupName($rawCallsign, $mcc = '') {
+function renderDashboardTalkgroupName($rawCallsign, $mcc = '', $tgid = '') {
         $rawCallsign = (string)$rawCallsign;
-        $flagCode = dashboardTalkgroupFlagCode($mcc, $rawCallsign);
+        $custom = dashboardCustomTalkgroupFlag($tgid);
+        $customFile = $custom !== '' ? __DIR__ . '/../flags/' . $custom . '.png' : '';
+        if ($customFile !== '' && file_exists($customFile)) {
+                $flagCode = $custom;
+        } else {
+                $flagCode = dashboardTalkgroupFlagCode($mcc, $rawCallsign);
+        }
 
         $flagFile = __DIR__ . '/../flags/' . $flagCode . '.png';
         if (!file_exists($flagFile)) {
@@ -77,7 +83,7 @@ if (count($tgDataArray)) {
                 $tgMccRaw = $showMcc ? (string) ($tgData['mcc'] ?? '') : '';
                 $rawName = trim(preg_replace('/<img[^>]*>/i', '', (string) ($tgData['callsign'] ?? '')));
                 $tgNr   = htmlspecialchars($tgNrRaw, ENT_QUOTES, 'UTF-8');
-                $tgName = renderDashboardTalkgroupName($tgData['callsign'] ?? '', $tgData['mcc'] ?? '');
+                $tgName = renderDashboardTalkgroupName($tgData['callsign'] ?? '', $tgData['mcc'] ?? '', $tgNrRaw);
                 $sortName = htmlspecialchars($rawName, ENT_QUOTES, 'UTF-8');
                 $nameAttr = htmlspecialchars(strtolower($rawName), ENT_QUOTES, 'UTF-8');
                 $countryAttr = htmlspecialchars(strtolower($tgCountryRaw), ENT_QUOTES, 'UTF-8');
